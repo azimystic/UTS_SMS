@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using UTS_SMS.Models;
-using SMS.Services;
+using UTS_SMS.Services;
 using Microsoft.AspNetCore.Hosting;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
     public class CampusesController : Controller
     {

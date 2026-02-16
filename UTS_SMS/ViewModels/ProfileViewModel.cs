@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using UTS_SMS.Models;
 
-namespace SMS.ViewModels
+namespace UTS_SMS.ViewModels
 {
     public class ProfileViewModel
     {

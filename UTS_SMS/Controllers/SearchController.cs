@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
     [Authorize]
     [ApiController]

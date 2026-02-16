@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UTS_SMS.Models;
-using SMS.Services;
+using UTS_SMS.Services;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
     [Authorize(Roles = "Admin")]
     public class StudentMigrationController : Controller

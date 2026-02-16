@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
-using SMS;
+using UTS_SMS;
 using UTS_SMS.Models;
-using SMS.Services;
+using UTS_SMS.Services;
+using UTS_SMS;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -78,8 +79,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ISalaryDeductionService, SalaryDeductionService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<MessageService>();
-builder.Services.AddScoped<MenuService>();
-builder.Services.AddScoped<ReportService>();
+ builder.Services.AddScoped<ReportService>();
 
 // Add background services
 builder.Services.AddHostedService<SalaryDeductionBackgroundService>();

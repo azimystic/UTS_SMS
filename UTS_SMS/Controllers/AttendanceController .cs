@@ -3,13 +3,13 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UTS_SMS.Models;
-using SMS.ViewModels;
+using UTS_SMS.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
     [Authorize]
     public class AttendanceController : Controller

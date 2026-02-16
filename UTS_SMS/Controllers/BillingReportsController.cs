@@ -2,10 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UTS_SMS.Models;
-using SMS.Services;
-using SMS.ViewModels;
+using UTS_SMS.Services;
+using UTS_SMS.ViewModels;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
     public class BillingReportsController : Controller
     {

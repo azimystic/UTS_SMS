@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using UTS_SMS.Models;
 using Microsoft.AspNetCore.Identity;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
     public class AdmissionInquiriesController : Controller
     {

@@ -4,10 +4,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using UTS_SMS.Models;
-using SMS.Services;
+using UTS_SMS.Services;
 using UTS_SMS.Models;
+using UTS_SMS;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
     [Authorize(Roles = "Admin,Teacher")]
     public class StudentsController : Controller

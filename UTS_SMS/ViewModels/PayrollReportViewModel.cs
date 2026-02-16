@@ -1,7 +1,7 @@
 ﻿// View Models
 using UTS_SMS.Models;
 
-namespace SMS.ViewModels
+namespace UTS_SMS.ViewModels
 {
     public class PayrollReportViewModel
     {

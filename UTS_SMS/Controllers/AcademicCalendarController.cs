@@ -3,9 +3,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using UTS_SMS;
 using UTS_SMS.Models;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
     [Authorize(Roles = "Admin")]
     public class AcademicCalendarController : Controller

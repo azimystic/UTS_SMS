@@ -1,7 +1,7 @@
 using UTS_SMS.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace SMS.Services
+namespace UTS_SMS.Services
 {
     public class NotificationService
     {

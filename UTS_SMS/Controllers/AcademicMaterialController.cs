@@ -3,12 +3,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using SMS;
+using UTS_SMS;
 using UTS_SMS.Models;
-using SMS.ViewModels;
+using UTS_SMS.ViewModels;
 using System.Security.Claims;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
     [Authorize]
     public class AcademicMaterialController : Controller

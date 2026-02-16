@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using UTS_SMS.Models;
 using System.Text.Json;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
     [Authorize]
     public class ExamDateSheetController : Controller

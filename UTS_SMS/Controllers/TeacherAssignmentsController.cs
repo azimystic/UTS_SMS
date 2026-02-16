@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using UTS_SMS.Models;
 using System.Linq;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
     // Teacher Assignment Controller
     public class TeacherAssignmentsController : Controller

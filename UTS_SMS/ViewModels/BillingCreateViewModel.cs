@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace SMS.ViewModels
+namespace UTS_SMS.ViewModels
 {
     public class BillingCreateViewModel
     {

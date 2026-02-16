@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using UTS_SMS.Models;
-using SMS.Services;
+using UTS_SMS.Services;
 
-namespace SMS
+namespace UTS_SMS
 {
     public class SalaryDeductionBackgroundService : BackgroundService
     {

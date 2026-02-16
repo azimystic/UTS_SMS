@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UTS_SMS.Models;
-using SMS.ViewModels;
+using UTS_SMS.ViewModels;
 using System.Diagnostics;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
     [Authorize(Roles = "Admin,Teacher")]
     public class StudentSurveyAnswerController : Controller

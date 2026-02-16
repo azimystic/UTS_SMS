@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using UTS_SMS.Models;
 using System.Data;
 
-namespace SMS
+namespace UTS_SMS
 {
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
@@ -89,10 +89,7 @@ namespace SMS
         public DbSet<MessageRecipient> MessageRecipients { get; set; }
         public DbSet<MessageAttachment> MessageAttachments { get; set; }
         
-        // App Menu System
-        public DbSet<AppMenuParent> AppMenuParents { get; set; }
-        public DbSet<AppMenuChild> AppMenuChildren { get; set; }
-        public DbSet<AppMenuRoleAssignment> AppMenuRoleAssignments { get; set; }
+     
         
         // Academic Material System
         public DbSet<Chapter> Chapters { get; set; }
@@ -923,18 +920,7 @@ namespace SMS
                 .HasForeignKey(n => n.CampusId)
                 .OnDelete(DeleteBehavior.Restrict);
                 
-            // AppMenuRoleAssignment configurations
-            modelBuilder.Entity<AppMenuRoleAssignment>()
-                .HasOne(amra => amra.ParentMenu)
-                .WithMany()
-                .HasForeignKey(amra => amra.ParentMenuId)
-                .OnDelete(DeleteBehavior.Cascade);
-                
-            modelBuilder.Entity<AppMenuRoleAssignment>()
-                .HasOne(amra => amra.ChildMenu)
-                .WithMany()
-                .HasForeignKey(amra => amra.ChildMenuId)
-                .OnDelete(DeleteBehavior.Cascade);
+            
         }
     }
 }

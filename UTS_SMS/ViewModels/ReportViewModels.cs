@@ -1,7 +1,7 @@
 using UTS_SMS.Models;
 using System.ComponentModel.DataAnnotations;
 
-namespace SMS.ViewModels
+namespace UTS_SMS.ViewModels
 {
     // Base Report Filter ViewModel
     public class ReportFilterViewModel

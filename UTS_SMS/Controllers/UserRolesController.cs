@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UTS_SMS.Models;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
     [Authorize(Roles = "Owner,Admin")]
     public class UserRolesController : Controller

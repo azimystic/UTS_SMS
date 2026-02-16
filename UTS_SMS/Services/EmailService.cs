@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Mail;
 using Microsoft.Extensions.Configuration;
 
-namespace SMS.Services
+namespace UTS_SMS.Services
 {
     public interface IEmailService
     {

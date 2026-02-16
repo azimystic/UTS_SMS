@@ -1,6 +1,6 @@
 using UTS_SMS.Models;
 
-namespace SMS.ViewModels
+namespace UTS_SMS.ViewModels
 {
     // ViewModel for managing Academic Years per class (not section)
     public class ClassAcademicYearViewModel

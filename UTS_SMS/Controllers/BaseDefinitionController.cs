@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using UTS_SMS.Models;
-using SMS.Services;
+using UTS_SMS.Services;
 using System.Data;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
     // Base Controller for common definition operations
     public class BaseDefinitionController<T> : Controller where T : class

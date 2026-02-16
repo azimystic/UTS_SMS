@@ -1,4 +1,4 @@
-﻿@model SMS.ViewModels.DashboardViewModel
+﻿@model UTS_SMS.ViewModels.DashboardViewModel
 
 @{
     ViewData["Title"] = "Admin Dashboard";

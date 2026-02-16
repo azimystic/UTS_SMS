@@ -3,13 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
  using UTS_SMS.Models;
-using SMS.Services;
+using UTS_SMS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
     public class SubjectsGroupingsController : Controller
     {

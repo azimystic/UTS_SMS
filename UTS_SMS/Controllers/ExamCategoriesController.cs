@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
     public class ExamCategoriesController : Controller
     {

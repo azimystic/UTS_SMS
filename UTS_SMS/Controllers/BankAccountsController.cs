@@ -2,9 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using UTS_SMS.Models;
-using SMS.Services;
+using UTS_SMS.Services;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
     public class BankAccountsController : BaseDefinitionController<BankAccount>
     {

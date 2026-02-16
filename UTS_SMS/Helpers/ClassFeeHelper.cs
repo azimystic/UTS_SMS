@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using UTS_SMS.Models;
 
-namespace SMS.Helpers
+namespace UTS_SMS.Helpers
 {
     public static class ClassFeeHelper
     {

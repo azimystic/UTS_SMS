@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using UTS_SMS.Models;
-using SMS.ViewModels;
+using UTS_SMS.ViewModels;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
     public class SalaryDefinitionController : Controller
     {

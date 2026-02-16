@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using UTS_SMS.Models;
-using SMS.Services;
+using UTS_SMS.Services;
 using System.ComponentModel.DataAnnotations;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
      public class AccountController : Controller
     {

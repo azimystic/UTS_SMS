@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace SMS.Services
+namespace UTS_SMS.Services
 {
     public class NotificationBackgroundService : BackgroundService
     {

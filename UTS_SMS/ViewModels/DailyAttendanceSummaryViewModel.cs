@@ -1,4 +1,4 @@
-﻿namespace SMS.ViewModels
+﻿namespace UTS_SMS.ViewModels
 {
     public class DailyAttendanceSummaryViewModel
     {

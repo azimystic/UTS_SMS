@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using UTS_SMS.Models;
 
-namespace SMS.Services
+namespace UTS_SMS.Services
 {
     public interface IUserService
     {

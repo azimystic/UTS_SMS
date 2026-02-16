@@ -5,7 +5,7 @@ using UTS_SMS.Models;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
     public class StudentPromotionController : Controller
     {

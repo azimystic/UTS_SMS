@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace SMS.Controllers
+namespace UTS_SMS.Controllers
 {
     public class ManageDefinitionController : Controller
     {
