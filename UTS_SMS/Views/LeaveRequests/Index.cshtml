@@ -1,0 +1,122 @@
+@model IEnumerable<SMS.Models.LeaveRequest>
+
+@{
+    ViewData["Title"] = "My Leave Requests";
+    var leaveBalances = ViewBag.LeaveBalances as List<SMS.Models.LeaveBalance> ?? new List<SMS.Models.LeaveBalance>();
+}
+
+<div class="min-h-screen p-4 md:p-6">
+    <div class="w-full max-w-full">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-primary-800">My Leave Requests</h1>
+                <p class="text-neutral-600 mt-1">View and manage your leave applications</p>
+            </div>
+            <a asp-action="Create" class="bg-gradient-primary hover:shadow-sms-lg text-white px-6 py-2 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-sms-md flex items-center mt-4 md:mt-0">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Apply for Leave
+            </a>
+        </div>
+
+        <!-- Leave Balances Section -->
+        @if (leaveBalances.Any())
+        {
+            <div class="mb-6">
+                <h2 class="text-lg font-semibold text-primary-800 mb-4">📊 Leave Balance</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    @foreach (var balance in leaveBalances)
+                    {
+                        @await Html.PartialAsync("_LeaveBalanceCard", balance)
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Leave Requests Table -->
+        <div class="bg-white rounded-2xl shadow-sms-lg overflow-hidden border border-primary-100">
+            <div class="p-6 border-b border-primary-100">
+                <h2 class="text-lg font-semibold text-primary-800">📋 Leave History</h2>
+            </div>
+            
+            @if (Model != null && Model.Any())
+            {
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-primary-100">
+                        <thead class="bg-gradient-to-r from-primary-50 to-primary-100">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-primary-800 uppercase tracking-wider">Start Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-primary-800 uppercase tracking-wider">End Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-primary-800 uppercase tracking-wider">Leave Type</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-primary-800 uppercase tracking-wider">Total Days</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-primary-800 uppercase tracking-wider">Reason</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-primary-800 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-primary-800 uppercase tracking-wider">Approved By</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-primary-100">
+                            @foreach (var item in Model)
+                            {
+                                <tr class="hover:bg-primary-50 transition-colors duration-200">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-primary-900">
+                                        @item.StartDate.ToString("MMM dd, yyyy")
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-primary-900">
+                                        @item.EndDate.ToString("MMM dd, yyyy")
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary-800">
+                                        @item.LeaveType
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-primary-900">
+                                        @item.TotalDays
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-neutral-600 max-w-xs truncate" title="@item.Reason">
+                                        @(item.Reason?.Length > 50 ? item.Reason.Substring(0, 50) + "..." : item.Reason)
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        @if (item.Status == "Pending")
+                                        {
+                                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                ⏳ Pending
+                                            </span>
+                                        }
+                                        else if (item.Status == "Approved")
+                                        {
+                                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                ✓ Approved
+                                            </span>
+                                        }
+                                        else if (item.Status == "Rejected")
+                                        {
+                                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                ✗ Rejected
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">
+                                        @(item.ApprovedBy ?? "-")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="p-12 text-center">
+                    <svg class="w-16 h-16 text-neutral-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <h3 class="text-lg font-medium text-primary-800 mb-2">No leave requests found</h3>
+                    <p class="text-neutral-500 mb-4">You haven't applied for any leave yet.</p>
+                    <a asp-action="Create" class="inline-flex items-center bg-gradient-primary text-white px-4 py-2 rounded-lg hover:shadow-sms-lg transition-all duration-300">
+                        Apply for Leave
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>

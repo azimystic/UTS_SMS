@@ -1,0 +1,318 @@
+@{
+    ViewData["Title"] = "MailBox";
+    var isAdmin = User.IsInRole("Admin") || User.IsInRole("Owner");
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-inbox"></i> MailBox
+                    </h3>
+                    @if (isAdmin)
+                    {
+                        <a href="/MailBox/Compose" class="btn btn-primary">
+                            <i class="fas fa-pencil-alt"></i> Compose Message
+                        </a>
+                    }
+                </div>
+                <div class="card-body">
+                    <!-- Time Filter -->
+                    <div class="mb-3">
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="timeFilter" id="filterToday" value="today" autocomplete="off">
+                            <label class="btn btn-outline-secondary" for="filterToday">Today</label>
+
+                            <input type="radio" class="btn-check" name="timeFilter" id="filterYesterday" value="yesterday" autocomplete="off">
+                            <label class="btn btn-outline-secondary" for="filterYesterday">Yesterday</label>
+
+                            <input type="radio" class="btn-check" name="timeFilter" id="filterAll" value="all" autocomplete="off" checked>
+                            <label class="btn btn-outline-secondary" for="filterAll">All Time</label>
+                        </div>
+                    </div>
+
+                    <!-- Messages List -->
+                    <div id="messagesList">
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Message Detail Modal with Dark Background -->
+<div class="modal fade" id="messageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="background: linear-gradient(135deg, #2D2D2D 0%, #1a1a1a 100%); border: none;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+                <h5 class="modal-title" id="messageSubject" style="color: #FFFFFF;"></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="background: #1a1a1a;">
+                <div id="messageDetails"></div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .message-item {
+        padding: 1rem;
+        border-bottom: 1px solid #dee2e6;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+
+    .message-item:hover {
+        background: rgba(251, 191, 36, 0.05);
+    }
+
+    .message-item.unread {
+        background: rgba(251, 191, 36, 0.1);
+        font-weight: 600;
+    }
+
+    .message-subject {
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
+        color: #1F2937;
+    }
+
+    .message-preview {
+        font-size: 0.875rem;
+        color: #6B7280;
+        margin-bottom: 0.25rem;
+    }
+
+    .message-meta {
+        font-size: 0.75rem;
+        color: #6B7280;
+        display: flex;
+        gap: 1rem;
+    }
+
+    .message-sender {
+        color: #FBBF24;
+    }
+
+    .attachment-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        background: rgba(251, 191, 36, 0.1);
+        color: #FBBF24;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        margin-left: 0.5rem;
+    }
+</style>
+
+<script>
+    let currentFilter = 'all';
+    let messages = [];
+
+    // Time filter change
+    document.querySelectorAll('input[name="timeFilter"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            currentFilter = this.value;
+            loadMessages();
+        });
+    });
+
+    // Load messages
+    function loadMessages() {
+        const messagesList = document.getElementById('messagesList');
+        messagesList.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        `;
+
+        fetch(`/api/messages?timeFilter=${currentFilter}`)
+            .then(response => response.json())
+            .then(data => {
+                messages = data;
+                renderMessages();
+            })
+            .catch(error => {
+                console.error('Error loading messages:', error);
+                messagesList.innerHTML = `
+                    <div class="alert alert-danger">
+                        Error loading messages. Please try again.
+                    </div>
+                `;
+            });
+    }
+
+    // Render messages
+    function renderMessages() {
+        const messagesList = document.getElementById('messagesList');
+
+        if (messages.length === 0) {
+            messagesList.innerHTML = `
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-envelope-open fa-3x mb-3"></i>
+                    <p>No messages found</p>
+                </div>
+            `;
+            return;
+        }
+
+        const html = messages.map(msg => {
+            const unreadClass = msg.isRead ? '' : 'unread';
+            const attachmentBadge = msg.attachmentCount > 0
+                ? `<span class="attachment-badge"><i class="fas fa-paperclip"></i> ${msg.attachmentCount}</span>`
+                : '';
+
+            return `
+                <div class="message-item ${unreadClass}" onclick="viewMessage(${msg.id})">
+                    <div class="message-subject">
+                        ${escapeHtml(msg.subject)}
+                        ${attachmentBadge}
+                    </div>
+                    <div class="message-preview">${escapeHtml(msg.body)}</div>
+                    <div class="message-meta">
+                        <span class="message-sender">From: ${escapeHtml(msg.senderName)}</span>
+                        <span>${formatDate(msg.sentDate)}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        messagesList.innerHTML = html;
+    }
+
+    // View message details
+    function viewMessage(messageId) {
+        // Find message in cache
+        const message = messages.find(m => m.id === messageId);
+        if (message) {
+            // Show basic details immediately from cache
+            showMessagePreview(message);
+        }
+        
+        // Mark as read and load full details
+        fetch(`/api/messages/${messageId}/read`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(() => {
+            // Load full message details
+            return fetch(`/api/messages/${messageId}/details`);
+        })
+        .then(response => response.json())
+        .then(fullMessage => {
+            showMessageDetails(fullMessage);
+            // Reload messages to update read status
+            loadMessages();
+        })
+        .catch(error => console.error('Error viewing message:', error));
+    }
+
+    // Show message preview immediately from cache
+    function showMessagePreview(message) {
+        document.getElementById('messageSubject').textContent = message.subject;
+        document.getElementById('messageDetails').innerHTML = `
+            <div class="mb-3 pb-3 border-bottom">
+                <div class="text-muted small">
+                    <strong>From:</strong> ${escapeHtml(message.senderName)}<br>
+                    <strong>Date:</strong> ${formatDate(message.sentDate)}
+                </div>
+            </div>
+            <div class="message-body mb-3" style="color: #FFFFFF;">
+                ${escapeHtml(message.body)}
+            </div>
+            <div class="text-center py-3">
+                <div class="spinner-border spinner-border-sm text-light" role="status">
+                    <span class="visually-hidden">Loading details...</span>
+                </div>
+            </div>
+        `;
+        
+        const modal = new bootstrap.Modal(document.getElementById('messageModal'));
+        modal.show();
+    }
+
+    // Show message details in modal
+    function showMessageDetails(message) {
+        document.getElementById('messageSubject').textContent = message.subject;
+
+        const attachmentsHtml = message.attachments && message.attachments.length > 0
+            ? `<div class="mt-3">
+                  <h6 style="color: #FFFFFF;">Attachments:</h6>
+                  <ul class="list-unstyled">
+                    ${message.attachments.map(a => `
+                      <li class="mb-2">
+                        <a href="${a.filePath}" download="${a.fileName}" target="_blank" class="text-decoration-none text-primary">
+                          <i class="fas fa-paperclip"></i> ${escapeHtml(a.fileName)} (${formatFileSize(a.fileSize)})
+                        </a>
+                      </li>
+                    `).join('')}
+                  </ul>
+               </div>`
+            : '';
+
+        document.getElementById('messageDetails').innerHTML = `
+            <div class="mb-3 pb-3 border-bottom">
+                <div class="small" style="color: #D1D5DB;">
+                    <strong style="color: #FFFFFF;">From:</strong> ${escapeHtml(message.senderName)}<br>
+                    <strong style="color: #FFFFFF;">Date:</strong> ${formatDate(message.sentDate)}
+                </div>
+            </div>
+            <div class="message-body mb-3" style="color: #FFFFFF; line-height: 1.6;">
+                ${message.body}
+            </div>
+            ${attachmentsHtml}
+        `;
+
+        const modal = new bootstrap.Modal(document.getElementById('messageModal'));
+        modal.show();
+    }
+
+    // Utility functions
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = now - date;
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(diff / 3600000);
+        const days = Math.floor(diff / 86400000);
+
+        if (minutes < 1) return 'Just now';
+        if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+        if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+        if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
+
+        return date.toLocaleDateString();
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Load messages on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadMessages();
+        // Refresh messages every 60 seconds
+        setInterval(loadMessages, 60000);
+    });
+</script>

@@ -1,0 +1,478 @@
+@{
+    ViewData["Title"] = "Compose Message";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-envelope"></i> Compose Message
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form id="composeMessageForm" enctype="multipart/form-data">
+                        <!-- Subject -->
+                        <div class="mb-3">
+                            <label for="subject" class="form-label">Subject <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="subject" name="subject" required maxlength="500">
+                        </div>
+
+                        <!-- Message Body -->
+                        <div class="mb-3">
+                            <label for="body" class="form-label">Message <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="body" name="body" rows="6" required></textarea>
+                        </div>
+
+                        <!-- Recipient Type Selection -->
+                        <div class="mb-3">
+                            <label class="form-label">Send To <span class="text-danger">*</span></label>
+                            <div class="btn-group d-block" role="group">
+                                <input type="radio" class="btn-check" name="recipientType" id="recipientStudent" value="student" autocomplete="off">
+                                <label class="btn btn-outline-primary" for="recipientStudent">
+                                    <i class="fas fa-user-graduate"></i> Students
+                                </label>
+
+                                <input type="radio" class="btn-check" name="recipientType" id="recipientEmployee" value="employee" autocomplete="off">
+                                <label class="btn btn-outline-primary" for="recipientEmployee">
+                                    <i class="fas fa-chalkboard-teacher"></i> Employees
+                                </label>
+
+                                <input type="radio" class="btn-check" name="recipientType" id="recipientAdmin" value="admin" autocomplete="off">
+                                <label class="btn btn-outline-primary" for="recipientAdmin">
+                                    <i class="fas fa-user-shield"></i> Admins
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Student Path -->
+                        <div id="studentPath" class="recipient-path" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="studentClass" class="form-label">Class</label>
+                                    <select class="form-select" id="studentClass">
+                                        <option value="">Select Class</option>
+                                        @foreach (var cls in ViewBag.Classes)
+                                        {
+                                            <option value="@cls.Id">@cls.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="studentSection" class="form-label">Section</label>
+                                    <select class="form-select" id="studentSection" disabled>
+                                        <option value="">Select Section</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    Students
+                                    <button type="button" class="btn btn-sm btn-outline-secondary ms-2" id="selectAllStudents">
+                                        <i class="fas fa-check-square"></i> Select All
+                                    </button>
+                                </label>
+                                <div id="studentList" class="recipient-list">
+                                    <p class="text-muted">Please select a class and section first</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Employee Path -->
+                        <div id="employeePath" class="recipient-path" style="display: none;">
+                            <div class="mb-3">
+                                <label for="employeeSearch" class="form-label">Search Employee</label>
+                                <input type="text" class="form-control" id="employeeSearch" placeholder="Type to search...">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Employees by Role</label>
+                                <div id="employeeList" class="recipient-list">
+                                    <p class="text-muted">Loading employees...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Admin Path -->
+                        <div id="adminPath" class="recipient-path" style="display: none;">
+                            <div class="mb-3">
+                                <label for="adminCampus" class="form-label">Campus</label>
+                                <select class="form-select" id="adminCampus">
+                                    <option value="">Select Campus</option>
+                                    @foreach (var campus in ViewBag.Campuses)
+                                    {
+                                        <option value="@campus.Id">@campus.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    Admins
+                                    <button type="button" class="btn btn-sm btn-outline-secondary ms-2" id="selectAllAdmins">
+                                        <i class="fas fa-check-square"></i> Select All
+                                    </button>
+                                </label>
+                                <div id="adminList" class="recipient-list">
+                                    <p class="text-muted">Please select a campus first</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- File Attachments -->
+                        <div class="mb-3">
+                            <label for="attachments" class="form-label">
+                                <i class="fas fa-paperclip"></i> Attachments (Optional)
+                            </label>
+                            <input type="file" class="form-control" id="attachments" name="attachments" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx">
+                            <small class="form-text text-muted">You can select multiple files (images and documents)</small>
+                        </div>
+
+                        <!-- Selected Recipients Summary -->
+                        <div id="recipientSummary" class="alert alert-info" style="display: none;">
+                            <strong>Selected Recipients:</strong> <span id="recipientCount">0</span>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="/MailBox/Index" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Send Message
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .recipient-list {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1rem;
+    }
+
+    .recipient-item {
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .recipient-item:last-child {
+        border-bottom: none;
+    }
+
+    .role-group {
+        margin-bottom: 1rem;
+    }
+
+    .role-group-title {
+        font-weight: 600;
+        color: #FBBF24;
+        margin-bottom: 0.5rem;
+        padding: 0.5rem;
+        background: rgba(251, 191, 36, 0.1);
+        border-radius: 0.375rem;
+    }
+</style>
+
+<script>
+    let selectedRecipients = [];
+
+    // Recipient type selection
+    document.querySelectorAll('input[name="recipientType"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.recipient-path').forEach(path => {
+                path.style.display = 'none';
+            });
+
+            selectedRecipients = [];
+            updateRecipientSummary();
+
+            const type = this.value;
+            if (type === 'student') {
+                document.getElementById('studentPath').style.display = 'block';
+            } else if (type === 'employee') {
+                document.getElementById('employeePath').style.display = 'block';
+                loadEmployees();
+            } else if (type === 'admin') {
+                document.getElementById('adminPath').style.display = 'block';
+            }
+        });
+    });
+
+    // Student: Load sections when class is selected
+    document.getElementById('studentClass').addEventListener('change', function() {
+        const classId = this.value;
+        const sectionSelect = document.getElementById('studentSection');
+
+        if (!classId) {
+            sectionSelect.innerHTML = '<option value="">Select Section</option>';
+            sectionSelect.disabled = true;
+            document.getElementById('studentList').innerHTML = '<p class="text-muted">Please select a class first</p>';
+            return;
+        }
+
+        fetch(`/MailBox/GetSectionsByClass?classId=${classId}`)
+            .then(response => response.json())
+            .then(sections => {
+                sectionSelect.innerHTML = '<option value="">Select Section</option>' +
+                    sections.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+                sectionSelect.disabled = false;
+            })
+            .catch(error => console.error('Error loading sections:', error));
+    });
+
+    // Student: Load students when section is selected
+    document.getElementById('studentSection').addEventListener('change', function() {
+        const classId = document.getElementById('studentClass').value;
+        const sectionId = this.value;
+
+        if (!classId || !sectionId) {
+            document.getElementById('studentList').innerHTML = '<p class="text-muted">Please select a section</p>';
+            return;
+        }
+
+        fetch(`/MailBox/GetStudentsBySection?classId=${classId}&sectionId=${sectionId}`)
+            .then(response => response.json())
+            .then(students => {
+                if (students.length === 0) {
+                    document.getElementById('studentList').innerHTML = '<p class="text-muted">No students found</p>';
+                    return;
+                }
+
+                const html = students.map(s => `
+                    <div class="recipient-item">
+                        <div class="form-check">
+                            <input class="form-check-input student-checkbox" type="checkbox" value="${s.userId}" id="student_${s.userId}">
+                            <label class="form-check-label" for="student_${s.userId}">
+                                ${s.name} ${s.rollNumber ? '(' + s.rollNumber + ')' : ''}
+                            </label>
+                        </div>
+                    </div>
+                `).join('');
+
+                document.getElementById('studentList').innerHTML = html;
+
+                // Add event listeners to checkboxes
+                document.querySelectorAll('.student-checkbox').forEach(cb => {
+                    cb.addEventListener('change', updateRecipientSelection);
+                });
+            })
+            .catch(error => console.error('Error loading students:', error));
+    });
+
+    // Select all students
+    document.getElementById('selectAllStudents').addEventListener('click', function() {
+        const checkboxes = document.querySelectorAll('.student-checkbox');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        checkboxes.forEach(cb => {
+            cb.checked = !allChecked;
+        });
+        updateRecipientSelection();
+    });
+
+    // Employee: Load employees
+    function loadEmployees() {
+        fetch('/MailBox/GetEmployees')
+            .then(response => response.json())
+            .then(groups => {
+                if (groups.length === 0) {
+                    document.getElementById('employeeList').innerHTML = '<p class="text-muted">No employees found</p>';
+                    return;
+                }
+
+                const html = groups.map(group => `
+                    <div class="role-group">
+                        <div class="role-group-title">${group.role}</div>
+                        ${group.employees.map(e => `
+                            <div class="recipient-item">
+                                <div class="form-check">
+                                    <input class="form-check-input employee-checkbox" type="checkbox" value="${e.userId}" id="emp_${e.userId}">
+                                    <label class="form-check-label" for="emp_${e.userId}">
+                                        ${e.name}
+                                    </label>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `).join('');
+
+                document.getElementById('employeeList').innerHTML = html;
+
+                // Add event listeners
+                document.querySelectorAll('.employee-checkbox').forEach(cb => {
+                    cb.addEventListener('change', updateRecipientSelection);
+                });
+            })
+            .catch(error => console.error('Error loading employees:', error));
+    }
+
+    // Employee: Search functionality
+    document.getElementById('employeeSearch').addEventListener('input', function() {
+        const search = this.value.toLowerCase();
+        document.querySelectorAll('.employee-checkbox').forEach(cb => {
+            const label = cb.nextElementSibling;
+            const text = label.textContent.toLowerCase();
+            const item = cb.closest('.recipient-item');
+            item.style.display = text.includes(search) ? 'block' : 'none';
+        });
+    });
+
+    // Admin: Load admins when campus is selected
+    document.getElementById('adminCampus').addEventListener('change', function() {
+        const campusId = this.value;
+
+        if (!campusId) {
+            document.getElementById('adminList').innerHTML = '<p class="text-muted">Please select a campus</p>';
+            return;
+        }
+
+        fetch(`/MailBox/GetAdminsByCampus?campusId=${campusId}`)
+            .then(response => response.json())
+            .then(admins => {
+                if (admins.length === 0) {
+                    document.getElementById('adminList').innerHTML = '<p class="text-muted">No admins found</p>';
+                    return;
+                }
+
+                const html = admins.map(a => `
+                    <div class="recipient-item">
+                        <div class="form-check">
+                            <input class="form-check-input admin-checkbox" type="checkbox" value="${a.userId}" id="admin_${a.userId}">
+                            <label class="form-check-label" for="admin_${a.userId}">
+                                ${a.name}
+                            </label>
+                        </div>
+                    </div>
+                `).join('');
+
+                document.getElementById('adminList').innerHTML = html;
+
+                // Add event listeners
+                document.querySelectorAll('.admin-checkbox').forEach(cb => {
+                    cb.addEventListener('change', updateRecipientSelection);
+                });
+            })
+            .catch(error => console.error('Error loading admins:', error));
+    });
+
+    // Select all admins
+    document.getElementById('selectAllAdmins').addEventListener('click', function() {
+        const checkboxes = document.querySelectorAll('.admin-checkbox');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        checkboxes.forEach(cb => {
+            cb.checked = !allChecked;
+        });
+        updateRecipientSelection();
+    });
+
+    // Update recipient selection
+    function updateRecipientSelection() {
+        const checkboxes = document.querySelectorAll('.student-checkbox:checked, .employee-checkbox:checked, .admin-checkbox:checked');
+        selectedRecipients = Array.from(checkboxes).map(cb => cb.value);
+        updateRecipientSummary();
+    }
+
+    // Update recipient summary
+    function updateRecipientSummary() {
+        const summary = document.getElementById('recipientSummary');
+        const count = document.getElementById('recipientCount');
+
+        if (selectedRecipients.length > 0) {
+            count.textContent = selectedRecipients.length;
+            summary.style.display = 'block';
+        } else {
+            summary.style.display = 'none';
+        }
+    }
+
+    // Form submission
+    document.getElementById('composeMessageForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const subject = document.getElementById('subject').value;
+        const body = document.getElementById('body').value;
+
+        if (!subject || !body) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        if (selectedRecipients.length === 0) {
+            alert('Please select at least one recipient');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('subject', subject);
+        formData.append('body', body);
+        formData.append('recipientIds', selectedRecipients.join(','));
+
+        // Add files with validation
+        const files = document.getElementById('attachments').files;
+        const maxFileSize = 10 * 1024 * 1024; // 10MB
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 
+                              'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                              'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                              'text/plain'];
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            
+            // Validate file size
+            if (file.size > maxFileSize) {
+                alert(`File "${file.name}" exceeds the maximum size of 10MB`);
+                return;
+            }
+
+            // Validate file type
+            if (!allowedTypes.includes(file.type) && !file.name.match(/\.(jpg|jpeg|png|gif|pdf|doc|docx|xls|xlsx|txt)$/i)) {
+                alert(`File "${file.name}" has an unsupported file type. Allowed types: images, PDF, Word, Excel, text files`);
+                return;
+            }
+
+            formData.append('attachments', file);
+        }
+
+        // Disable submit button and show loading state
+        const submitButton = e.target.querySelector('button[type="submit"]');
+        const originalButtonText = submitButton.innerHTML;
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+        // Send message
+        fetch('/api/messages/send', {
+            method: 'POST',
+            body: formData
+        })
+        .then(async response => {
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to send message');
+            }
+            return data;
+        })
+        .then(data => {
+            if (data.success) {
+                alert('Message sent successfully!');
+                window.location.href = '/MailBox/Index';
+            } else {
+                alert('Error sending message: ' + (data.error || 'Unknown error'));
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonText;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error sending message: ' + error.message);
+            submitButton.disabled = false;
+            submitButton.innerHTML = originalButtonText;
+        });
+    });
+</script>

@@ -1,0 +1,33 @@
+@model SMS.Models.LeaveBalance
+
+@{
+    var percentage = Model.TotalAllocated > 0 ? ((double)Model.Used * 100.0 / (double)Model.TotalAllocated) : 0;
+    var barColor = percentage >= 90 ? "bg-red-500" : (percentage >= 70 ? "bg-yellow-500" : "bg-green-500");
+}
+
+<div class="bg-gradient-to-br from-white to-primary-50 rounded-xl shadow-sms-md p-4 border border-primary-100 hover:shadow-sms-lg transition-all duration-300">
+    <div class="flex items-center justify-between mb-3">
+        <h4 class="text-sm font-semibold text-primary-800">@Model.LeaveType</h4>
+        <span class="text-xs font-medium text-neutral-600">@Model.Available available</span>
+    </div>
+    
+    <div class="grid grid-cols-3 gap-2 mb-3">
+        <div class="text-center">
+            <p class="text-xs text-neutral-500">Total</p>
+            <p class="text-lg font-bold text-primary-700">@Model.TotalAllocated</p>
+        </div>
+        <div class="text-center">
+            <p class="text-xs text-neutral-500">Used</p>
+            <p class="text-lg font-bold text-orange-600">@Model.Used</p>
+        </div>
+        <div class="text-center">
+            <p class="text-xs text-neutral-500">Left</p>
+            <p class="text-lg font-bold text-green-600">@Model.Available</p>
+        </div>
+    </div>
+    
+    <div class="w-full bg-gray-200 rounded-full h-2">
+        <div class="@barColor rounded-full h-2 transition-all duration-500" style="width: @percentage%"></div>
+    </div>
+    <p class="text-xs text-neutral-500 mt-1 text-center">@string.Format("{0:F1}% used", percentage)</p>
+</div>

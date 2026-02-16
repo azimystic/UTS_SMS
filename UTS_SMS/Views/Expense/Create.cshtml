@@ -1,0 +1,203 @@
+@model Expense
+
+@{
+    ViewData["Title"] = "Add New Expense";
+}
+
+<div class="min-h-screen bg-neutral-50 p-3 md:p-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-primary-800 mb-2">Add New Expense</h1>
+                <p class="text-neutral-600">Record a new monthly expense</p>
+            </div>
+            <a asp-action="Index" 
+               class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-all duration-300 mt-4 md:mt-0">
+                Back to Expenses
+            </a>
+        </div>
+
+        <!-- Form -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <form asp-action="Create" method="post" class="space-y-6">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Expense Name -->
+                    <div>
+                        <label asp-for="Name" class="block text-sm font-medium text-neutral-700 mb-2">Expense Name *</label>
+                        <input asp-for="Name" type="text" 
+                               class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200" 
+                               placeholder="Enter expense name" required>
+                        <span asp-validation-for="Name" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Category -->
+                    <div>
+                        <label asp-for="Category" class="block text-sm font-medium text-neutral-700 mb-2">Category</label>
+                        <select asp-for="Category" 
+                                class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200">
+                            <option value="">Select Category</option>
+                            <option value="Utilities">Utilities</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Supplies">Supplies</option>
+                            <option value="Transportation">Transportation</option>
+                            <option value="Marketing">Marketing</option>
+                            <option value="Insurance">Insurance</option>
+                            <option value="Legal">Legal</option>
+                            <option value="Training">Training</option>
+                            <option value="Events">Events</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <span asp-validation-for="Category" class="text-error text-sm"></span>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label asp-for="Description" class="block text-sm font-medium text-neutral-700 mb-2">Description</label>
+                    <textarea asp-for="Description" rows="3"
+                              class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200" 
+                              placeholder="Describe the expense (optional)"></textarea>
+                    <span asp-validation-for="Description" class="text-error text-sm"></span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Amount -->
+                    <div>
+                        <label asp-for="Amount" class="block text-sm font-medium text-neutral-700 mb-2">Amount *</label>
+                        <input asp-for="Amount" type="number" step="0.01" min="0" 
+                               class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200" 
+                               placeholder="0.00" required>
+                        <span asp-validation-for="Amount" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Expense Date -->
+                    <div>
+                        <label asp-for="ExpenseDate" class="block text-sm font-medium text-neutral-700 mb-2">Expense Date</label>
+                        <input asp-for="ExpenseDate" type="date" 
+                               class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200">
+                        <span asp-validation-for="ExpenseDate" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Reference -->
+                    <div>
+                        <label asp-for="Reference" class="block text-sm font-medium text-neutral-700 mb-2">Reference</label>
+                        <input asp-for="Reference" type="text" 
+                               class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200" 
+                               placeholder="Invoice/Receipt number">
+                        <span asp-validation-for="Reference" class="text-error text-sm"></span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Month -->
+                    <div>
+                        <label asp-for="Month" class="block text-sm font-medium text-neutral-700 mb-2">Month</label>
+                        <select name="Month"
+                                class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200">
+                            <option value="1" selected="@(ViewBag.DefaultMonth == 1)">January</option>
+                            <option value="2" selected="@(ViewBag.DefaultMonth == 2)">February</option>
+                            <option value="3" selected="@(ViewBag.DefaultMonth == 3)">March</option>
+                            <option value="4" selected="@(ViewBag.DefaultMonth == 4)">April</option>
+                            <option value="5" selected="@(ViewBag.DefaultMonth == 5)">May</option>
+                            <option value="6" selected="@(ViewBag.DefaultMonth == 6)">June</option>
+                            <option value="7" selected="@(ViewBag.DefaultMonth == 7)">July</option>
+                            <option value="8" selected="@(ViewBag.DefaultMonth == 8)">August</option>
+                            <option value="9" selected="@(ViewBag.DefaultMonth == 9)">September</option>
+                            <option value="10" selected="@(ViewBag.DefaultMonth == 10)">October</option>
+                            <option value="11" selected="@(ViewBag.DefaultMonth == 11)">November</option>
+                            <option value="12" selected="@(ViewBag.DefaultMonth == 12)">December</option>
+                        </select>
+
+                        <span asp-validation-for="Month" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Year -->
+                    <div>
+                        <label asp-for="Year" class="block text-sm font-medium text-neutral-700 mb-2">Year</label>
+                        <select name="Year"
+                                class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200">
+                            @for (int year = DateTime.Now.Year - 1; year <= DateTime.Now.Year + 1; year++)
+                            {
+                                if (ViewBag.DefaultYear == year)
+                                {
+                                    <option value="@year" selected>@year</option>
+                                }
+                                else
+                                {
+                                    <option value="@year">@year</option>
+                                }
+                            }
+                        </select>
+
+
+                        <span asp-validation-for="Year" class="text-error text-sm"></span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Account -->
+                    <div>
+                        <label asp-for="AccountId" class="block text-sm font-medium text-neutral-700 mb-2">Account Used</label>
+                        <select asp-for="AccountId" asp-items="ViewBag.AccountId" 
+                                class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200">
+                            <option value="">Select Account</option>
+                        </select>
+                        <span asp-validation-for="AccountId" class="text-error text-sm"></span>
+                        <p class="text-xs text-neutral-500 mt-1">Which account was used for this expense</p>
+                    </div>
+
+                    <!-- Campus -->
+                    <div>
+                        <label asp-for="CampusId" class="block text-sm font-medium text-neutral-700 mb-2">Campus *</label>
+                        <select asp-for="CampusId" asp-items="ViewBag.CampusId" 
+                                class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200" required>
+                            <option value="">Select Campus</option>
+                        </select>
+                        <span asp-validation-for="CampusId" class="text-error text-sm"></span>
+                    </div>
+                </div>
+
+                <!-- Submit Buttons -->
+                <div class="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 pt-6 border-t border-primary-100">
+                    <a asp-action="Index" 
+                       class="w-full sm:w-auto bg-neutral-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-all duration-300 text-center">
+                        Cancel
+                    </a>
+                    <button type="submit" 
+                            class="w-full sm:w-auto bg-gradient-primary hover:bg-primary-700 text-white px-6 py-2 rounded-lg transition-all duration-300">
+                        Add Expense
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        // Set today's date as default for expense date
+        document.addEventListener('DOMContentLoaded', function() {
+            const expenseDateInput = document.querySelector('input[name="ExpenseDate"]');
+            if (expenseDateInput && !expenseDateInput.value) {
+                const today = new Date().toISOString().split('T')[0];
+                expenseDateInput.value = today;
+            }
+
+            // Update month and year based on expense date
+            const monthSelect = document.querySelector('select[name="Month"]');
+            const yearSelect = document.querySelector('select[name="Year"]');
+            
+            expenseDateInput.addEventListener('change', function() {
+                const selectedDate = new Date(this.value);
+                if (!isNaN(selectedDate.getTime())) {
+                    monthSelect.value = selectedDate.getMonth() + 1;
+                    yearSelect.value = selectedDate.getFullYear();
+                }
+            });
+        });
+    </script>
+}

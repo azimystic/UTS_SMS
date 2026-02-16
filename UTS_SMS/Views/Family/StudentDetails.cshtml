@@ -1,0 +1,387 @@
+@model Student
+
+@{
+    ViewData["Title"] = "Student Details";
+    var attendanceData = ViewBag.AttendanceData as IEnumerable<dynamic>;
+    var feeRecord = ViewBag.FeeRecord as BillingMaster;
+    var testResults = ViewBag.TestResults as IEnumerable<ExamMarks>;
+    var namazAttendance = ViewBag.NamazAttendance as IEnumerable<NamazAttendance>;
+    var startDate = (DateTime)ViewBag.StartDate;
+    var endDate = (DateTime)ViewBag.EndDate;
+}
+
+<div class="min-h-screen bg-neutral-50 p-3 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-primary-800 mb-2">@Model.StudentName</h1>
+                <p class="text-neutral-600">Performance Dashboard - @startDate.ToString("MMM yyyy")</p>
+            </div>
+            <div class="flex space-x-3 mt-4 md:mt-0">
+                <a asp-action="Details" asp-route-id="@Model.FamilyId" 
+                   class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-all duration-300">
+                    Back to Family
+                </a>
+            </div>
+        </div>
+
+        <!-- Student Info Card -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div class="flex items-center space-x-4">
+                <div class="flex-shrink-0">
+                    @if (!string.IsNullOrEmpty(Model.ProfilePicture))
+                    {
+                        <img class="h-16 w-16 rounded-full object-cover" src="/@Model.ProfilePicture" alt="@Model.StudentName" />
+                    }
+                    else
+                    {
+                        <div class="h-16 w-16 rounded-full bg-gray-300 flex items-center justify-center">
+                            <span class="text-xl font-medium text-neutral-700">@Model.StudentName.First()</span>
+                        </div>
+                    }
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold text-primary-800">@Model.StudentName</h2>
+                    <p class="text-neutral-600">@Model.ClassObj?.Name - @Model.SectionObj?.Name</p>
+                    <p class="text-sm text-neutral-500">CNIC: @Model.StudentCNIC</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Overview Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+            <!-- Attendance Summary -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-success-light rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-neutral-500 truncate">Attendance Rate</dt>
+                            <dd class="text-lg font-medium text-primary-800">
+                                @{
+                                    var totalDays = attendanceData?.Count() ?? 0;
+                                    var presentDays = 0;
+                                    var attendanceRate = 0.0;
+                                    
+                                    if (attendanceData != null && totalDays > 0)
+                                    {
+                                        try 
+                                        {
+                                            presentDays = attendanceData.Count(a => a.Present == true || (bool)a.Present);
+                                            attendanceRate = (presentDays * 100.0 / totalDays);
+                                        }
+                                        catch (Exception)
+                                        {
+                                            // Handle any casting or null issues
+                                            attendanceRate = 0.0;
+                                        }
+                                    }
+                                }
+                                @attendanceRate.ToString("F1")%
+                                <div class="text-xs text-neutral-500 mt-1">@presentDays/@totalDays days</div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test Average -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-neutral-500 truncate">Test Average</dt>
+                            <dd class="text-lg font-medium text-primary-800">
+                                @{
+                                    var avgMarks = 0.0;
+                                    var testCount = 0;
+                                    
+                                    if (testResults?.Any() == true)
+                                    {
+                                        testCount = testResults.Count();
+                                        avgMarks = testResults.Average(t => (double)t.Percentage);
+                                    }
+                                }
+                                @avgMarks.ToString("F1")%
+                                <div class="text-xs text-neutral-500 mt-1">@testCount tests</div>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fee Status -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-warning-light rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-neutral-500 truncate">Fee Status</dt>
+                            <dd class="text-lg font-medium text-primary-800">
+                                @if (feeRecord != null)
+                                {
+                                    var paid = feeRecord.TotalAmountPaid;
+                                    var total = feeRecord.TotalAmountPayable;
+                                    if (paid >= total)
+                                    {
+                                        <span class="text-success">Paid</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-error">@((total - paid).ToString("C"))</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-neutral-500">No Record</span>
+                                }
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Namaz Attendance -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-neutral-500 truncate">Namaz Rate</dt>
+                            <dd class="text-lg font-medium text-primary-800">
+                                @{
+                                    var namazTotal = namazAttendance?.Count() ?? 0;
+                                    var namazPresent = namazAttendance?.Count(n => n.Status == "WJ") ?? 0;
+                                    var namazRate = namazTotal > 0 ? (namazPresent * 100.0 / namazTotal) : 0;
+                                }
+                                @namazRate.ToString("F1")%
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+            <!-- Attendance Chart -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-primary-800 mb-4">Daily Attendance</h3>
+                <div class="h-64">
+                    <canvas id="attendanceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Test Results Chart -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-primary-800 mb-4">Test Results</h3>
+                <div class="h-64">
+                    <canvas id="testResultsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Information Cards -->
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <!-- Fee Details -->
+            <div class="bg-white rounded-lg shadow-sm">
+                <div class="px-6 py-4 border-b border-primary-100">
+                    <h3 class="text-lg font-semibold text-primary-800">Fee Details</h3>
+                </div>
+                <div class="p-6">
+                    @if (feeRecord != null)
+                    {
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-neutral-600">Tuition Fee:</span>
+                                <span class="font-medium">@feeRecord.TuitionFee.ToString("C")</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-neutral-600">Admission Fee:</span>
+                                <span class="font-medium">@feeRecord.AdmissionFee.ToString("C")</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-neutral-600">Miscellaneous:</span>
+                                <span class="font-medium">@feeRecord.MiscallaneousCharges.ToString("C")</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-neutral-600">Fine:</span>
+                                <span class="font-medium">@feeRecord.Fine.ToString("C")</span>
+                            </div>
+                            <div class="border-t pt-3 flex justify-between font-semibold">
+                                <span>Total Payable:</span>
+                                <span>@feeRecord.TotalAmountPayable.ToString("C")</span>
+                            </div>
+                            <div class="flex justify-between font-semibold text-success">
+                                <span>Amount Paid:</span>
+                                <span>@feeRecord.TotalAmountPaid.ToString("C")</span>
+                            </div>
+                            @if (feeRecord.TotalAmountPaid < feeRecord.TotalAmountPayable)
+                            {
+                                <div class="flex justify-between font-semibold text-error">
+                                    <span>Balance Due:</span>
+                                    <span>@((feeRecord.TotalAmountPayable - feeRecord.TotalAmountPaid).ToString("C"))</span>
+                                </div>
+                            }
+                        </div>
+                        <div class="mt-4">
+                            <a href="#" onclick="window.open('/Billing/FeeDetails/@Model.Id', '_blank')" 
+                               class="text-primary-600 hover:text-primary-800 text-sm">View Full Fee Details →</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-neutral-500">No fee record found for this month.</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Test Results Details -->
+            <div class="bg-white rounded-lg shadow-sm">
+                <div class="px-6 py-4 border-b border-primary-100">
+                    <h3 class="text-lg font-semibold text-primary-800">Recent Test Results</h3>
+                </div>
+                <div class="p-6">
+                    @if (testResults?.Any() == true)
+                    {
+                        <div class="space-y-4">
+                            @foreach (var test in testResults.Take(5))
+                            {
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <div class="font-medium text-primary-800">@test.Subject?.Name</div>
+                                        <div class="text-sm text-neutral-500">@test.Exam?.Name</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-medium">@test.ObtainedMarks/@test.TotalMarks</div>
+                                        <div class="text-sm @(test.Percentage >= 60 ? "text-success" : "text-error")">
+                                            @test.Percentage.ToString("F1")% (@test.Grade)
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <div class="mt-4">
+                            <a href="#" onclick="window.open('/ExamReports/StudentResults/@Model.Id', '_blank')" 
+                               class="text-primary-600 hover:text-primary-800 text-sm">View All Results →</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-neutral-500">No test results found for this month.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/chartjs/chart.min.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Attendance Chart
+            const attendanceCtx = document.getElementById('attendanceChart').getContext('2d');
+            const attendanceData = @Html.Raw(Json.Serialize(attendanceData?.Select(a => new { Date = ((DateTime)a.Date).ToString("MMM dd"), Present = (bool)a.Present }).ToArray() ?? Array.Empty<object>()));
+            
+            new Chart(attendanceCtx, {
+                type: 'line',
+                data: {
+                    labels: attendanceData.map(a => a.Date),
+                    datasets: [{
+                        label: 'Attendance',
+                        data: attendanceData.map(a => a.Present ? 1 : 0),
+                        borderColor: 'rgb(34, 197, 94)',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1,
+                            ticks: {
+                                callback: function(value) {
+                                    return value === 1 ? 'Present' : 'Absent';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            // Test Results Chart
+            const testCtx = document.getElementById('testResultsChart').getContext('2d');
+            const testData = @Html.Raw(Json.Serialize(testResults?.Select(t => new { Subject = t.Subject?.Name, Percentage = t.Percentage }).ToArray() ?? Array.Empty<object>()));
+            
+            new Chart(testCtx, {
+                type: 'bar',
+                data: {
+                    labels: testData.map(t => t.Subject),
+                    datasets: [{
+                        label: 'Percentage',
+                        data: testData.map(t => t.Percentage),
+                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                        borderColor: 'rgb(59, 130, 246)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}

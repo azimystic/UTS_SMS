@@ -1,0 +1,225 @@
+@model SMS.Models.LeaveRequest
+
+@{
+    ViewData["Title"] = "Apply for Leave";
+    var leaveBalances = ViewBag.LeaveBalances as List<SMS.Models.LeaveBalance> ?? new List<SMS.Models.LeaveBalance>();
+    var approvedLeaves = ViewBag.ApprovedLeaves as List<SMS.Models.LeaveRequest> ?? new List<SMS.Models.LeaveRequest>();
+}
+
+<div class="min-h-screen p-4 md:p-6">
+    <div class="w-full max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="mb-6">
+            <div class="flex items-center mb-2">
+                <a asp-action="Index" class="text-primary-600 hover:text-primary-800 mr-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                </a>
+                <h1 class="text-2xl md:text-3xl font-bold text-primary-800">Apply for Leave</h1>
+            </div>
+            <p class="text-neutral-600">Fill in the details below to submit your leave request</p>
+        </div>
+
+        <!-- Leave Balances Section -->
+        @if (leaveBalances.Any())
+        {
+            <div class="mb-6">
+                <h2 class="text-lg font-semibold text-primary-800 mb-4">📊 Your Leave Balance</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    @foreach (var balance in leaveBalances)
+                    {
+                        <div class="bg-white rounded-xl shadow-sms-md p-4 border-l-4 @(balance.Available > 0 ? "border-success" : "border-danger")">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="text-sm font-semibold text-primary-800">@balance.LeaveType</h3>
+                                <span class="text-xs px-2 py-1 rounded-full @(balance.Available > 0 ? "bg-success-light text-success" : "bg-danger-light text-danger")">
+                                    @balance.Available available
+                                </span>
+                            </div>
+                            <div class="space-y-1 text-xs text-neutral-600">
+                                <div class="flex justify-between">
+                                    <span>Total Allocated:</span>
+                                    <span class="font-medium">@balance.TotalAllocated</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Used:</span>
+                                    <span class="font-medium text-amber-600">@balance.Used</span>
+                                </div>
+                                @if (balance.CarriedForward > 0)
+                                {
+                                    <div class="flex justify-between">
+                                        <span>Carried Forward:</span>
+                                        <span class="font-medium text-blue-600">+@balance.CarriedForward</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Leave Application Form -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-2xl shadow-sms-lg p-6 border border-primary-100">
+                    <h2 class="text-lg font-semibold text-primary-800 mb-6">📝 Leave Application Form</h2>
+                    
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="text-red-600 mb-4 bg-red-50 p-3 rounded-lg"></div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <!-- Start Date -->
+                            <div>
+                                <label asp-for="StartDate" class="block text-sm font-medium text-primary-800 mb-2">
+                                    Start Date <span class="text-red-500">*</span>
+                                </label>
+                                <input asp-for="StartDate" type="date" 
+                                       class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400 bg-primary-50"
+                                       min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                <span asp-validation-for="StartDate" class="text-red-600 text-sm"></span>
+                            </div>
+
+                            <!-- End Date -->
+                            <div>
+                                <label asp-for="EndDate" class="block text-sm font-medium text-primary-800 mb-2">
+                                    End Date <span class="text-red-500">*</span>
+                                </label>
+                                <input asp-for="EndDate" type="date" 
+                                       class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400 bg-primary-50"
+                                       min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                <span asp-validation-for="EndDate" class="text-red-600 text-sm"></span>
+                            </div>
+                        </div>
+
+                        <!-- Leave Type -->
+                        <div class="mb-6">
+                            <label asp-for="LeaveType" class="block text-sm font-medium text-primary-800 mb-2">
+                                Leave Type <span class="text-red-500">*</span>
+                            </label>
+                            <select asp-for="LeaveType" asp-items="ViewBag.LeaveTypes"
+                                    class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400 bg-primary-50">
+                                <option value="">-- Select Leave Type --</option>
+                            </select>
+                            <span asp-validation-for="LeaveType" class="text-red-600 text-sm"></span>
+                        </div>
+
+                        <!-- Reason -->
+                        <div class="mb-6">
+                            <label asp-for="Reason" class="block text-sm font-medium text-primary-800 mb-2">
+                                Reason <span class="text-red-500">*</span>
+                            </label>
+                            <textarea asp-for="Reason" rows="5"
+                                      class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-400 bg-primary-50 resize-none"
+                                      placeholder="Please provide a detailed reason for your leave request..."></textarea>
+                            <span asp-validation-for="Reason" class="text-red-600 text-sm"></span>
+                        </div>
+
+                        <!-- Total Days Display -->
+                        <div class="mb-6 p-4 bg-primary-50 rounded-lg border border-primary-200">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-primary-800">Total Days:</span>
+                                <span id="totalDays" class="text-2xl font-bold text-primary-600">0</span>
+                            </div>
+                            <p class="text-xs text-neutral-600 mt-1">Excluding Sundays and holidays only (Saturdays included)</p>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex flex-col md:flex-row justify-end space-y-3 md:space-y-0 md:space-x-4">
+                            <a asp-action="Index" class="px-6 py-2 bg-neutral-200 text-neutral-700 rounded-lg hover:bg-neutral-300 transition-all duration-300 text-center">
+                                Cancel
+                            </a>
+                            <button type="submit" class="px-6 py-2 bg-gradient-primary text-white rounded-lg hover:shadow-sms-lg transition-all duration-300 transform hover:scale-105">
+                                Submit Leave Request
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Leave History Sidebar -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-2xl shadow-sms-lg p-6 border border-primary-100 sticky top-6">
+                    <h2 class="text-lg font-semibold text-primary-800 mb-4">📋 Recent Approved Leaves</h2>
+                    
+                    @if (approvedLeaves.Any())
+                    {
+                        <div class="space-y-3 max-h-96 overflow-y-auto">
+                            @foreach (var leave in approvedLeaves)
+                            {
+                                <div class="p-3 bg-success-light border border-success rounded-lg">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <span class="text-xs font-semibold text-success">@leave.LeaveType</span>
+                                        <span class="text-xs px-2 py-1 bg-success text-white rounded-full">@leave.TotalDays days</span>
+                                    </div>
+                                    <div class="text-xs text-neutral-700 space-y-1">
+                                        <div>📅 @leave.StartDate.ToString("MMM dd") - @leave.EndDate.ToString("MMM dd, yyyy")</div>
+                                        @if (leave.ApprovedBy != null)
+                                        {
+                                            <div>✅ Approved by @leave.ApprovedBy</div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-8 text-neutral-400">
+                            <svg class="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <p class="text-sm">No approved leaves yet</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const startDateInput = document.querySelector('input[name="StartDate"]');
+            const endDateInput = document.querySelector('input[name="EndDate"]');
+            const totalDaysSpan = document.getElementById('totalDays');
+
+            function calculateTotalDays() {
+                const startDate = new Date(startDateInput.value);
+                const endDate = new Date(endDateInput.value);
+
+                if (startDate && endDate && startDate <= endDate) {
+                    let totalDays = 0;
+                    let currentDate = new Date(startDate);
+
+                    while (currentDate <= endDate) {
+                        const dayOfWeek = currentDate.getDay();
+                        // Exclude only Sunday (0), Saturday (6) is now included
+                        if (dayOfWeek !== 0) {
+                            totalDays++;
+                        }
+                        currentDate.setDate(currentDate.getDate() + 1);
+                    }
+
+                    totalDaysSpan.textContent = totalDays;
+                } else {
+                    totalDaysSpan.textContent = '0';
+                }
+            }
+
+            // Update end date min when start date changes
+            startDateInput.addEventListener('change', function() {
+                endDateInput.min = startDateInput.value;
+                if (endDateInput.value && endDateInput.value < startDateInput.value) {
+                    endDateInput.value = startDateInput.value;
+                }
+                calculateTotalDays();
+            });
+
+            endDateInput.addEventListener('change', calculateTotalDays);
+        });
+    </script>
+}

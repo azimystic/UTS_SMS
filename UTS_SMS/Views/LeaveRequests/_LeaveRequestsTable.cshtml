@@ -1,0 +1,103 @@
+@model IEnumerable<SMS.Models.LeaveRequest>
+
+@{
+    var showActions = ViewData["ShowActions"] as bool? ?? false;
+}
+
+@if (Model != null && Model.Any())
+{
+    <table class="min-w-full divide-y divide-primary-100">
+        <thead class="bg-gradient-to-r from-primary-50 to-primary-100">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-primary-800 uppercase tracking-wider">Employee Name</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-primary-800 uppercase tracking-wider">Start Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-primary-800 uppercase tracking-wider">End Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-primary-800 uppercase tracking-wider">Leave Type</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-primary-800 uppercase tracking-wider">Total Days</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-primary-800 uppercase tracking-wider">Reason</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-primary-800 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-primary-800 uppercase tracking-wider">Applied Date</th>
+                @if (showActions)
+                {
+                    <th class="px-6 py-3 text-left text-xs font-medium text-primary-800 uppercase tracking-wider">Actions</th>
+                }
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-primary-100">
+            @foreach (var item in Model)
+            {
+                <tr class="hover:bg-primary-50 transition-colors duration-200">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary-800">
+                        @(item.Employee?.FullName ?? "N/A")
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-primary-900">
+                        @item.StartDate.ToString("MMM dd, yyyy")
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-primary-900">
+                        @item.EndDate.ToString("MMM dd, yyyy")
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary-800">
+                        @item.LeaveType
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-primary-900">
+                        @item.TotalDays
+                    </td>
+                    <td class="px-6 py-4 text-sm text-neutral-600 max-w-xs truncate" title="@item.Reason">
+                        @(item.Reason?.Length > 40 ? item.Reason.Substring(0, 40) + "..." : item.Reason)
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        @if (item.Status == "Pending")
+                        {
+                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                ⏳ Pending
+                            </span>
+                        }
+                        else if (item.Status == "Approved")
+                        {
+                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                ✓ Approved
+                            </span>
+                        }
+                        else if (item.Status == "Rejected")
+                        {
+                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                ✗ Rejected
+                            </span>
+                        }
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">
+                        @item.CreatedAt.ToString("MMM dd, yyyy")
+                    </td>
+                    @if (showActions)
+                    {
+                        <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                            <form asp-action="Approve" method="post" style="display: inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <button type="submit" 
+                                        onclick="return confirm('Are you sure you want to approve this leave request?');"
+                                        class="px-3 py-1 bg-green-600 text-white text-xs rounded-md hover:bg-green-700 transition-colors duration-200">
+                                    ✓ Approve
+                                </button>
+                            </form>
+                            <button onclick="openRejectionModal(@item.Id)" 
+                                    class="px-3 py-1 bg-red-600 text-white text-xs rounded-md hover:bg-red-700 transition-colors duration-200">
+                                ✗ Reject
+                            </button>
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="p-12 text-center">
+        <svg class="w-16 h-16 text-neutral-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+        </svg>
+        <h3 class="text-lg font-medium text-primary-800 mb-2">No requests in this category</h3>
+        <p class="text-neutral-500">There are no leave requests with this status.</p>
+    </div>
+}

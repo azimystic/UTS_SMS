@@ -1,0 +1,210 @@
+@model Family
+
+@{
+    ViewData["Title"] = "Family Details";
+}
+
+<div class="min-h-screen bg-neutral-50 p-3 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-primary-800 mb-2">Family Details</h1>
+                <p class="text-neutral-600">@Model.FatherName's Family</p>
+            </div>
+            <div class="flex space-x-3 mt-4 md:mt-0">
+                <a asp-action="Edit" asp-route-id="@Model.Id" 
+                   class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-all duration-300">
+                    Edit Family
+                </a>
+                <a asp-action="Index" 
+                   class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-all duration-300">
+                    Back to Families
+                </a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Family Information -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-lg font-semibold text-primary-800 mb-4">Family Information</h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700">Father Name</label>
+                            <div class="mt-1 text-sm text-primary-800">
+                                @Model.FatherName
+                                @if (Model.IsFatherDeceased)
+                                {
+                                    <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-error-light text-error">
+                                        Deceased
+                                    </span>
+                                }
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700">Father CNIC</label>
+                            <div class="mt-1 text-sm text-primary-800">@Model.FatherCNIC</div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.FatherPhone))
+                        {
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700">Father Phone</label>
+                                <div class="mt-1 text-sm text-primary-800">@Model.FatherPhone</div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.HomeAddress))
+                        {
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700">Home Address</label>
+                                <div class="mt-1 text-sm text-primary-800">@Model.HomeAddress</div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.FatherSourceOfIncome))
+                        {
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700">Father's Source of Income</label>
+                                <div class="mt-1 text-sm text-primary-800">@Model.FatherSourceOfIncome</div>
+                            </div>
+                        }
+
+                        @if (Model.IsFatherDeceased && !string.IsNullOrEmpty(Model.GuardianName))
+                        {
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700">Guardian Name</label>
+                                <div class="mt-1 text-sm text-primary-800">@Model.GuardianName</div>
+                            </div>
+                            
+                            @if (!string.IsNullOrEmpty(Model.GuardianPhone))
+                            {
+                                <div>
+                                    <label class="block text-sm font-medium text-neutral-700">Guardian Phone</label>
+                                    <div class="mt-1 text-sm text-primary-800">@Model.GuardianPhone</div>
+                                </div>
+                            }
+                        }
+
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700">Campus</label>
+                            <div class="mt-1 text-sm text-primary-800">@Model.Campus?.Name</div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700">Total Students</label>
+                            <div class="mt-1">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-primary-100 text-primary-800">
+                                    @Model.Students.Count() Students
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Students List -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow-sm">
+                    <div class="px-6 py-4 border-b border-primary-100">
+                        <h2 class="text-lg font-semibold text-primary-800">Students in Family</h2>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-primary-100">
+                            <thead class="bg-neutral-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Student Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Class</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Section</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-primary-100">
+                                @foreach (var student in Model.Students)
+                                {
+                                    <tr class="hover:bg-neutral-50">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-10 w-10">
+                                                    @if (!string.IsNullOrEmpty(student.ProfilePicture))
+                                                    {
+                                                        <img class="h-10 w-10 rounded-full object-cover" src="/@student.ProfilePicture" alt="@student.StudentName" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                                            <span class="text-sm font-medium text-neutral-700">@student.StudentName.First()</span>
+                                                        </div>
+                                                    }
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-medium text-primary-800">@student.StudentName</div>
+                                                    <div class="text-sm text-neutral-500">@student.StudentCNIC</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-primary-800">@student.ClassObj?.Name</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-primary-800">@student.SectionObj?.Name</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <a href="@Url.Action("Dashboard", "StudentDashboard", new { studentId = student.Id })" 
+                                               class="text-primary-600 hover:text-primary-800 transition-colors duration-300 inline-flex items-center">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                                </svg>
+                                                View Dashboard
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Mobile Cards for Students -->
+                    <div class="md:hidden space-y-4 p-4">
+                        @foreach (var student in Model.Students)
+                        {
+                            <div class="bg-neutral-50 rounded-lg p-4">
+                                <div class="flex items-center space-x-3 mb-3">
+                                    <div class="flex-shrink-0">
+                                        @if (!string.IsNullOrEmpty(student.ProfilePicture))
+                                        {
+                                            <img class="h-12 w-12 rounded-full object-cover" src="/@student.ProfilePicture" alt="@student.StudentName" />
+                                        }
+                                        else
+                                        {
+                                            <div class="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
+                                                <span class="text-sm font-medium text-neutral-700">@student.StudentName.First()</span>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="flex-1">
+                                        <h3 class="text-sm font-medium text-primary-800">@student.StudentName</h3>
+                                        <p class="text-xs text-neutral-500">@student.StudentCNIC</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-2 mb-3 text-sm">
+                                    <div><span class="font-medium">Class:</span> @student.ClassObj?.Name</div>
+                                    <div><span class="font-medium">Section:</span> @student.SectionObj?.Name</div>
+                                </div>
+                                
+                                <a href="@Url.Action("Dashboard", "StudentDashboard", new { studentId = student.Id })" 
+                                   class="block w-full text-center bg-gradient-primary hover:bg-primary-700 text-white py-2 px-4 rounded-lg text-sm transition-all duration-300 flex items-center justify-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                    View Dashboard
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

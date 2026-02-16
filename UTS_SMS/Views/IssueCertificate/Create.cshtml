@@ -1,0 +1,221 @@
+@{
+    ViewData["Title"] = "Issue Certificate";
+}
+
+<div class="min-h-screen p-4 md:p-6">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-primary-800">Issue Certificate</h1>
+            <p class="text-neutral-600 mt-2">Issue a new certificate to a student</p>
+        </div>
+
+        <!-- Form Card -->
+        <div class="bg-white rounded-xl shadow-sms-md p-6">
+            <form asp-action="Create" method="post" id="issueCertificateForm">
+                @Html.AntiForgeryToken()
+                
+                <input type="hidden" id="studentId" name="studentId" />
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">
+                        Search Student <span class="text-error">*</span>
+                    </label>
+                    <input type="text" id="studentSearch" 
+                           class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+                           placeholder="Search by name, roll number, or CNIC..." 
+                           autocomplete="off" />
+                    <div id="searchResults" class="mt-2 bg-white border border-primary-200 rounded-lg hidden max-h-64 overflow-y-auto"></div>
+                </div>
+
+                <!-- Selected Student Display -->
+                <div id="selectedStudentCard" class="mb-4 p-4 bg-primary-50 border border-primary-200 rounded-lg hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-semibold text-primary-800">Selected Student</h3>
+                            <div class="mt-2 space-y-1 text-sm">
+                                <p><strong>Name:</strong> <span id="selectedName"></span></p>
+                                <p><strong>Roll Number:</strong> <span id="selectedRoll"></span></p>
+                                <p><strong>Class:</strong> <span id="selectedClass"></span></p>
+                                <p><strong>CNIC:</strong> <span id="selectedCNIC"></span></p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="clearStudent()" class="text-error hover:text-red-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">
+                        Certificate Type <span class="text-error">*</span>
+                    </label>
+                    <select id="certificateTypeId" name="certificateTypeId" required
+                            class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent">
+                        <option value="">-- Select Certificate Type --</option>
+                        @foreach (var cert in ViewBag.CertificateTypes as IEnumerable<CertificateType>)
+                        {
+                            <option value="@cert.Id" data-price="@cert.Price">@cert.CertificateName - @cert.Price.ToString("C")</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Fee Info -->
+                <div id="feeInfo" class="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg hidden">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-blue-700">
+                                <strong>Note:</strong> A fee of <span id="certificateFee" class="font-bold"></span> will be automatically added to the student's account.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="submit" id="submitBtn" class="bg-gradient-primary hover:shadow-sms-lg text-white px-6 py-2 rounded-lg transition-all duration-300 shadow-sms-md">
+                        <i class="fas fa-check mr-2"></i> Issue Certificate
+                    </button>
+                    <a asp-action="Index" class="bg-neutral-200 hover:bg-neutral-300 text-neutral-700 px-6 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-times mr-2"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Info Card -->
+        <div class="mt-6 bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-yellow-700">
+                        <strong>Important:</strong> Issuing a certificate will automatically add the certificate fee to the student's account.
+                        The certificate can only be printed after the fee is paid (unless Force Print is used).
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    let searchTimeout;
+    const studentSearch = document.getElementById('studentSearch');
+    const searchResults = document.getElementById('searchResults');
+    const studentIdInput = document.getElementById('studentId');
+    const selectedStudentCard = document.getElementById('selectedStudentCard');
+    const certificateTypeSelect = document.getElementById('certificateTypeId');
+    const feeInfo = document.getElementById('feeInfo');
+    const certificateFee = document.getElementById('certificateFee');
+
+    // Student search
+    studentSearch.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const term = this.value.trim();
+        
+        if (term.length < 2) {
+            searchResults.classList.add('hidden');
+            return;
+        }
+
+        searchTimeout = setTimeout(() => {
+            fetch(`@Url.Action("SearchStudent", "IssueCertificate")?term=${encodeURIComponent(term)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        searchResults.innerHTML = data.map(student => `
+                            <div class="p-3 hover:bg-primary-100 cursor-pointer border-b last:border-b-0" 
+                                 onclick="selectStudent(${student.id}, '${student.name}', '${student.rollNumber}', '${student.className} ${student.sectionName}', '${student.cnic}')">
+                                <div class="font-semibold text-neutral-800">${student.name}</div>
+                                <div class="text-sm text-neutral-600">
+                                    Roll: ${student.rollNumber} | Class: ${student.className} ${student.sectionName}
+                                </div>
+                            </div>
+                        `).join('');
+                        searchResults.classList.remove('hidden');
+                    } else {
+                        searchResults.innerHTML = '<div class="p-3 text-neutral-500 text-center">No students found</div>';
+                        searchResults.classList.remove('hidden');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error searching students:', error);
+                });
+        }, 300);
+    });
+
+    function selectStudent(id, name, rollNumber, className, cnic) {
+        studentIdInput.value = id;
+        document.getElementById('selectedName').textContent = name;
+        document.getElementById('selectedRoll').textContent = rollNumber;
+        document.getElementById('selectedClass').textContent = className;
+        document.getElementById('selectedCNIC').textContent = cnic;
+        
+        selectedStudentCard.classList.remove('hidden');
+        searchResults.classList.add('hidden');
+        studentSearch.value = '';
+    }
+
+    function clearStudent() {
+        studentIdInput.value = '';
+        selectedStudentCard.classList.add('hidden');
+    }
+
+    // Certificate type selection
+    certificateTypeSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value) {
+            const price = parseFloat(selectedOption.getAttribute('data-price'));
+            certificateFee.textContent = price.toLocaleString(undefined, { 
+                style: 'currency', 
+                currency: 'PKR',
+                minimumFractionDigits: 2 
+            });
+            feeInfo.classList.remove('hidden');
+        } else {
+            feeInfo.classList.add('hidden');
+        }
+    });
+
+    // Form validation with SweetAlert2
+    document.getElementById('issueCertificateForm').addEventListener('submit', function(e) {
+        if (!studentIdInput.value) {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'error',
+                title: 'Student Required',
+                text: 'Please select a student',
+                confirmButtonColor: '#EF4444'
+            });
+            return false;
+        }
+        if (!certificateTypeSelect.value) {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'error',
+                title: 'Certificate Type Required',
+                text: 'Please select a certificate type',
+                confirmButtonColor: '#EF4444'
+            });
+            return false;
+        }
+    });
+
+    // Close search results when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!searchResults.contains(e.target) && e.target !== studentSearch) {
+            searchResults.classList.add('hidden');
+        }
+    });
+</script>
+}
