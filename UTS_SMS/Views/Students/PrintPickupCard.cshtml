@@ -1,0 +1,238 @@
+@model PickupCard
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Pickup Card - @Model.PersonName</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .pickup-card-container {
+            background: white;
+            width: 3.375in;
+            height: 2.125in;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .pickup-card-header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            text-align: center;
+            padding: 8px;
+        }
+
+        .school-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .card-tagline {
+            font-size: 8px;
+        }
+
+        .pickup-card-body {
+            padding: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .photo-section {
+            flex-shrink: 0;
+        }
+
+        .person-photo {
+            width: 80px;
+            height: 95px;
+            object-fit: cover;
+            border: 2px solid #f5576c;
+            border-radius: 5px;
+        }
+
+        .info-section {
+            flex: 1;
+            font-size: 9px;
+        }
+
+        .info-row {
+            margin-bottom: 4px;
+            display: flex;
+        }
+
+        .info-label {
+            font-weight: bold;
+            min-width: 55px;
+            color: #f5576c;
+        }
+
+        .info-value {
+            color: #333;
+        }
+
+        .student-info {
+            background: #fff3cd;
+            padding: 5px;
+            border-radius: 4px;
+            margin-top: 5px;
+            font-size: 8px;
+            position: relative;
+        }
+
+        .pickup-card-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #f8f9fa;
+            text-align: center;
+            padding: 4px;
+            font-size: 7px;
+            color: #666;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #f5576c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .print-button:hover {
+            background: #e04658;
+        }
+
+        .principal-signature {
+            display: none;
+        }
+
+        @@media print {
+            body {
+                background: white;
+                padding: 0;
+                margin: 0;
+                display: block;
+            }
+
+            .print-button {
+                display: none;
+            }
+
+            .pickup-card-container {
+                box-shadow: none;
+                page-break-after: always;
+                position: absolute;
+                top: 0;
+                left: 0;
+                margin: 0;
+            }
+
+            .school-name {
+                color: #000000;
+            }
+
+            .principal-signature {
+                display: block;
+                position: absolute;
+                right: 5px;
+                bottom: -5px;
+                width: 90px;
+                height: 30px;
+                border-bottom: 1px solid #333;
+                font-size: 7px;
+                color: #666;
+                text-align: center;
+                padding-top: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button" onclick="window.print()">Print Pickup Card</button>
+
+    <div class="pickup-card-container">
+        <div class="pickup-card-header">
+            <div class="school-name">@Model.Student?.Campus?.Name</div>
+            <div class="card-tagline">AUTHORIZED PICKUP CARD</div>
+        </div>
+
+        <div class="pickup-card-body">
+            <div class="photo-section">
+                @if (!string.IsNullOrEmpty(Model.PersonPicture))
+                {
+                    <img src="/@Model.PersonPicture" alt="Person Photo" class="person-photo" />
+                }
+                else
+                {
+                    <div class="person-photo" style="background: #e9ecef; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999;">
+                        No Photo
+                    </div>
+                }
+            </div>
+
+            <div class="info-section">
+                <div class="info-row">
+                    <span class="info-label">Name:</span>
+                    <span class="info-value">@Model.PersonName</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">CNIC:</span>
+                    <span class="info-value">@Model.CNIC</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Relation:</span>
+                    <span class="info-value">@Model.Relation</span>
+                </div>
+                
+                <div class="student-info">
+                    <div style="font-weight: bold; margin-bottom: 3px; color: #856404;">Student Information:</div>
+                    <div><strong>Name:</strong> @Model.Student?.StudentName</div>
+                    <div><strong>Class:</strong> @Model.Student?.ClassObj?.Name</div>
+                    <div><strong>Section:</strong> @Model.Student?.SectionObj?.Name</div>
+                    <div><strong>Roll No:</strong> @(Model.Student?.RollNumber ?? Model.Student?.Id.ToString("D6"))</div>
+                    
+                    <!-- Principal Signature Placeholder (print only) -->
+                    <div class="principal-signature">Principal Signature</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pickup-card-footer">
+            Issued: @Model.CreatedDate.ToString("dd-MMM-yyyy") | This card must be presented when picking up the student
+        </div>
+    </div>
+
+    <script>
+        // Auto-print when page loads (optional)
+        // window.onload = function() { window.print(); };
+    </script>
+</body>
+</html>

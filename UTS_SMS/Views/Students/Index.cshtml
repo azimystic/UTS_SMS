@@ -1,0 +1,1017 @@
+﻿@model PaginatedList<Student>
+
+@{
+    ViewData["Title"] = "Students";
+    var classList = ViewBag.Classes as IEnumerable<string>;
+    var sectionList = ViewBag.Sections as IEnumerable<string>;
+    var campusList = ViewBag.Campuses as IEnumerable<dynamic>;
+    var campusListAll = ViewBag.CampusesAll as IEnumerable<dynamic>;
+    var userCampusId = ViewBag.UserCampusId as int?;
+    var isOwner = ViewBag.IsOwner as bool? ?? false;
+}
+
+
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6">
+        <h1 class="text-2xl md:text-3xl font-bold text-primary-800 mb-3 md:mb-0">Students</h1>
+        <div class="flex space-x-2">
+            <a asp-controller="Admin" asp-action="Dashboard" class="bg-gradient-primary hover:shadow-sms-lg text-white px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sms-md text-sm md:text-base flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                Dashboard
+            </a>
+            <a asp-controller="StudentMigration" asp-action="Index" class="bg-gradient-primary hover:shadow-sms-lg text-white px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sms-md text-sm md:text-base flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                Migration Requests
+            </a>
+            <a asp-action="Create" class="bg-gradient-primary hover:shadow-sms-lg text-white px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sms-md text-sm md:text-base">
+                Add New Student
+            </a>
+        </div>
+    </div>
+
+    <!-- Mobile Filter Button -->
+    <div class="md:hidden mb-4">
+        <button id="filterToggle" class="w-full bg-gradient-primary text-white py-2 px-4 rounded-lg flex items-center justify-center shadow-sms-md">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+            </svg>
+            Show Filters
+        </button>
+    </div>
+
+    <form id="filterForm" asp-action="Index" method="get" class="bg-white p-3 md:p-4 rounded-xl shadow-sms-md mb-4 md:mb-6 transition-all duration-300 hover:shadow-sms-lg hidden md:block border border-primary-100">
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-3 md:gap-4">
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-primary-800 mb-1">Search</label>
+                <input type="text" name="searchString" value="@ViewData["CurrentFilter"]"
+                       class="w-full px-3 py-2 border-2 border-primary-100 rounded-md focus:ring-2 focus:ring-primary-400 focus:border-primary-400 bg-primary-50 text-primary-800 text-sm"
+                       placeholder="Name, Father, CNIC, Phone" id="searchInput" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-primary-800 mb-1">Campus</label>
+                <select name="campusFilter" asp-items="@(new SelectList(campusList, "Name", "Name"))"
+                        class="w-full px-3 py-2 border-2 border-primary-100 rounded-md focus:ring-2 focus:ring-primary-400 focus:border-primary-400 bg-primary-50 text-primary-800 text-sm"
+                        id="campusFilter">
+                    <option value="">All Campuses</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-primary-800 mb-1">Class</label>
+                <select name="classFilter" asp-items="@(new SelectList(classList))"
+                        class="w-full px-3 py-2 border-2 border-primary-100 rounded-md focus:ring-2 focus:ring-primary-400 focus:border-primary-400 bg-primary-50 text-primary-800 text-sm"
+                        id="classFilter">
+                    <option value="">All Classes</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-primary-800 mb-1">Section</label>
+                <select name="sectionFilter" asp-items="@(new SelectList(sectionList))"
+                        class="w-full px-3 py-2 border-2 border-primary-100 rounded-md focus:ring-2 focus:ring-primary-400 focus:border-primary-400 bg-primary-50 text-primary-800 text-sm"
+                        id="sectionFilter">
+                    <option value="">All Sections</option>
+                </select>
+            </div>
+            <div class="flex flex-col justify-end space-y-2">
+                <div>
+                    <label class="block text-sm font-medium text-primary-800 mb-1">Status</label>
+                    <select name="showLeft"
+                            class="w-full px-3 py-2 border-2 border-primary-100 rounded-md focus:ring-2 focus:ring-primary-400 focus:border-primary-400 bg-primary-50 text-primary-800 text-sm"
+                            id="statusFilter">
+                        <option value="">All Students</option>
+                        <option value="false" selected="@(ViewData["ShowLeft"]?.ToString() == "False")">Active</option>
+                        <option value="true" selected="@(ViewData["ShowLeft"]?.ToString() == "True")">Left</option>
+                    </select>
+                </div>
+                <a asp-action="Index" class="w-full bg-primary-100 hover:bg-primary-200 text-primary-800 px-3 py-2 rounded-md text-center text-sm transition-all duration-300">
+                    Reset
+                </a>
+            </div>
+        </div>
+    </form>
+
+    <!-- Mobile Cards View -->
+    <div class="block md:hidden space-y-3">
+        @foreach (var item in Model)
+        {
+            <div class="bg-white rounded-lg shadow-sms-md p-4 border border-primary-100 @(item.HasLeft ? "bg-gray-100" : "")">
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-primary-800 text-sm">@item.StudentName</h3>
+                        <p class="text-neutral-600 text-xs">@item.FatherName</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium @(item.HasLeft ? "bg-error-light text-error" : "bg-success-light text-success")">
+                            @(item.HasLeft ? "Left" : "Active")
+                        </span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 mb-3 text-xs">
+                    <div>
+                        <p class="text-neutral-500">Class:</p>
+                        <p class="font-medium text-primary-800">@item.ClassObj?.Name</p>
+                    </div>
+                    <div>
+                        <p class="text-neutral-500">Section:</p>
+                        <p class="font-medium text-primary-800">@item.SectionObj?.Name</p>
+                    </div>
+                    <div>
+                        <p class="text-neutral-500">Campus:</p>
+                        <p class="font-medium text-primary-800">@item.Campus?.Name</p>
+                    </div>
+                    <div>
+                        <p class="text-neutral-500">Phone:</p>
+                        <p class="font-medium text-primary-800">@item.PhoneNumber</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center border-t border-primary-100 pt-3">
+                    <p class="text-xs text-neutral-500">Reg: @item.RegistrationDate.ToString("dd-MMM-yyyy")</p>
+                    <div class="flex space-x-2">
+                        <a href="@Url.Action("Dashboard", "StudentDashboard", new { studentId = item.Id })"
+                           class="text-blue-600 hover:text-blue-800 bg-blue-50 p-2 rounded-full hover:bg-blue-100 transition-all duration-300"
+                           title="View Dashboard">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </a>
+                        
+                        <a asp-action="Edit" asp-route-id="@item.Id"
+                           class="text-primary-600 hover:text-primary-800 bg-primary-50 p-2 rounded-full hover:bg-primary-100 transition-all duration-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                            </svg>
+                        </a>
+
+                        @if (!item.HasLeft)
+                        {
+                            <form asp-action="MarkAsLeft" asp-route-id="@item.Id" method="post" class="inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit"
+                                        class="text-error bg-error-light p-2 rounded-full hover:bg-error hover:text-white transition-all duration-300"
+                                        onclick="return confirm('Are you sure you want to mark this student as left?')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <form asp-action="MarkAsActive" asp-route-id="@item.Id" method="post" class="inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit"
+                                        class="text-success hover:text-success bg-success-light p-2 rounded-full hover:bg-success hover:text-white transition-all duration-300"
+                                        onclick="return confirm('Are you sure you want to mark this student as active again?')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Desktop Table View -->
+    <div class="hidden md:block bg-white rounded-xl shadow-sms-md overflow-hidden transition-all duration-300 hover:shadow-sms-lg border border-primary-100">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-primary-100">
+                <thead class="bg-gradient-dark text-white">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase">
+                            <a asp-action="Index"
+                               asp-route-sortOrder="@ViewData["NameSortParm"]"
+                               asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                               asp-route-classFilter="@ViewData["ClassFilter"]"
+                               asp-route-sectionFilter="@ViewData["SectionFilter"]"
+                               asp-route-campusFilter="@ViewData["CampusFilter"]"
+                               asp-route-showLeft="@ViewData["ShowLeft"]"
+                               class="hover:text-accent-400 transition-colors duration-200">
+                                Name
+                            </a>
+                        </th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase">
+                            <a asp-action="Index"
+                               asp-route-sortOrder="@ViewData["FatherSortParm"]"
+                               asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                               asp-route-classFilter="@ViewData["ClassFilter"]"
+                               asp-route-sectionFilter="@ViewData["SectionFilter"]"
+                               asp-route-campusFilter="@ViewData["CampusFilter"]"
+                               asp-route-showLeft="@ViewData["ShowLeft"]"
+                               class="hover:text-accent-400 transition-colors duration-200">
+                                Father Name
+                            </a>
+                        </th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase">
+                            <a asp-action="Index"
+                               asp-route-sortOrder="@ViewData["ClassSortParm"]"
+                               asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                               asp-route-classFilter="@ViewData["ClassFilter"]"
+                               asp-route-sectionFilter="@ViewData["SectionFilter"]"
+                               asp-route-campusFilter="@ViewData["CampusFilter"]"
+                               asp-route-showLeft="@ViewData["ShowLeft"]"
+                               class="hover:text-accent-400 transition-colors duration-200">
+                                Class
+                            </a>
+                        </th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase">Section</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase">Campus</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase">Phone</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase">
+                            <a asp-action="Index"
+                               asp-route-sortOrder="@ViewData["DateSortParm"]"
+                               asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                               asp-route-classFilter="@ViewData["ClassFilter"]"
+                               asp-route-sectionFilter="@ViewData["SectionFilter"]"
+                               asp-route-campusFilter="@ViewData["CampusFilter"]"
+                               asp-route-showLeft="@ViewData["ShowLeft"]"
+                               class="hover:text-accent-400 transition-colors duration-200">
+                                Reg Date
+                            </a>
+                        </th>
+                        <th class="px-4 py-3 text-left text-xs font-medium uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-primary-100">
+                    @foreach (var item in Model)
+                    {
+                        <tr class="@(item.HasLeft ? "bg-gray-100" : "hover:bg-primary-50")">
+                            <td class="px-4 py-4 text-sm font-medium text-primary-800">@item.StudentName</td>
+                            <td class="px-4 py-4 text-sm text-neutral-700">@item.FatherName</td>
+                            <td class="px-4 py-4 text-sm text-neutral-700">@item.ClassObj?.Name</td>
+                            <td class="px-4 py-4 text-sm text-neutral-700">@item.SectionObj?.Name</td>
+                            <td class="px-4 py-4 text-sm text-neutral-700">@item.Campus?.Name</td>
+                            <td class="px-4 py-4 text-sm">@item.PhoneNumber</td>
+                            <td class="px-4 py-4 text-sm">@item.RegistrationDate.ToString("dd-MMM-yyyy")</td>
+                            <td class="px-4 py-4 text-sm">
+                                <div class="flex space-x-2">
+                                    <a href="@Url.Action("Dashboard", "StudentDashboard", new { studentId = item.Id })"
+                                       class="text-blue-600 hover:text-blue-800 bg-blue-50 p-2 rounded-full hover:bg-blue-100 transition-all duration-300 transform hover:scale-110"
+                                       title="View Dashboard">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                        </svg>
+                                    </a>
+                                    
+                                    <a asp-action="Edit" asp-route-id="@item.Id"
+                                       class="text-primary-600 hover:text-primary-800 bg-primary-50 p-2 rounded-full hover:bg-primary-100 transition-all duration-300 transform hover:scale-110"
+                                       title="Edit Student">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                        </svg>
+                                    </a>
+
+                                    <a href="/Students/IDCard/@item.Id" target="_blank"
+                                       class="text-indigo-600 hover:text-indigo-800 bg-indigo-50 p-2 rounded-full hover:bg-indigo-100 transition-all duration-300 transform hover:scale-110"
+                                       title="Print ID Card">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 2a1 1 0 00-1 1v1a1 1 0 002 0V3a1 1 0 00-1-1zM4 4h3a3 3 0 006 0h3a2 2 0 012 2v9a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2zm2.5 7a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm2.45 4a2.5 2.5 0 10-4.9 0h4.9zM12 9a1 1 0 100 2h3a1 1 0 100-2h-3zm-1 4a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                    </a>
+
+                                    <button onclick="openPickupCardModal(@item.Id, '@item.StudentName')"
+                                       class="text-purple-600 hover:text-purple-800 bg-purple-50 p-2 rounded-full hover:bg-purple-100 transition-all duration-300 transform hover:scale-110"
+                                       title="Manage Pickup Cards">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                                        </svg>
+                                    </button>
+
+                                    @if (!item.HasLeft)
+                                    {
+                                        <button onclick="openMigrationModal(@item.Id, '@item.StudentName', '@item.Campus.Name')"
+                                                class="text-accent-600 hover:text-accent-800 bg-accent-50 p-2 rounded-full hover:bg-accent-100 transition-all duration-300 transform hover:scale-110"
+                                                title="Request Migration">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1 1 0 11-3 0 1 1 0 013 0z"/>
+                                                <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z"/>
+                                            </svg>
+                                        </button>
+
+                                        <form asp-action="MarkAsLeft" asp-route-id="@item.Id" method="post" class="inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit"
+                                                    class="text-error hover:text-error bg-error-light p-2 rounded-full hover:bg-error-light transition-all duration-300 transform hover:scale-110"
+                                                    onclick="return confirm('Are you sure you want to mark this student as left?')"
+                                                    title="Mark as Left">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="MarkAsActive" asp-route-id="@item.Id" method="post" class="inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit"
+                                                    class="text-success hover:text-success bg-success-light p-2 rounded-full hover:bg-success-light transition-all duration-300 transform hover:scale-110"
+                                                    onclick="return confirm('Are you sure you want to mark this student as active again?')"
+                                                    title="Mark as Active">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @{ 
+        var prevDisabled = !Model.HasPreviousPage ? "opacity-50 cursor-not-allowed" : "hover:bg-primary-50";
+        var nextDisabled = !Model.HasNextPage ? "opacity-50 cursor-not-allowed" : "hover:bg-primary-50";
+    }
+
+    <!-- Pagination -->
+    <div class="mt-6 flex justify-center">
+        <nav class="relative z-0 inline-flex rounded-md shadow-sms-sm -space-x-px" aria-label="Pagination">
+            <a asp-action="Index"
+               asp-route-sortOrder="@ViewData["CurrentSort"]"
+               asp-route-pageNumber="@(Model.PageIndex - 1)"
+               asp-route-currentFilter="@ViewData["CurrentFilter"]"
+               asp-route-classFilter="@ViewData["ClassFilter"]"
+               asp-route-sectionFilter="@ViewData["SectionFilter"]"
+               asp-route-campusFilter="@ViewData["CampusFilter"]"
+               asp-route-showLeft="@ViewData["ShowLeft"]"
+               class="relative inline-flex items-center px-4 py-2 rounded-l-md border-2 border-primary-100 bg-white text-sm font-medium text-primary-700 @prevDisabled transition-colors duration-200">
+                Previous
+            </a>
+
+            @{
+                int startPage = Math.Max(1, Model.PageIndex - 2);
+                int endPage = Math.Min(Model.TotalPages, Model.PageIndex + 2);
+
+                if (startPage > 1)
+                {
+                    <a asp-action="Index"
+                       asp-route-sortOrder="@ViewData["CurrentSort"]"
+                       asp-route-pageNumber="1"
+                       asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                       asp-route-classFilter="@ViewData["ClassFilter"]"
+                       asp-route-sectionFilter="@ViewData["SectionFilter"]"
+                       asp-route-campusFilter="@ViewData["CampusFilter"]"
+                       asp-route-showLeft="@ViewData["ShowLeft"]"
+                       class="relative inline-flex items-center px-4 py-2 border-2 border-primary-100 bg-white text-sm font-medium @(1 == Model.PageIndex ? "z-10 bg-primary-50 border-primary-400 text-primary-600" : "text-primary-700 hover:bg-primary-50") transition-colors duration-200">
+                        1
+                    </a>
+                    if (startPage > 2)
+                    {
+                        <span class="relative inline-flex items-center px-4 py-2 border-2 border-primary-100 bg-white text-sm font-medium text-neutral-600">
+                            ...
+                        </span>
+                    }
+                }
+
+                for (int i = startPage; i <= endPage; i++)
+                {
+                    <a asp-action="Index"
+                       asp-route-sortOrder="@ViewData["CurrentSort"]"
+                       asp-route-pageNumber="@i"
+                       asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                       asp-route-classFilter="@ViewData["ClassFilter"]"
+                       asp-route-sectionFilter="@ViewData["SectionFilter"]"
+                       asp-route-campusFilter="@ViewData["CampusFilter"]"
+                       asp-route-showLeft="@ViewData["ShowLeft"]"
+                       class="relative inline-flex items-center px-4 py-2 border-2 border-primary-100 bg-white text-sm font-medium @(i == Model.PageIndex ? "z-10 bg-primary-50 border-primary-400 text-primary-600" : "text-primary-700 hover:bg-primary-50") transition-colors duration-200">
+                        @i
+                    </a>
+                }
+
+                if (endPage < Model.TotalPages)
+                {
+                    if (endPage < Model.TotalPages - 1)
+                    {
+                        <span class="relative inline-flex items-center px-4 py-2 border-2 border-primary-100 bg-white text-sm font-medium text-neutral-600">
+                            ...
+                        </span>
+                    }
+                    <a asp-action="Index"
+                       asp-route-sortOrder="@ViewData["CurrentSort"]"
+                       asp-route-pageNumber="@Model.TotalPages"
+                       asp-route-currentFilter="@ViewData["CurrentFilter"]"
+                       asp-route-classFilter="@ViewData["ClassFilter"]"
+                       asp-route-sectionFilter="@ViewData["SectionFilter"]"
+                       asp-route-campusFilter="@ViewData["CampusFilter"]"
+                       asp-route-showLeft="@ViewData["ShowLeft"]"
+                       class="relative inline-flex items-center px-4 py-2 border-2 border-primary-100 bg-white text-sm font-medium @(Model.TotalPages == Model.PageIndex ? "z-10 bg-primary-50 border-primary-400 text-primary-600" : "text-primary-700 hover:bg-primary-50") transition-colors duration-200">
+                        @Model.TotalPages
+                    </a>
+                }
+            }
+
+            <a asp-action="Index"
+               asp-route-sortOrder="@ViewData["CurrentSort"]"
+               asp-route-pageNumber="@(Model.PageIndex + 1)"
+               asp-route-currentFilter="@ViewData["CurrentFilter"]"
+               asp-route-classFilter="@ViewData["ClassFilter"]"
+               asp-route-sectionFilter="@ViewData["SectionFilter"]"
+               asp-route-campusFilter="@ViewData["CampusFilter"]"
+               asp-route-showLeft="@ViewData["ShowLeft"]"
+               class="relative inline-flex items-center px-4 py-2 rounded-r-md border-2 border-primary-100 bg-white text-sm font-medium text-primary-700 @nextDisabled transition-colors duration-200">
+                Next
+            </a>
+        </nav>
+    </div>
+
+
+<!-- Pickup Card Modal -->
+<div id="pickupCardModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+    <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="bg-gradient-primary px-6 py-4 rounded-t-xl flex justify-between items-center">
+            <h3 class="text-xl font-semibold text-white" id="modalStudentName">Manage Pickup Cards</h3>
+            <button onclick="closePickupCardModal()" class="text-white hover:text-neutral-200 text-2xl">&times;</button>
+        </div>
+        <div class="p-6">
+            <!-- Add New Pickup Card Form -->
+            <div class="mb-6 border-b pb-6">
+                <h4 class="text-lg font-semibold text-primary-800 mb-4">Add New Pickup Card</h4>
+                <form id="addPickupCardForm" enctype="multipart/form-data">
+                    <input type="hidden" id="studentIdForPickup" name="studentId" />
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">Person Name</label>
+                            <input type="text" name="personName" required class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">CNIC</label>
+                            <input type="text" name="cnic" required class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 cnic-input-pickup" placeholder="12345-1234567-1" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">Relation</label>
+                            <input type="text" name="relation" required class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">Person Picture</label>
+                            <input type="file" name="personPicture" accept="image/jpeg,image/png,image/jpg" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">CNIC Picture</label>
+                            <input type="file" name="cnicPicture" accept="image/jpeg,image/png,image/jpg" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400" />
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <button type="submit" class="bg-gradient-primary hover:bg-primary-700 text-white px-6 py-2 rounded-lg transition-all">
+                            Add Pickup Card
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Available Pickup Cards -->
+            <div>
+                <h4 class="text-lg font-semibold text-primary-800 mb-4">Available Pickup Cards</h4>
+                <div id="pickupCardsList" class="space-y-4">
+                    <!-- Cards will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Pickup Card Modal -->
+<div id="editPickupCardModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4">
+        <div class="bg-gradient-primary px-6 py-4 rounded-t-xl flex justify-between items-center">
+            <h3 class="text-xl font-semibold text-white">Edit Pickup Card</h3>
+            <button onclick="closeEditPickupCardModal()" class="text-white hover:text-neutral-200 text-2xl">&times;</button>
+        </div>
+        <div class="p-6">
+            <form id="editPickupCardForm" enctype="multipart/form-data">
+                <input type="hidden" id="editCardId" name="cardId" />
+                <input type="hidden" id="editStudentId" />
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Person Name</label>
+                        <input type="text" id="editPersonName" name="personName" required class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">CNIC</label>
+                        <input type="text" id="editCnic" name="cnic" required class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 cnic-input-pickup" placeholder="12345-1234567-1" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Relation</label>
+                        <input type="text" id="editRelation" name="relation" required class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Person Picture (optional)</label>
+                        <input type="file" name="personPicture" accept="image/jpeg,image/png,image/jpg" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400" />
+                        <p class="text-xs text-neutral-500 mt-1">Leave empty to keep current picture</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">CNIC Picture (optional)</label>
+                        <input type="file" name="cnicPicture" accept="image/jpeg,image/png,image/jpg" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400" />
+                        <p class="text-xs text-neutral-500 mt-1">Leave empty to keep current picture</p>
+                    </div>
+                </div>
+                <div class="mt-6 flex gap-4">
+                    <button type="submit" class="flex-1 bg-gradient-primary hover:bg-primary-700 text-white px-6 py-2 rounded-lg transition-all">
+                        Update Pickup Card
+                    </button>
+                    <button type="button" onclick="closeEditPickupCardModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-2 rounded-lg transition-all">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="migrationModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div class="bg-gradient-primary px-4 py-3 rounded-t-lg flex justify-between items-center">
+            <h3 class="text-lg font-semibold text-white">Request Migration</h3>
+            <button onclick="closeMigrationModal()" class="text-white hover:text-neutral-200 text-xl">&times;</button>
+        </div>
+        <div class="p-4">
+            <input type="hidden" id="migrationStudentId" />
+
+            <div class="mb-3">
+                <label class="block text-xs font-medium text-neutral-700 mb-1">Student</label>
+                <input type="text" id="migrationStudentName" readonly class="w-full px-3 py-1.5 text-sm border border-primary-200 rounded bg-gray-100" />
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-xs font-medium text-neutral-700 mb-1">From</label>
+                <input type="text" id="migrationFromCampus" readonly class="w-full px-3 py-1.5 text-sm border border-primary-200 rounded bg-gray-100" />
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-xs font-medium text-neutral-700 mb-1">To Campus *</label>
+                <select id="migrationToCampus" required class="w-full px-3 py-1.5 text-sm border border-primary-200 rounded focus:outline-none focus:ring-1 focus:ring-primary-400">
+                    <option value="">Select Campus</option>
+                    @if (campusListAll != null)
+                    {
+                        @foreach (var campus in campusListAll)
+                        {
+                            @* Show all campuses if owner, otherwise exclude current user's campus *@
+                            @if (isOwner || campus.Id != userCampusId)
+                            {
+                                <option value="@campus.Id">@campus.Name</option>
+                            }
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-xs font-medium text-neutral-700 mb-1">Remarks</label>
+                <textarea id="migrationRemarks" rows="2" class="w-full px-3 py-1.5 text-sm border border-primary-200 rounded focus:outline-none focus:ring-1 focus:ring-primary-400" placeholder="Optional"></textarea>
+            </div>
+
+            <div id="duesWarning" class="hidden bg-orange-50 border border-orange-200 rounded p-2 mb-3">
+                <div class="flex items-center">
+                    <svg class="w-4 h-4 text-orange-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div class="flex-1">
+                        <p class="text-xs font-semibold text-orange-800">Outstanding Dues</p>
+                        <p class="text-xs text-orange-700" id="duesAmount"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex space-x-2">
+                <button type="button" onclick="closeMigrationModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1.5 rounded text-sm">
+                    Cancel
+                </button>
+                <button type="button" id="submitMigrationBtn" onclick="submitMigration(false)" class="flex-1 bg-gradient-primary hover:bg-primary-700 text-white px-3 py-1.5 rounded text-sm">
+                    Submit
+                </button>
+                <button type="button" id="forceSubmitBtn" onclick="submitMigration(true)" class="hidden flex-1 bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded text-sm">
+                    Force Submit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+   
+    <script>
+        // Pickup Card Modal Functions
+        function openPickupCardModal(studentId, studentName) {
+            document.getElementById('pickupCardModal').classList.remove('hidden');
+            document.getElementById('pickupCardModal').classList.add('flex');
+            document.getElementById('studentIdForPickup').value = studentId;
+            document.getElementById('modalStudentName').textContent = 'Manage Pickup Cards - ' + studentName;
+            loadPickupCards(studentId);
+        }
+
+        function closePickupCardModal() {
+            document.getElementById('pickupCardModal').classList.add('hidden');
+            document.getElementById('pickupCardModal').classList.remove('flex');
+        }
+
+        function loadPickupCards(studentId) {
+            fetch(`/Students/GetPickupCards?studentId=${studentId}`)
+                .then(response => response.json())
+                .then(cards => {
+                    const container = document.getElementById('pickupCardsList');
+                    if (cards.length === 0) {
+                        container.innerHTML = '<p class="text-neutral-500">No pickup cards available.</p>';
+                        return;
+                    }
+
+                    container.innerHTML = cards.map(card => `
+                        <div class="border border-primary-200 rounded-lg p-4 ${!card.isActive ? 'bg-gray-100' : 'bg-white'}">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <h5 class="font-semibold text-primary-800">${card.personName}</h5>
+                                    <p class="text-sm text-neutral-600">CNIC: ${card.cnic}</p>
+                                    <p class="text-sm text-neutral-600">Relation: ${card.relation}</p>
+                                    <p class="text-xs text-neutral-500 mt-2">Added: ${new Date(card.createdDate).toLocaleDateString()}</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="openEditPickupCardModal(${card.id}, '${card.personName}', '${card.cnic}', '${card.relation}', ${studentId})" 
+                                            class="text-primary-600 hover:text-primary-800 bg-primary-50 p-2 rounded-lg transition-all" title="Edit">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
+                                    </button>
+                                    ${card.isActive ? 
+                                        `<button onclick="deactivatePickupCard(${card.id}, ${studentId})" 
+                                                class="text-orange-600 hover:text-orange-800 bg-orange-50 p-2 rounded-lg transition-all" title="Deactivate">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                                            </svg>
+                                        </button>` :
+                                        `<button onclick="activatePickupCard(${card.id}, ${studentId})" 
+                                                class="text-green-600 hover:text-green-800 bg-green-50 p-2 rounded-lg transition-all" title="Activate">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                            </svg>
+                                        </button>`
+                                    }
+                                    <a href="/Students/PrintPickupCard/${card.id}" target="_blank"
+                                       class="text-indigo-600 hover:text-indigo-800 bg-indigo-50 p-2 rounded-lg transition-all" title="Print">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                                        </svg>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                })
+                .catch(error => {
+                    console.error('Error loading pickup cards:', error);
+                    document.getElementById('pickupCardsList').innerHTML = '<p class="text-error">Error loading pickup cards.</p>';
+                });
+        }
+
+        function deactivatePickupCard(cardId, studentId) {
+            if (!confirm('Are you sure you want to deactivate this pickup card?')) return;
+            
+            fetch(`/Students/DeactivatePickupCard?id=${cardId}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        loadPickupCards(studentId);
+                        showNotification('Pickup card deactivated successfully', 'success');
+                    } else {
+                        showNotification('Error deactivating pickup card', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Error deactivating pickup card', 'error');
+                });
+        }
+
+        function activatePickupCard(cardId, studentId) {
+            fetch(`/Students/ActivatePickupCard?id=${cardId}`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        loadPickupCards(studentId);
+                        showNotification('Pickup card activated successfully', 'success');
+                    } else {
+                        showNotification('Error activating pickup card', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Error activating pickup card', 'error');
+                });
+        }
+
+        function showNotification(message, type) {
+            const notif = document.createElement('div');
+            notif.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white`;
+            notif.textContent = message;
+            document.body.appendChild(notif);
+            setTimeout(() => notif.remove(), 3000);
+        }
+
+        // Edit Pickup Card Modal Functions
+        function openEditPickupCardModal(cardId, personName, cnic, relation, studentId) {
+            document.getElementById('editPickupCardModal').classList.remove('hidden');
+            document.getElementById('editPickupCardModal').classList.add('flex');
+            document.getElementById('editCardId').value = cardId;
+            document.getElementById('editStudentId').value = studentId;
+            document.getElementById('editPersonName').value = personName;
+            document.getElementById('editCnic').value = cnic;
+            document.getElementById('editRelation').value = relation;
+        }
+
+        function closeEditPickupCardModal() {
+            document.getElementById('editPickupCardModal').classList.add('hidden');
+            document.getElementById('editPickupCardModal').classList.remove('flex');
+        }
+
+        // Handle edit pickup card form submission
+              // Handle edit pickup card form submission
+        document.getElementById('editPickupCardForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const studentId = document.getElementById('editStudentId').value;
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="inline-flex items-center"><svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Updating...</span>';
+
+            fetch('/Students/EditPickupCard', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                // Reset button immediately upon receiving response
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    closeEditPickupCardModal();
+                    loadPickupCards(studentId);
+                    showNotification('Pickup card updated successfully', 'success');
+                } else {
+                    showNotification(data.message || 'Error updating pickup card', 'error');
+                }
+            })
+            .catch(error => {
+                // Reset button on error as well
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                console.error('Error:', error);
+                showNotification('Error updating pickup card', 'error');
+            });
+        });
+
+        // Handle add pickup card form submission
+              // Handle add pickup card form submission
+        document.getElementById('addPickupCardForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="inline-flex items-center"><svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Adding...</span>';
+
+            fetch('/Students/AddPickupCard', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                // Reset button immediately upon receiving response
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    this.reset();
+                    loadPickupCards(document.getElementById('studentIdForPickup').value);
+                    showNotification('Pickup card added successfully', 'success');
+                } else {
+                    showNotification(data.message || 'Error adding pickup card', 'error');
+                }
+            })
+            .catch(error => {
+                // Reset button on error as well
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                console.error('Error:', error);
+                showNotification('Error adding pickup card', 'error');
+            });
+        });
+
+        // Migration Modal Functions
+        let currentStudentId = null;
+
+        function openMigrationModal(studentId, studentName, fromCampus) {
+            currentStudentId = studentId;
+            document.getElementById('migrationStudentId').value = studentId;
+            document.getElementById('migrationStudentName').value = studentName;
+            document.getElementById('migrationFromCampus').value = fromCampus;
+            document.getElementById('migrationToCampus').value = '';
+            document.getElementById('migrationRemarks').value = '';
+            document.getElementById('duesWarning').classList.add('hidden');
+            document.getElementById('forceSubmitBtn').classList.add('hidden');
+            document.getElementById('submitMigrationBtn').classList.remove('hidden');
+            document.getElementById('migrationModal').classList.remove('hidden');
+            document.getElementById('migrationModal').classList.add('flex');
+
+            // Check for outstanding dues
+            fetch(`/Students/CheckStudentDues?studentId=${studentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.hasDues) {
+                        document.getElementById('duesAmount').innerText = `Outstanding Dues: Rs. ${data.duesAmount.toFixed(2)}`;
+                        document.getElementById('duesWarning').classList.remove('hidden');
+                        document.getElementById('forceSubmitBtn').classList.remove('hidden');
+                    }
+                })
+                .catch(error => console.error('Error checking dues:', error));
+        }
+
+        function closeMigrationModal() {
+            document.getElementById('migrationModal').classList.add('hidden');
+            document.getElementById('migrationModal').classList.remove('flex');
+            currentStudentId = null;
+        }
+
+        function submitMigration(forceSubmit) {
+            const toCampusId = document.getElementById('migrationToCampus').value;
+            const remarks = document.getElementById('migrationRemarks').value;
+
+            if (!toCampusId) {
+                alert('Please select a target campus');
+                return;
+            }
+
+            const submitBtn = forceSubmit ? document.getElementById('forceSubmitBtn') : document.getElementById('submitMigrationBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Submitting...';
+
+            fetch('/StudentMigration/RequestMigration', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    studentId: parseInt(currentStudentId),
+                    toCampusId: parseInt(toCampusId),
+                    remarks: remarks,
+                    forceSubmit: forceSubmit
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                submitBtn.disabled = false;
+                submitBtn.innerText = forceSubmit ? 'Force Submit' : 'Submit Request';
+
+                if (data.success) {
+                    showNotification('Migration request submitted successfully', 'success');
+                    closeMigrationModal();
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    if (data.hasDues && !forceSubmit) {
+                        document.getElementById('duesAmount').innerText = `Outstanding Dues: Rs. ${data.outstandingDues.toFixed(2)}`;
+                        document.getElementById('duesWarning').classList.remove('hidden');
+                        document.getElementById('forceSubmitBtn').classList.remove('hidden');
+                        showNotification(data.message, 'error');
+                    } else {
+                        showNotification(data.message || 'Error submitting migration request', 'error');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                submitBtn.disabled = false;
+                submitBtn.innerText = forceSubmit ? 'Force Submit' : 'Submit Request';
+                showNotification('Error submitting migration request', 'error');
+            });
+        }
+
+        // CNIC formatting for pickup cards
+        document.querySelectorAll('.cnic-input-pickup').forEach(function(input) {
+            input.addEventListener('input', function(e) {
+                let value = e.target.value;
+                let digits = value.replace(/\D/g, '');
+
+                if (digits.length > 13) {
+                    digits = digits.substring(0, 13);
+                }
+
+                let formatted = '';
+                for (let i = 0; i < digits.length; i++) {
+                    if (i === 5 || i === 12) {
+                        formatted += '-';
+                    }
+                    formatted += digits[i];
+                }
+
+                e.target.value = formatted;
+            });
+        });
+
+        // Toggle mobile filters
+        document.getElementById('filterToggle').addEventListener('click', function() {
+            const form = document.getElementById('filterForm');
+            form.classList.toggle('hidden');
+            this.textContent = form.classList.contains('hidden') ? 'Show Filters' : 'Hide Filters';
+        });
+
+        // Auto-submit form on filter change
+        $(document).ready(function() {
+            var typingTimer;
+            var doneTypingInterval = 500;
+
+            var filterElements = ['#searchInput', '#campusFilter', '#classFilter', '#sectionFilter', '#statusFilter'];
+
+            $(filterElements.join(',')).on('input change', function() {
+                clearTimeout(typingTimer);
+
+                if ($(this).is('#searchInput')) {
+                    typingTimer = setTimeout(submitForm, doneTypingInterval);
+                } else {
+                    submitForm();
+                }
+            });
+
+            function submitForm() {
+                $('#filterForm').submit();
+            }
+
+            // Set current filter values
+            $('#campusFilter').val('@ViewData["CampusFilter"]');
+            $('#classFilter').val('@ViewData["ClassFilter"]');
+            $('#sectionFilter').val('@ViewData["SectionFilter"]');
+            $('#statusFilter').val('@ViewData["ShowLeft"]');
+        });
+
+        // Cascade sections based on class selection
+        document.addEventListener('DOMContentLoaded', function() {
+            const classSelect = document.getElementById('classFilter');
+            const sectionSelect = document.getElementById('sectionFilter');
+
+            classSelect.addEventListener('change', function() {
+                const className = this.value;
+                if (className) {
+                    fetch(`/Students/GetSectionsByClassName?className=${encodeURIComponent(className)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            sectionSelect.innerHTML = '<option value="">All Sections</option>';
+                            data.forEach(section => {
+                                const option = document.createElement('option');
+                                option.value = section.name;
+                                option.textContent = section.name;
+                                sectionSelect.appendChild(option);
+                            });
+                        })
+                        .catch(error => console.error('Error loading sections:', error));
+                } else {
+                    sectionSelect.innerHTML = '<option value="">All Sections</option>';
+                }
+            });
+        });
+    </script>
+    <style>
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        tr {
+            transition: all 0.2s ease;
+        }
+
+            tr:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            }
+
+        /* Prevent horizontal scrolling on mobile */
+        body, html {
+            overflow-x: hidden;
+            max-width: 100%;
+        }
+    </style>
+}}

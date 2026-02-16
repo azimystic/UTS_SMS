@@ -1,0 +1,238 @@
+@model Student
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Student ID Card - @Model.StudentName</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .id-card-container {
+            background: white;
+            width: 3.375in;
+            height: 2.125in;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .id-card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 8px;
+        }
+
+        .school-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .school-tagline {
+            font-size: 8px;
+        }
+
+        .id-card-body {
+            padding: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .photo-section {
+            flex-shrink: 0;
+        }
+
+        .student-photo {
+            width: 80px;
+            height: 95px;
+            object-fit: cover;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+        }
+
+        .info-section {
+            flex: 1;
+            font-size: 9px;
+            position: relative;
+        }
+
+        .info-row {
+            margin-bottom: 4px;
+            display: flex;
+        }
+
+        .info-label {
+            font-weight: bold;
+            min-width: 45px;
+            color: #667eea;
+        }
+
+        .info-value {
+            color: #333;
+        }
+
+        .id-card-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #f8f9fa;
+            text-align: center;
+            padding: 4px;
+            font-size: 7px;
+            color: #666;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .print-button:hover {
+            background: #5568d3;
+        }
+
+        .principal-signature {
+            display: none;
+        }
+
+        @@media print {
+            body {
+                background: white;
+                padding: 0;
+                margin: 0;
+                display: block;
+            }
+
+            .print-button {
+                display: none;
+            }
+
+            .id-card-container {
+                box-shadow: none;
+                page-break-after: always;
+                position: absolute;
+                top: 0;
+                left: 0;
+                margin: 0;
+            }
+
+            .school-name {
+                color: #000000;
+            }
+
+            .principal-signature {
+                display: block;
+                position: absolute;
+                right: 5px;
+                bottom: -5px;
+                width: 90px;
+                height: 30px;
+                border-bottom: 1px solid #333;
+                font-size: 7px;
+                color: #666;
+                text-align: center;
+                padding-top: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button" onclick="window.print()">Print ID Card</button>
+
+    <div class="id-card-container">
+        <div class="id-card-header">
+            <div class="school-name">@Model.Campus?.Name</div>
+            <div class="school-tagline">STUDENT IDENTITY CARD</div>
+        </div>
+
+        <div class="id-card-body">
+            <div class="photo-section">
+                @if (!string.IsNullOrEmpty(Model.ProfilePicture))
+                {
+                    <img src="/@Model.ProfilePicture" alt="Student Photo" class="student-photo" />
+                }
+                else
+                {
+                    <div class="student-photo" style="background: #e9ecef; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999;">
+                        No Photo
+                    </div>
+                }
+            </div>
+
+            <div class="info-section">
+                <div class="info-row">
+                    <span class="info-label">Name:</span>
+                    <span class="info-value">@Model.StudentName</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Father:</span>
+                    <span class="info-value">@Model.FatherName</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Class:</span>
+                    <span class="info-value">@Model.ClassObj?.Name - @Model.SectionObj?.Name</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Roll No:</span>
+                    <span class="info-value">@(Model.RollNumber ?? Model.Id.ToString("D6"))</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">DOB:</span>
+                    <span class="info-value">@Model.DateOfBirth.ToString("dd-MMM-yyyy")</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Phone:</span>
+                    <span class="info-value">@Model.PhoneNumber</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Address:</span>
+                    <span class="info-value">@(Model.HomeAddress != null && Model.HomeAddress.Length > 35 ? Model.HomeAddress.Substring(0, 35) + "..." : Model.HomeAddress)</span>
+                </div>
+                
+                <!-- Principal Signature Placeholder (print only) -->
+                <div class="principal-signature">Principal Signature</div>
+            </div>
+        </div>
+
+        <div class="id-card-footer">
+            Valid for Academic Year @ViewBag.AcademicYear | In case of loss, please contact school administration
+        </div>
+    </div>
+
+    <script>
+        // Auto-print when page loads (optional)
+        // window.onload = function() { window.print(); };
+    </script>
+</body>
+</html>

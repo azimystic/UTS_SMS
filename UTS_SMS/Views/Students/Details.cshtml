@@ -1,0 +1,549 @@
+@model Student
+
+@{
+    ViewData["Title"] = "Student Details";
+    var initials = Model.StudentName?.Substring(0, Math.Min(2, Model.StudentName.Length)).ToUpper() ?? "ST";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        
+        <!-- Hero Section -->
+        <div class="detail-hero">
+            <div class="detail-hero-content">
+                <!-- Avatar -->
+                <div class="detail-avatar-large">
+                    @if (!string.IsNullOrEmpty(Model.ProfilePicture))
+                    {
+                        <img src="~/@Model.ProfilePicture" alt="@Model.StudentName">
+                    }
+                    else
+                    {
+                        <div class="avatar-placeholder">@initials</div>
+                    }
+                </div>
+
+                <!-- Hero Info -->
+                <div class="detail-hero-info">
+                    <h1 class="detail-hero-title">@Model.StudentName</h1>
+                    <p class="detail-hero-subtitle">@Model.ClassObj?.Name - @Model.SectionObj?.Name</p>
+                    
+                    <div class="detail-hero-badges">
+                        <span class="detail-hero-badge">
+                            <i class="fas fa-id-card"></i>
+                            ID: @Model.Id
+                        </span>
+                        <span class="detail-hero-badge">
+                            <i class="fas fa-school"></i>
+                            @Model.Campus?.Name
+                        </span>
+                        <span class="detail-hero-badge">
+                            <i class="fas fa-@(Model.Gender == "Male" ? "mars" : "venus")"></i>
+                            @Model.Gender
+                        </span>
+                    </div>
+
+                    <div class="detail-hero-quick-stats">
+                        <div class="detail-hero-stat">
+                            <span class="detail-hero-stat-value">@Model.ClassObj?.GradeLevel</span>
+                            <span class="detail-hero-stat-label">Grade</span>
+                        </div>
+                        <div class="detail-hero-stat">
+                            <span class="detail-hero-stat-value">@((DateTime.Now.Year - Model.DateOfBirth.Year) - (DateTime.Now.DayOfYear < Model.DateOfBirth.DayOfYear ? 1 : 0))</span>
+                            <span class="detail-hero-stat-label">Age</span>
+                        </div>
+                        @if (Model.TuitionFeeDiscountPercent.HasValue && Model.TuitionFeeDiscountPercent > 0)
+                        {
+                            <div class="detail-hero-stat">
+                                <span class="detail-hero-stat-value">@Model.TuitionFeeDiscountPercent%</span>
+                                <span class="detail-hero-stat-label">Discount</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Hero Actions -->
+                <div class="detail-hero-actions">
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="detail-hero-btn">
+                        <i class="fas fa-edit"></i>
+                        Edit Profile
+                    </a>
+                    <a asp-action="IDCard" asp-route-id="@Model.Id" class="detail-hero-btn">
+                        <i class="fas fa-id-card"></i>
+                        Print ID Card
+                    </a>
+                    <a asp-action="PrintPickupCard" asp-route-id="@Model.Id" class="detail-hero-btn">
+                        <i class="fas fa-car"></i>
+                        Pickup Card
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <nav class="detail-tabs">
+            <button class="detail-tab active" onclick="switchTab(event, 'overview')">
+                <i class="fas fa-home"></i>
+                Overview
+            </button>
+            <button class="detail-tab" onclick="switchTab(event, 'personal')">
+                <i class="fas fa-user"></i>
+                Personal Info
+            </button>
+            <button class="detail-tab" onclick="switchTab(event, 'guardian')">
+                <i class="fas fa-users"></i>
+                Guardian Info
+            </button>
+            <button class="detail-tab" onclick="switchTab(event, 'academic')">
+                <i class="fas fa-graduation-cap"></i>
+                Academic
+            </button>
+            <button class="detail-tab" onclick="switchTab(event, 'documents')">
+                <i class="fas fa-file-alt"></i>
+                Documents
+            </button>
+        </nav>
+
+        <!-- Tab Content: Overview -->
+        <div id="overview" class="detail-tab-content active">
+            <!-- Quick Stats -->
+            <div class="detail-stats-grid">
+                <div class="detail-stat-card">
+                    <div class="detail-stat-icon primary">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div class="detail-stat-content">
+                        <div class="detail-stat-label">Class</div>
+                        <div class="detail-stat-value">@Model.ClassObj?.Name</div>
+                    </div>
+                </div>
+                <div class="detail-stat-card">
+                    <div class="detail-stat-icon success">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="detail-stat-content">
+                        <div class="detail-stat-label">Section</div>
+                        <div class="detail-stat-value">@Model.SectionObj?.Name</div>
+                    </div>
+                </div>
+                <div class="detail-stat-card">
+                    <div class="detail-stat-icon warning">
+                        <i class="fas fa-calendar"></i>
+                    </div>
+                    <div class="detail-stat-content">
+                        <div class="detail-stat-label">Date of Birth</div>
+                        <div class="detail-stat-value">@Model.DateOfBirth.ToString("MMM dd, yyyy")</div>
+                    </div>
+                </div>
+                <div class="detail-stat-card">
+                    <div class="detail-stat-icon danger">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                    <div class="detail-stat-content">
+                        <div class="detail-stat-label">Phone</div>
+                        <div class="detail-stat-value">@(Model.PhoneNumber ?? "N/A")</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Information Cards -->
+            <div class="detail-info-grid">
+                <!-- Basic Information -->
+                <div class="detail-info-card">
+                    <div class="detail-info-card-header">
+                        <div class="detail-info-card-icon">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <h3 class="detail-info-card-title">Basic Information</h3>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Full Name</span>
+                        <span class="detail-info-value">@Model.StudentName</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Student CNIC</span>
+                        <span class="detail-info-value">@Model.StudentCNIC</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Gender</span>
+                        <span class="detail-info-value">@Model.Gender</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Date of Birth</span>
+                        <span class="detail-info-value">@Model.DateOfBirth.ToString("MMMM dd, yyyy")</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Age</span>
+                        <span class="detail-info-value">@((DateTime.Now.Year - Model.DateOfBirth.Year) - (DateTime.Now.DayOfYear < Model.DateOfBirth.DayOfYear ? 1 : 0)) years</span>
+                    </div>
+                </div>
+
+                <!-- Contact Information -->
+                <div class="detail-info-card">
+                    <div class="detail-info-card-header">
+                        <div class="detail-info-card-icon">
+                            <i class="fas fa-address-book"></i>
+                        </div>
+                        <h3 class="detail-info-card-title">Contact Information</h3>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Phone Number</span>
+                        <span class="detail-info-value">@(Model.PhoneNumber ?? "N/A")</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Home Address</span>
+                        <span class="detail-info-value">@Model.HomeAddress</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Campus</span>
+                        <span class="detail-info-value">@Model.Campus?.Name</span>
+                    </div>
+                </div>
+
+                <!-- Financial Information -->
+                <div class="detail-info-card">
+                    <div class="detail-info-card-header">
+                        <div class="detail-info-card-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <h3 class="detail-info-card-title">Financial Information</h3>
+                    </div>
+                    @if (Model.StudentCategory != null)
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Category</span>
+                            <span class="detail-info-value highlight">@Model.StudentCategory.CategoryName</span>
+                        </div>
+                    }
+                    @if (Model.TuitionFeeDiscountPercent.HasValue)
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Tuition Discount</span>
+                            <span class="detail-info-value highlight">@Model.TuitionFeeDiscountPercent%</span>
+                        </div>
+                    }
+                    @if (Model.AdmissionFeeDiscountAmount.HasValue)
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Admission Discount</span>
+                            <span class="detail-info-value highlight">Rs. @Model.AdmissionFeeDiscountAmount</span>
+                        </div>
+                    }
+                    @if (Model.Family != null)
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Family ID</span>
+                            <span class="detail-info-value">@Model.Family.Id</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Personal Info -->
+        <div id="personal" class="detail-tab-content">
+            <div class="detail-info-grid">
+                <div class="detail-info-card">
+                    <div class="detail-info-card-header">
+                        <div class="detail-info-card-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h3 class="detail-info-card-title">Personal Details</h3>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Full Name</span>
+                        <span class="detail-info-value">@Model.StudentName</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Student CNIC</span>
+                        <span class="detail-info-value">@Model.StudentCNIC</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Gender</span>
+                        <span class="detail-info-value">@Model.Gender</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Date of Birth</span>
+                        <span class="detail-info-value">@Model.DateOfBirth.ToString("MMMM dd, yyyy")</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Age</span>
+                        <span class="detail-info-value">@((DateTime.Now.Year - Model.DateOfBirth.Year) - (DateTime.Now.DayOfYear < Model.DateOfBirth.DayOfYear ? 1 : 0)) years</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.PersonalTitle))
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Title</span>
+                            <span class="detail-info-value">@Model.PersonalTitle</span>
+                        </div>
+                    }
+                </div>
+
+                <div class="detail-info-card">
+                    <div class="detail-info-card-header">
+                        <div class="detail-info-card-icon">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <h3 class="detail-info-card-title">Previous Education</h3>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.PreviousSchool))
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Previous School</span>
+                            <span class="detail-info-value">@Model.PreviousSchool</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.MatricRollNumber))
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Matric Roll No.</span>
+                            <span class="detail-info-value">@Model.MatricRollNumber</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.InterRollNumber))
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Inter Roll No.</span>
+                            <span class="detail-info-value">@Model.InterRollNumber</span>
+                        </div>
+                    }
+                    @if (string.IsNullOrEmpty(Model.PreviousSchool) && string.IsNullOrEmpty(Model.MatricRollNumber) && string.IsNullOrEmpty(Model.InterRollNumber))
+                    {
+                        <p class="text-gray-500 text-sm">No previous education information available.</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Guardian Info -->
+        <div id="guardian" class="detail-tab-content">
+            <div class="detail-info-grid">
+                <!-- Father Information -->
+                <div class="detail-info-card">
+                    <div class="detail-info-card-header">
+                        <div class="detail-info-card-icon">
+                            <i class="fas fa-male"></i>
+                        </div>
+                        <h3 class="detail-info-card-title">Father Information</h3>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Name</span>
+                        <span class="detail-info-value">@Model.FatherName</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">CNIC</span>
+                        <span class="detail-info-value">@Model.FatherCNIC</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Phone</span>
+                        <span class="detail-info-value">@Model.FatherPhone</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.FatherSourceOfIncome))
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Source of Income</span>
+                            <span class="detail-info-value">@Model.FatherSourceOfIncome</span>
+                        </div>
+                    }
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Status</span>
+                        <span class="detail-info-value">@(Model.IsFatherDeceased ? "Deceased" : "Alive")</span>
+                    </div>
+                </div>
+
+                <!-- Mother Information -->
+                @if (!string.IsNullOrEmpty(Model.MotherName))
+                {
+                    <div class="detail-info-card">
+                        <div class="detail-info-card-header">
+                            <div class="detail-info-card-icon">
+                                <i class="fas fa-female"></i>
+                            </div>
+                            <h3 class="detail-info-card-title">Mother Information</h3>
+                        </div>
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Name</span>
+                            <span class="detail-info-value">@Model.MotherName</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.MotherCNIC))
+                        {
+                            <div class="detail-info-row">
+                                <span class="detail-info-label">CNIC</span>
+                                <span class="detail-info-value">@Model.MotherCNIC</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.MotherPhone))
+                        {
+                            <div class="detail-info-row">
+                                <span class="detail-info-label">Phone</span>
+                                <span class="detail-info-value">@Model.MotherPhone</span>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <!-- Guardian Information (if applicable) -->
+                @if (Model.IsFatherDeceased && !string.IsNullOrEmpty(Model.GuardianName))
+                {
+                    <div class="detail-info-card">
+                        <div class="detail-info-card-header">
+                            <div class="detail-info-card-icon">
+                                <i class="fas fa-user-shield"></i>
+                            </div>
+                            <h3 class="detail-info-card-title">Guardian Information</h3>
+                        </div>
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Name</span>
+                            <span class="detail-info-value">@Model.GuardianName</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.GuardianPhone))
+                        {
+                            <div class="detail-info-row">
+                                <span class="detail-info-label">Phone</span>
+                                <span class="detail-info-value">@Model.GuardianPhone</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Tab Content: Academic -->
+        <div id="academic" class="detail-tab-content">
+            <div class="detail-info-grid">
+                <div class="detail-info-card">
+                    <div class="detail-info-card-header">
+                        <div class="detail-info-card-icon">
+                            <i class="fas fa-school"></i>
+                        </div>
+                        <h3 class="detail-info-card-title">Academic Information</h3>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Class</span>
+                        <span class="detail-info-value highlight">@Model.ClassObj?.Name</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Section</span>
+                        <span class="detail-info-value highlight">@Model.SectionObj?.Name</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Grade Level</span>
+                        <span class="detail-info-value">@Model.ClassObj?.GradeLevel</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Campus</span>
+                        <span class="detail-info-value">@Model.Campus?.Name</span>
+                    </div>
+                    @if (Model.SubjectsGrouping != null)
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Subjects Group</span>
+                            <span class="detail-info-value">@Model.SubjectsGrouping.Name</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Documents -->
+        <div id="documents" class="detail-tab-content">
+            <div class="detail-info-grid">
+                @if (!string.IsNullOrEmpty(Model.ProfilePicture))
+                {
+                    <div class="detail-info-card">
+                        <div class="detail-info-card-header">
+                            <div class="detail-info-card-icon">
+                                <i class="fas fa-image"></i>
+                            </div>
+                            <h3 class="detail-info-card-title">Profile Picture</h3>
+                        </div>
+                        <img src="~/@Model.ProfilePicture" alt="Profile Picture" class="w-full rounded-lg" />
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.FatherCNIC_Front))
+                {
+                    <div class="detail-info-card">
+                        <div class="detail-info-card-header">
+                            <div class="detail-info-card-icon">
+                                <i class="fas fa-id-card"></i>
+                            </div>
+                            <h3 class="detail-info-card-title">Father CNIC (Front)</h3>
+                        </div>
+                        <img src="~/@Model.FatherCNIC_Front" alt="Father CNIC Front" class="w-full rounded-lg" />
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.FatherCNIC_Back))
+                {
+                    <div class="detail-info-card">
+                        <div class="detail-info-card-header">
+                            <div class="detail-info-card-icon">
+                                <i class="fas fa-id-card"></i>
+                            </div>
+                            <h3 class="detail-info-card-title">Father CNIC (Back)</h3>
+                        </div>
+                        <img src="~/@Model.FatherCNIC_Back" alt="Father CNIC Back" class="w-full rounded-lg" />
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.BForm))
+                {
+                    <div class="detail-info-card">
+                        <div class="detail-info-card-header">
+                            <div class="detail-info-card-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <h3 class="detail-info-card-title">B-Form</h3>
+                        </div>
+                        <img src="~/@Model.BForm" alt="B-Form" class="w-full rounded-lg" />
+                    </div>
+                }
+
+                @if (string.IsNullOrEmpty(Model.ProfilePicture) && string.IsNullOrEmpty(Model.FatherCNIC_Front) && 
+                     string.IsNullOrEmpty(Model.FatherCNIC_Back) && string.IsNullOrEmpty(Model.BForm))
+                {
+                    <div class="col-span-full text-center py-8">
+                        <i class="fas fa-folder-open text-6xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500">No documents uploaded yet.</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Back Button -->
+        <div class="mt-8 flex justify-between items-center">
+            <a asp-action="Index" class="sms-btn sms-btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Back to List
+            </a>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="sms-btn sms-btn-primary">
+                <i class="fas fa-edit"></i>
+                Edit Student
+            </a>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function switchTab(event, tabId) {
+        // Hide all tab contents
+        const tabContents = document.querySelectorAll('.detail-tab-content');
+        tabContents.forEach(content => {
+            content.classList.remove('active');
+        });
+
+        // Remove active class from all tabs
+        const tabs = document.querySelectorAll('.detail-tab');
+        tabs.forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        // Show selected tab content
+        document.getElementById(tabId).classList.add('active');
+        
+        // Add active class to clicked tab
+        event.currentTarget.classList.add('active');
+    }
+</script>

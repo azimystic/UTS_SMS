@@ -1,0 +1,1350 @@
+﻿@model Student
+@{
+    ViewData["Title"] = "Edit Student";
+}
+
+<div class="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <h1 class="text-3xl font-bold text-primary-800 mb-4 md:mb-0">Edit Student</h1>
+        <a asp-action="Index" class="bg-primary-100 hover:bg-primary-200 text-primary-800 px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sms-md flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Back to List
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="bg-success-light border-l-4 border-success text-success p-4 mb-6 rounded-lg animate-fade-in">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    <form asp-action="Edit" method="post" enctype="multipart/form-data" id="studentForm" class="space-y-6">
+        <input type="hidden" asp-for="Id" />
+
+        <!-- Student and Father Information Combined -->
+        <div class="bg-white rounded-xl shadow-sms-md overflow-hidden transition-all duration-300 hover:shadow-sms-xl">
+            <div class="bg-gradient-primary px-6 py-3">
+                <h2 class="text-xl font-semibold text-white">Student & Guardian Information</h2>
+            </div>
+            <div class="p-6">
+                <!-- Student Information Section -->
+                <h3 class="text-lg font-semibold text-primary-700 mb-4 border-b pb-2">Student Details</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label asp-for="StudentName" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <input asp-for="StudentName" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" required />
+                        <span asp-validation-for="StudentName" class="text-error text-sm mt-1"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Gender" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <select asp-for="Gender" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <span asp-validation-for="Gender" class="text-error text-sm"></span>
+                    </div>
+                    <div>
+                        <label asp-for="StudentCNIC" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <input asp-for="StudentCNIC" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all cnic-input" placeholder="12345-1234567-1" required />
+                        <span asp-validation-for="StudentCNIC" class="text-error text-sm mt-1"></span>
+                        <span class="cnic-error text-error text-sm mt-1 hidden">CNIC must be exactly 13 digits</span>
+                    </div>
+                    <div>
+                        <label asp-for="DateOfBirth" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <input asp-for="DateOfBirth" type="date" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" required />
+                        <span asp-validation-for="DateOfBirth" class="text-error text-sm mt-1"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Class" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <select asp-for="Class" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" asp-items="ViewBag.ClassId">
+                            <option value="">-- Select Class --</option>
+                        </select>
+                        <span asp-validation-for="Class" class="text-error text-sm"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Section" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <select asp-for="Section" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" asp-items="ViewBag.SectionId">
+                            <option value="">-- Select Section --</option>
+                        </select>
+                        <span asp-validation-for="Section" class="text-error text-sm"></span>
+                    </div>
+                  
+                    <div>
+                        <label asp-for="PhoneNumber" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <input asp-for="PhoneNumber" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all phone-input" placeholder="+92 300 1234567" />
+                        <span class="phone-error text-error text-sm mt-1 hidden">Phone must be in format: +92 300 1234567</span>
+                    </div>
+                    <div>
+                        <label asp-for="Email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                        <input asp-for="Email" type="email" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" placeholder="student@example.com" />
+                        <span asp-validation-for="Email" class="text-error text-sm"></span>
+                    </div>
+                    <div>
+                        <label asp-for="SubjectsGroupingId" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <select asp-for="SubjectsGroupingId" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" asp-items="ViewBag.SubjectsGroupingId">
+                            <option value="">-- Select Subject Group --</option>
+                        </select>
+                        <span asp-validation-for="SubjectsGroupingId" class="text-error text-sm"></span>
+                    </div>
+                    <div>
+                        <label asp-for="PreviousSchool" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <input asp-for="PreviousSchool" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" />
+                    </div>
+                    
+                    <!-- ✅ ADD STUDENT CATEGORY WITH INFO BUTTON -->
+                    <div>
+                        <label asp-for="StudentCategoryId" class="block text-sm font-medium text-gray-700 mb-1">Student Category</label>
+                        <div class="flex gap-2">
+                            <select asp-for="StudentCategoryId" id="studentCategory" class="flex-1 px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all">
+                                <option value="">-- Select Category --</option>
+                            </select>
+                            <button type="button" id="showCategoryDetails" onclick="showCategoryDetailsModal()" 
+                                    class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed" 
+                                    disabled title="Select a category first">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <span asp-validation-for="StudentCategoryId" class="text-error text-sm"></span>
+                    </div>
+                    
+                    <div>
+                        <label asp-for="AdmissionFeeDiscountAmount" class="block text-sm font-medium text-gray-700 mb-1">Discount Admission Fee%</label>
+                        <input asp-for="AdmissionFeeDiscountAmount" type="number" id="admissionDiscount" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all discount-input bg-gray-100" min="0" max="100" readonly title="Auto-calculated based on Student Category" />
+                        <span class="discount-error text-error text-sm mt-1 hidden">Discount must be between 0 and 100</span>
+                    </div>
+                    <div>
+                        <label asp-for="TuitionFeeDiscountPercent" class="block text-sm font-medium text-gray-700 mb-1">Discount Tuition Fee%</label>
+                        <input asp-for="TuitionFeeDiscountPercent" type="number" id="tuitionDiscount" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all discount-input bg-gray-100" min="0" max="100" readonly title="Auto-calculated based on Student Category" />
+                        <span class="discount-error text-error text-sm mt-1 hidden">Discount must be between 0 and 100</span>
+                    </div>
+                
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Profile Picture</label>
+                        <input type="file" id="profilePicture" name="profilePicture" accept="image/jpeg,image/png,image/jpg" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all file-input" />
+                        <span class="file-error text-error text-sm mt-1 hidden">Max 2MB, only JPG/PNG allowed</span>
+                        @if (!string.IsNullOrEmpty(Model.ProfilePicture))
+                        {
+                            <div class="mt-2 flex items-center gap-2">
+                                <img src="/@Model.ProfilePicture" alt="Profile" class="w-12 h-12 rounded-full object-cover border-2 border-primary-300" />
+                                <a href="/@Model.ProfilePicture" target="_blank" class="text-sm text-primary-600 hover:text-primary-800 transition-colors">View Current</a>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Father/Guardian Information Section -->
+                <div class="flex justify-between items-center mb-4 border-b pb-2 mt-6">
+                    <h3 class="text-lg font-semibold text-primary-700">Father/Guardian Details</h3>
+                    <button type="button" onclick="clearFatherGuardianDetails()" class="text-error hover:text-red-700 transition-colors" title="Clear all Father/Guardian fields">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label asp-for="FatherName" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <input asp-for="FatherName" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" required />
+                        <span asp-validation-for="FatherName" class="text-error text-sm mt-1"></span>
+                    </div>
+                    <div>
+                        <label asp-for="FatherCNIC" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <input asp-for="FatherCNIC" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all cnic-input" placeholder="12345-1234567-1" required />
+                        <span asp-validation-for="FatherCNIC" class="text-error text-sm mt-1"></span>
+                        <span class="cnic-error text-error text-sm mt-1 hidden">CNIC must be exactly 13 digits</span>
+                    </div>
+                    <div>
+                        <label asp-for="FatherPhone" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <input asp-for="FatherPhone" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all phone-input" placeholder="+92 300 1234567" required />
+                        <span asp-validation-for="FatherPhone" class="text-error text-sm mt-1"></span>
+                        <span class="phone-error text-error text-sm mt-1 hidden">Phone must be in format: +92 300 1234567</span>
+                    </div>
+                    <div>
+                        <label asp-for="FatherSourceOfIncome" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <input asp-for="FatherSourceOfIncome" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" />
+                    </div>
+                    
+                    <!-- ✅ ADD MOTHER FIELDS -->
+                    <div>
+                        <label asp-for="MotherName" class="block text-sm font-medium text-gray-700 mb-1">Mother Name (Optional)</label>
+                        <input asp-for="MotherName" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" />
+                        <span asp-validation-for="MotherName" class="text-error text-sm mt-1"></span>
+                    </div>
+                    <div>
+                        <label asp-for="MotherCNIC" class="block text-sm font-medium text-gray-700 mb-1">Mother CNIC (Optional)</label>
+                        <input asp-for="MotherCNIC" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all cnic-input" placeholder="12345-1234567-1" />
+                        <span asp-validation-for="MotherCNIC" class="text-error text-sm mt-1"></span>
+                        <span class="cnic-error text-error text-sm mt-1 hidden">CNIC must be exactly 13 digits</span>
+                    </div>
+                    <div>
+                        <label asp-for="MotherPhone" class="block text-sm font-medium text-gray-700 mb-1">Mother Phone (Optional)</label>
+                        <input asp-for="MotherPhone" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all phone-input" placeholder="+92 300 1234567" />
+                        <span class="phone-error text-error text-sm mt-1 hidden">Phone must be in format: +92 300 1234567</span>
+                    </div>
+                    
+                    <div>
+                        <label asp-for="CampusId" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <select asp-for="CampusId" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" asp-items="ViewBag.CampusId">
+                            <option value="">-- Select Campus --</option>
+                        </select>
+                        <span asp-validation-for="CampusId" class="text-error text-sm"></span>
+                    </div>
+                    <div class="flex items-center pt-6">
+                        <input asp-for="IsFatherDeceased" class="h-4 w-4 text-primary-600 focus:ring-primary-400 border-primary-200 rounded" id="isFatherDeceased" />
+                        <label asp-for="IsFatherDeceased" class="ml-2 block text-sm text-gray-700"></label>
+                    </div>
+                </div>
+
+                <div id="guardianInfo" class="hidden">
+                    <h3 class="text-lg font-semibold text-primary-700 mb-4 border-b pb-2">Guardian Details</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                        <div>
+                            <label asp-for="GuardianName" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                            <input asp-for="GuardianName" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" />
+                        </div>
+                        <div>
+                            <label asp-for="GuardianPhone" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                            <input asp-for="GuardianPhone" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all phone-input" placeholder="+92 300 1234567" />
+                            <span class="phone-error text-error text-sm mt-1 hidden">Phone must be in format: +92 300 1234567</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-4">
+                    <div>
+                        <label asp-for="HomeAddress" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <textarea asp-for="HomeAddress" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" required rows="3"></textarea>
+                        <span asp-validation-for="HomeAddress" class="text-error text-sm mt-1"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Optional Charges Section -->
+        <div id="optionalChargesSection" class="bg-white rounded-xl shadow-sms-md overflow-hidden transition-all duration-300 hover:shadow-sms-xl hidden">
+            <div class="bg-gradient-primary px-6 py-3">
+                <h2 class="text-xl font-semibold text-white">Optional Charges</h2>
+            </div>
+            <div class="p-6">
+                <p class="text-sm text-gray-600 mb-4">Select which optional charges apply to this student.</p>
+                <div id="optionalChargesList" class="space-y-2">
+                    <!-- Charges will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Documents Section -->
+        <div class="bg-white rounded-xl shadow-sms-md overflow-hidden transition-all duration-300 hover:shadow-sms-xl">
+            <div class="bg-gradient-primary px-6 py-3">
+                <h2 class="text-xl font-semibold text-white">Documents</h2>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Father CNIC Front</label>
+                        <input type="file" id="fatherCNICFront" name="fatherCNICFront" accept="image/jpeg,image/png,image/jpg,application/pdf" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all file-input" />
+                        <span class="file-error text-error text-sm mt-1 hidden"></span>
+                        @if (!string.IsNullOrEmpty(Model.FatherCNIC_Front))
+                        {
+                            <div class="mt-2">
+                                <a href="/@Model.FatherCNIC_Front" target="_blank" class="text-sm text-primary-600 hover:text-primary-800 transition-colors">View Current</a>
+                            </div>
+                        }
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Father CNIC Back</label>
+                        <input type="file" id="fatherCNICBack" name="fatherCNICBack" accept="image/jpeg,image/png,image/jpg,application/pdf" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all file-input" />
+                        <span class="file-error text-error text-sm mt-1 hidden"></span>
+                        @if (!string.IsNullOrEmpty(Model.FatherCNIC_Back))
+                        {
+                            <div class="mt-2">
+                                <a href="/@Model.FatherCNIC_Back" target="_blank" class="text-sm text-primary-600 hover:text-primary-800 transition-colors">View Current</a>
+                            </div>
+                        }
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Student CNIC Front</label>
+                        <input type="file" id="studentCNICFront" name="studentCNICFront" accept="image/jpeg,image/png,image/jpg,application/pdf" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all file-input" />
+                        <span class="file-error text-error text-sm mt-1 hidden"></span>
+                        @if (!string.IsNullOrEmpty(Model.StudentCNIC_Front))
+                        {
+                            <div class="mt-2">
+                                <a href="/@Model.StudentCNIC_Front" target="_blank" class="text-sm text-primary-600 hover:text-primary-800 transition-colors">View Current</a>
+                            </div>
+                        }
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Student CNIC Back</label>
+                        <input type="file" id="studentCNICBack" name="studentCNICBack" accept="image/jpeg,image/png,image/jpg,application/pdf" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all file-input" />
+                        <span class="file-error text-error text-sm mt-1 hidden"></span>
+                        @if (!string.IsNullOrEmpty(Model.StudentCNIC_Back))
+                        {
+                            <div class="mt-2">
+                                <a href="/@Model.StudentCNIC_Back" target="_blank" class="text-sm text-primary-600 hover:text-primary-800 transition-colors">View Current</a>
+                            </div>
+                        }
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">B-Form</label>
+                        <input type="file" id="bForm" name="bForm" accept="image/jpeg,image/png,image/jpg,application/pdf" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all file-input" />
+                        <span class="file-error text-error text-sm mt-1 hidden"></span>
+                        @if (!string.IsNullOrEmpty(Model.BForm))
+                        {
+                            <div class="mt-2">
+                                <a href="/@Model.BForm" target="_blank" class="text-sm text-primary-600 hover:text-primary-800 transition-colors">View Current</a>
+                            </div>
+                        }
+                    </div>
+
+                    <div id="matricCertificate01Group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Matric Certificate (9th Class)</label>
+                        <input type="file" id="matricCertificate01" name="matricCertificate01" accept="image/jpeg,image/png,image/jpg,application/pdf" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all file-input" />
+                        <span class="file-error text-error text-sm mt-1 hidden"></span>
+                        @if (!string.IsNullOrEmpty(Model.MatricCertificate_01))
+                        {
+                            <div class="mt-2">
+                                <a href="/@Model.MatricCertificate_01" target="_blank" class="text-sm text-primary-600 hover:text-primary-800 transition-colors">View Current</a>
+                            </div>
+                        }
+                    </div>
+
+                    <div id="matricCertificate02Group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Matric Certificate (10th Class)</label>
+                        <input type="file" id="matricCertificate02" name="matricCertificate02" accept="image/jpeg,image/png,image/jpg,application/pdf" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all file-input" />
+                        <span class="file-error text-error text-sm mt-1 hidden"></span>
+                        @if (!string.IsNullOrEmpty(Model.MatricCertificate_02))
+                        {
+                            <div class="mt-2">
+                                <a href="/@Model.MatricCertificate_02" target="_blank" class="text-sm text-primary-600 hover:text-primary-800 transition-colors">View Current</a>
+                            </div>
+                        }
+                    </div>
+
+                    <div id="interCertificate01Group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Inter Certificate (1st Year)</label>
+                        <input type="file" id="interCertificate01" name="interCertificate01" accept="image/jpeg,image/png,image/jpg,application/pdf" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all file-input" />
+                        <span class="file-error text-error text-sm mt-1 hidden"></span>
+                        @if (!string.IsNullOrEmpty(Model.InterCertificate_01))
+                        {
+                            <div class="mt-2">
+                                <a href="/@Model.InterCertificate_01" target="_blank" class="text-sm text-primary-600 hover:text-primary-800 transition-colors">View Current</a>
+                            </div>
+                        }
+                    </div>
+
+                    <div id="interCertificate02Group">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Inter Certificate (2nd Year)</label>
+                        <input type="file" id="interCertificate02" name="interCertificate02" accept="image/jpeg,image/png,image/jpg,application/pdf" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all file-input" />
+                        <span class="file-error text-error text-sm mt-1 hidden"></span>
+                        @if (!string.IsNullOrEmpty(Model.InterCertificate_02))
+                        {
+                            <div class="mt-2">
+                                <a href="/@Model.InterCertificate_02" target="_blank" class="text-sm text-primary-600 hover:text-primary-800 transition-colors">View Current</a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4 pt-4">
+            <button type="submit" class="bg-gradient-primary hover:bg-primary-700 text-white px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sms-md flex items-center justify-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                Save Changes
+            </button>
+
+            <a asp-action="Index" class="bg-primary-100 hover:bg-primary-200 text-primary-800 px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sms-md text-center">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Category Details Modal -->
+<div id="categoryDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display:none;">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
+        <div class="bg-gradient-primary px-6 py-4 rounded-t-xl">
+            <h3 class="text-xl font-semibold text-white">Student Category Details</h3>
+        </div>
+        <div class="p-6">
+            <p class="text-gray-700 mb-4" id="categoryDescriptionText"></p>
+            <div class="grid grid-cols-1 gap-4" id="categoryDiscountsContainer">
+                <!-- Discount details will be loaded here -->
+            </div>
+            <div class="flex gap-3 mt-4">
+                <button onclick="closeCategoryDetailsModal()" 
+                        class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg transition-all">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // ==================== DECLARE ALL VARIABLES AT TOP ====================
+        const classSelect = document.querySelector('[name="Class"]');
+        const sectionSelect = document.querySelector('[name="Section"]');
+        const campusSelect = document.querySelector('[name="CampusId"]');
+        const categorySelect = document.getElementById('studentCategory');
+        const admissionDiscountInput = document.getElementById('admissionDiscount');
+        const tuitionDiscountInput = document.getElementById('tuitionDiscount');
+        let familyCheckTimeout = null;
+
+        // ==================== HELPER FUNCTIONS ====================
+        function validateCnic(input) {
+            let digits = input.value.replace(/\D/g, '');
+            let errorSpan = input.parentElement.querySelector('.cnic-error');
+            let isRequired = input.hasAttribute('required');
+
+            if (digits.length === 0 && !isRequired) {
+                if (errorSpan) errorSpan.classList.add('hidden');
+                input.classList.remove('border-error');
+            } else if (digits.length > 0 && digits.length < 13) {
+                if (errorSpan) errorSpan.classList.remove('hidden');
+                input.classList.add('border-error');
+            } else if (digits.length === 13) {
+                if (errorSpan) errorSpan.classList.add('hidden');
+                input.classList.remove('border-error');
+            } else if (isRequired && digits.length === 0) {
+                if (errorSpan) errorSpan.classList.remove('hidden');
+                input.classList.add('border-error');
+            }
+        }
+
+        function validatePhone(input) {
+            let value = input.value;
+            let afterPrefix = value.substring(3).replace(/\D/g, '');
+            let errorSpan = input.parentElement.querySelector('.phone-error');
+            let isRequired = input.hasAttribute('required');
+
+            if (afterPrefix.length === 0 && !isRequired) {
+                if (errorSpan) errorSpan.classList.add('hidden');
+                input.classList.remove('border-error');
+            } else if (afterPrefix.length > 0 && afterPrefix.length < 10) {
+                if (errorSpan) errorSpan.classList.remove('hidden');
+                input.classList.add('border-error');
+            } else if (afterPrefix.length === 10) {
+                if (errorSpan) errorSpan.classList.add('hidden');
+                input.classList.remove('border-error');
+            } else if (isRequired && afterPrefix.length === 0) {
+                if (errorSpan) errorSpan.classList.remove('hidden');
+                input.classList.add('border-error');
+            }
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'fixed top-4 right-4 bg-success-light border-l-4 border-success text-success p-4 rounded-lg shadow-lg z-50';
+            successDiv.style.animation = 'slideInRight 0.3s';
+            successDiv.innerHTML = `✓ ${message}`;
+            document.body.appendChild(successDiv);
+            setTimeout(() => successDiv.remove(), 3000);
+        }
+
+        function showInfo(message) {
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'fixed top-4 right-4 bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-lg shadow-lg z-50';
+            infoDiv.style.animation = 'slideInRight 0.3s';
+            infoDiv.innerHTML = `ℹ ${message}`;
+            document.body.appendChild(infoDiv);
+            setTimeout(() => infoDiv.remove(), 5000);
+        }
+
+        function setHiddenField(name, value) {
+            let field = document.querySelector(`input[name="${name}"]`);
+            if (!field) {
+                field = document.createElement('input');
+                field.type = 'hidden';
+                field.name = name;
+                document.getElementById('studentForm').appendChild(field);
+            }
+            field.value = value;
+        }
+
+        function clearEmployeeDataFields() {
+            const hiddenFields = ['SelectedEmployeeId', 'PaymentMode', 'CustomAdmissionPercent', 'CustomTuitionPercent', 'MotherEmployeeId', 'FatherSalaryPercent', 'MotherSalaryPercent'];
+            hiddenFields.forEach(fieldName => {
+                const field = document.querySelector(`input[name="${fieldName}"]`);
+                if (field && field.type === 'hidden') {
+                    field.value = '';
+                }
+            });
+        }
+
+        // ==================== LOAD FUNCTIONS ====================
+        function loadSectionsByClass(classId, selectedSectionId = null) {
+            if (classId && sectionSelect) {
+                fetch(`/Students/GetSectionsByClass?classId=${classId}`)
+                    .then(response => response.json())
+                    .then(sections => {
+                        sectionSelect.innerHTML = '<option value="">-- Select Section --</option>';
+                        sections.forEach(section => {
+                            const option = document.createElement('option');
+                            option.value = section.id;
+                            option.textContent = section.name;
+                            if (selectedSectionId && section.id == selectedSectionId) {
+                                option.selected = true;
+                            }
+                            sectionSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error loading sections:', error));
+            } else if (sectionSelect) {
+                sectionSelect.innerHTML = '<option value="">-- Select Section --</option>';
+            }
+        }
+
+        function loadOptionalCharges() {
+            const classId = classSelect ? classSelect.value : null;
+            const studentId = document.querySelector('[name="Id"]') ? document.querySelector('[name="Id"]').value : null;
+            
+            if (!classId) {
+                document.getElementById('optionalChargesSection').classList.add('hidden');
+                return;
+            }
+            
+            fetch(`/ClassFee/GetOptionalChargesByClass?classId=${classId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('optionalChargesList');
+                    
+                    if (data.length === 0) {
+                        document.getElementById('optionalChargesSection').classList.add('hidden');
+                        return;
+                    }
+                    
+                    if (studentId) {
+                        fetch(`/Students/GetStudentAssignedCharges?studentId=${studentId}`)
+                            .then(response => response.json())
+                            .then(assignedCharges => {
+                                container.innerHTML = '';
+                                data.forEach(charge => {
+                                    const isAssigned = assignedCharges.some(ac => ac.chargeId === charge.id && ac.isAssigned);
+                                    const chargeDiv = document.createElement('div');
+                                    chargeDiv.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors';
+                                    chargeDiv.innerHTML = `
+                                        <div class="flex items-center">
+                                            <input type="checkbox" name="OptionalCharges" value="${charge.id}" ${isAssigned ? 'checked' : ''}
+                                                   class="h-4 w-4 text-primary-600 focus:ring-primary-400 border-primary-200 rounded" />
+                                            <label class="ml-3 text-sm font-medium text-gray-700">${charge.chargeName}</label>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="text-sm font-semibold text-primary-600">Rs. ${charge.amount.toLocaleString()}</span>
+                                            <span class="text-xs text-gray-500 ml-2">${charge.category}</span>
+                                        </div>
+                                    `;
+                                    container.appendChild(chargeDiv);
+                                });
+                                document.getElementById('optionalChargesSection').classList.remove('hidden');
+                            })
+                            .catch(error => console.error('Error loading assigned charges:', error));
+                    } else {
+                        container.innerHTML = '';
+                        data.forEach(charge => {
+                            const chargeDiv = document.createElement('div');
+                            chargeDiv.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors';
+                            chargeDiv.innerHTML = `
+                                <div class="flex items-center">
+                                    <input type="checkbox" name="OptionalCharges" value="${charge.id}" checked
+                                           class="h-4 w-4 text-primary-600 focus:ring-primary-400 border-primary-200 rounded" />
+                                    <label class="ml-3 text-sm font-medium text-gray-700">${charge.chargeName}</label>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-sm font-semibold text-primary-600">Rs. ${charge.amount.toLocaleString()}</span>
+                                    <span class="text-xs text-gray-500 ml-2">${charge.category}</span>
+                                </div>
+                            `;
+                            container.appendChild(chargeDiv);
+                        });
+                        document.getElementById('optionalChargesSection').classList.remove('hidden');
+                    }
+                })
+                .catch(error => console.error('Error loading optional charges:', error));
+        }
+
+        function loadCategories() {
+            if (campusSelect && categorySelect) {
+                const campusId = campusSelect.value;
+                // ✅ FIX: Get current category ID and discount values from Model
+                const modelCategoryId = '@Model.StudentCategoryId';
+                const modelAdmissionDiscount = '@Model.AdmissionFeeDiscountAmount';
+                const modelTuitionDiscount = '@Model.TuitionFeeDiscountPercent';
+                const currentCategoryId = categorySelect.value || (modelCategoryId && modelCategoryId !== '' && modelCategoryId !== 'null' ? modelCategoryId : null);
+                
+                console.log('Loading categories for campus:', campusId);
+                console.log('Model CategoryId:', modelCategoryId);
+                console.log('Model Admission Discount:', modelAdmissionDiscount);
+                console.log('Model Tuition Discount:', modelTuitionDiscount);
+                
+                if (campusId) {
+                    fetch(`/StudentCategory/GetCategoriesByCampus?campusId=${campusId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log('Categories loaded:', data);
+                            categorySelect.innerHTML = '<option value="">-- Select Category --</option>';
+                            data.forEach(category => {
+                                const option = document.createElement('option');
+                                option.value = category.id;
+                                option.textContent = category.name;
+                                option.setAttribute('data-admission', category.admissionDiscount);
+                                option.setAttribute('data-tuition', category.tuitionDiscount);
+                                option.setAttribute('data-type', category.type);
+                                if (currentCategoryId && category.id == currentCategoryId) {
+                                    option.selected = true;
+                                    console.log('Selected category:', category.name, category.id);
+                                }
+                                categorySelect.appendChild(option);
+                            });
+                            
+                            // ✅ FIX: Populate discount fields from Model (not from category default)
+                            if (currentCategoryId && categorySelect.value) {
+                                console.log('Populating discounts from Model values');
+                                
+                                // Use Model values if available, otherwise use category defaults
+                                const admissionDiscount = (modelAdmissionDiscount && modelAdmissionDiscount !== '') 
+                                    ? parseFloat(modelAdmissionDiscount) 
+                                    : parseFloat(categorySelect.options[categorySelect.selectedIndex].getAttribute('data-admission') || 0);
+                                    
+                                const tuitionDiscount = (modelTuitionDiscount && modelTuitionDiscount !== '') 
+                                    ? parseFloat(modelTuitionDiscount) 
+                                    : parseFloat(categorySelect.options[categorySelect.selectedIndex].getAttribute('data-tuition') || 0);
+                                
+                                if (admissionDiscountInput) admissionDiscountInput.value = admissionDiscount;
+                                if (tuitionDiscountInput) tuitionDiscountInput.value = tuitionDiscount;
+                                
+                                // Enable the details button
+                                const showDetailsBtn = document.getElementById('showCategoryDetails');
+                                if (showDetailsBtn) {
+                                    showDetailsBtn.disabled = false;
+                                    showDetailsBtn.title = 'Click to view category details or apply discount';
+                                }
+                            } else {
+                                console.log('No category to select');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error loading categories:', error);
+                        });
+                } else {
+                    console.log('No campus selected, clearing categories');
+                    categorySelect.innerHTML = '<option value="">-- Select Category --</option>';
+                }
+            }
+        }
+
+        // ==================== FATHER CNIC FUNCTIONS ====================
+        function checkFatherCNIC(cnic) {
+            if (familyCheckTimeout) clearTimeout(familyCheckTimeout);
+            
+            familyCheckTimeout = setTimeout(() => {
+                fetch(`/Students/CheckFatherCNIC?cnic=${encodeURIComponent(cnic)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.exists) {
+                            showFamilyModal(data);
+                        }
+                    })
+                    .catch(error => console.error('Error checking Father CNIC:', error));
+            }, 500);
+        }
+
+        function showFamilyModal(familyData) {
+            const modalHTML = `
+                <div id="familyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="animation: fadeIn 0.3s;">
+                    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4" style="animation: slideUp 0.3s;">
+                        <div class="bg-gradient-primary px-6 py-4 rounded-t-xl">
+                            <h3 class="text-xl font-semibold text-white">Family Found</h3>
+                        </div>
+                        <div class="p-6">
+                            <p class="text-gray-700 mb-4">A family with this Father CNIC already exists:</p>
+                            <div class="bg-gray-50 p-4 rounded-lg mb-4 space-y-2">
+                                <p><strong>Father Name:</strong> ${familyData.fatherName}</p>
+                                <p><strong>Father Phone:</strong> ${familyData.fatherPhone || 'N/A'}</p>
+                                ${familyData.motherName ? `<p><strong>Mother Name:</strong> ${familyData.motherName}</p>` : ''}
+                                ${familyData.motherPhone ? `<p><strong>Mother Phone:</strong> ${familyData.motherPhone}</p>` : ''}
+                                <p><strong>Address:</strong> ${familyData.address || 'N/A'}</p>
+                                <p><strong>Existing Students:</strong> ${familyData.studentCount}</p>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-4">Would you like to load these family details?</p>
+                            <div class="flex gap-3">
+                                <button onclick="loadFamilyDetails(${JSON.stringify(familyData).replace(/"/g, '&quot;')})" 
+                                        class="flex-1 bg-gradient-primary hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-all">
+                                    Load Details
+                                </button>
+                                <button onclick="clearFatherCNIC()" 
+                                        class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg transition-all">
+                                    Clear CNIC
+                                </button>
+                                <button onclick="closeFamilyModal()" 
+                                        class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-all">
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const existingModal = document.getElementById('familyModal');
+            if (existingModal) existingModal.remove();
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
+
+        window.loadFamilyDetails = function(familyData) {
+            const fields = [
+                {name: 'FatherName', value: familyData.fatherName},
+                {name: 'FatherPhone', value: familyData.fatherPhone},
+                {name: 'FatherSourceOfIncome', value: familyData.fatherSourceOfIncome},
+                {name: 'HomeAddress', value: familyData.address},
+                {name: 'MotherName', value: familyData.motherName},
+                {name: 'MotherCNIC', value: familyData.motherCNIC},
+                {name: 'MotherPhone', value: familyData.motherPhone}
+            ];
+            
+            fields.forEach(field => {
+                const input = document.querySelector(`[name="${field.name}"]`);
+                if (input && field.value) {
+                    input.value = field.value;
+                    input.readOnly = true;
+                    input.classList.add('bg-gray-100', 'cursor-not-allowed');
+                }
+            });
+            
+            closeFamilyModal();
+            showSuccess('Family details loaded and locked!');
+        };
+
+        window.clearFatherCNIC = function() {
+            document.querySelector('[name="FatherCNIC"]').value = '';
+            document.querySelector('[name="FatherCNIC"]').focus();
+            closeFamilyModal();
+        };
+
+        window.closeFamilyModal = function() {
+            const modal = document.getElementById('familyModal');
+            if (modal) {
+                modal.style.animation = 'fadeOut 0.3s';
+                setTimeout(() => modal.remove(), 300);
+            }
+        };
+
+        // ==================== CATEGORY MODALS ====================
+        window.showCategoryDetailsModal = function() {
+            const categoryId = categorySelect.value;
+            
+            if (!categoryId) {
+                alert('Please select a category first!');
+                return;
+            }
+            
+            const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+            const categoryName = selectedOption.textContent;
+            const categoryType = selectedOption.getAttribute('data-type');
+            
+            // ✅ FIX: For special categories (Sibling/EmployeeParent), show Apply Discount modal instead of info
+            const specialCategories = ['EmployeeParent', 'Sibling', 'Alumni'];
+            if (specialCategories.includes(categoryType)) {
+                const fatherCnicInput = document.querySelector('[name="FatherCNIC"]');
+
+                if (!fatherCnicInput || fatherCnicInput.value.replace(/\D/g, '').length !== 13) {
+                    alert('Please enter a complete Father CNIC (13 digits) first to validate this category!');
+                    return;
+                }
+
+                // Trigger CNIC validation which will show appropriate modal with Apply button
+                checkCategoryDiscount(fatherCnicInput.value, categoryId, categoryType);
+                return;
+            }
+            
+            // For Regular/Disabled/Custom categories, show info modal
+            fetch(`/StudentCategory/GetCategoryDetails?categoryId=${categoryId}`)
+                .then(r => r.json())
+                .then(catData => {
+                    if (catData.success) {
+                        let detailsHTML = `
+                            <div id="categoryDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" style="animation: fadeIn 0.3s;">
+                                <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4" style="animation: slideUp 0.3s;">
+                                    <div class="bg-gradient-primary px-6 py-4 rounded-t-xl flex justify-between items-center">
+                                        <h3 class="text-xl font-semibold text-white">Category Details</h3>
+                                        <button onclick="closeCategoryDetailsModal()" class="text-white hover:text-gray-200 text-2xl">&times;</button>
+                                    </div>
+                                    <div class="p-6 space-y-4">
+                                        <div>
+                                            <p class="text-sm text-gray-600">Category Name</p>
+                                            <p class="text-lg font-semibold text-gray-800">${categoryName}</p>
+                                        </div>
+                                        
+                                        <div>
+                                            <p class="text-sm text-gray-600">Category Type</p>
+                                            <p class="text-lg font-semibold text-primary-700">${categoryType}</p>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div class="bg-primary-50 p-3 rounded-lg">
+                                                <p class="text-sm text-gray-600">Admission Discount</p>
+                                                <p class="text-2xl font-bold text-primary-700">${catData.defaultAdmissionDiscount}%</p>
+                                            </div>
+                                            <div class="bg-indigo-50 p-3 rounded-lg">
+                                                <p class="text-sm text-gray-600">Tuition Discount</p>
+                                                <p class="text-2xl font-bold text-indigo-700">${catData.defaultTuitionDiscount}%</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="px-6 py-4 bg-gray-50 rounded-b-xl">
+                                        <button onclick="closeCategoryDetailsModal()" class="w-full bg-gradient-primary hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-all">
+                                            Close
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        const existingModal = document.getElementById('categoryDetailsModal');
+                        if (existingModal) existingModal.remove();
+                        document.body.insertAdjacentHTML('beforeend', detailsHTML);
+                    }
+                })
+                .catch(err => console.error('Error:', err));
+        };
+
+        window.closeCategoryDetailsModal = function() {
+            const modal = document.getElementById('categoryDetailsModal');
+            if (modal) {
+                modal.style.animation = 'fadeOut 0.3s';
+                setTimeout(() => modal.remove(), 300);
+            }
+        };
+
+        window.clearFatherGuardianDetails = function() {
+            if (!confirm('Are you sure you want to clear all Father/Guardian details?')) return;
+            
+            const fieldsToClear = [
+                'FatherName', 'FatherCNIC', 'FatherPhone', 'FatherSourceOfIncome',
+                'MotherName', 'MotherCNIC', 'MotherPhone', 'HomeAddress',
+                'GuardianName', 'GuardianPhone'
+            ];
+            
+            fieldsToClear.forEach(fieldName => {
+                const input = document.querySelector(`[name="${fieldName}"]`);
+                if (input) {
+                    input.value = fieldName.includes('Phone') ? '+92 ' : '';
+                    input.readOnly = false;
+                    input.classList.remove('bg-gray-100', 'cursor-not-allowed');
+                }
+            });
+            
+            const deceasedCheckbox = document.getElementById('isFatherDeceased');
+            if (deceasedCheckbox) {
+                deceasedCheckbox.checked = false;
+                $('#guardianInfo').addClass('hidden');
+            }
+            
+            showSuccess('Father/Guardian details cleared successfully!');
+        };
+
+        // ==================== CATEGORY DISCOUNT FUNCTIONS ====================
+        function checkCategoryDiscount(cnic, categoryId, categoryType) {
+            fetch(`/Students/CheckCategoryDiscount?cnic=${encodeURIComponent(cnic)}&categoryId=${categoryId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.found) {
+                        showCategoryDiscountModal(data);
+                    } else if (data.success && !data.found) {
+                        if (data.type === 'not_employee') {
+                            showAlternateCNICPrompt(categoryId);
+                        } else {
+                            showInfo(data.message);
+                        }
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function showCategoryDiscountModal(data) {
+            let modalContent = '';
+            
+            if (data.type === 'employee') {
+                modalContent = `
+                    <div class="mb-4">
+                        <div class="bg-emerald-50 p-4 rounded-lg mb-4">
+                            <p class="font-semibold text-emerald-900">✓ Employee Found</p>
+                            <p class="text-sm text-emerald-800 mt-2"><strong>Name:</strong> ${data.employeeName}</p>
+                            <p class="text-sm text-emerald-800"><strong>Role:</strong> ${data.employeeRole}</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 mb-4">
+                            <div class="bg-primary-50 p-3 rounded-lg">
+                                <p class="text-sm text-gray-600">Admission Discount</p>
+                                <p class="text-xl font-bold text-primary-700">${data.admissionDiscount}%</p>
+                            </div>
+                            <div class="bg-indigo-50 p-3 rounded-lg">
+                                <p class="text-sm text-gray-600">Tuition Discount</p>
+                                <p class="text-xl font-bold text-indigo-700">${data.tuitionDiscount}%</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-3">Select payment mode:</p>
+                        <div class="flex flex-col gap-2">
+                            <button onclick="applyDiscount(${data.employeeId}, '${data.employeeName}', ${data.admissionDiscount}, ${data.tuitionDiscount}, 'PayFeesSelf')" 
+                                    class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-all text-sm">
+                                Pay Fees Self (Student/Parent)
+                            </button>
+                            <button onclick="applyDiscount(${data.employeeId}, '${data.employeeName}', ${data.admissionDiscount}, ${data.tuitionDiscount}, 'CutFromSalary')" 
+                                    class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-all text-sm">
+                                Cut from Employee Salary
+                            </button>
+                            <button onclick="showCustomRatioModal(${data.employeeId}, '${data.employeeName}', ${data.admissionDiscount}, ${data.tuitionDiscount})" 
+                                    class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-all text-sm">
+                                Define Custom Ratio
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else if (data.type === 'sibling') {
+                // ✅ FIX: Add Apply button for Sibling category
+                const siblingList = data.siblings && data.siblings.length > 0 
+                    ? data.siblings.map(s => `<li class="text-sm">${s.studentName} (Class ${s.class})</li>`).join('')
+                    : '<li class="text-sm text-gray-500">No existing siblings</li>';
+                    
+                modalContent = `
+                    <div class="mb-4">
+                        <div class="bg-purple-50 p-4 rounded-lg mb-4">
+                            <p class="font-semibold text-purple-900">✓ Sibling Category Selected</p>
+                            <p class="text-sm text-purple-800 mt-2">Siblings Found: <strong>${data.siblingCount || 0}</strong></p>
+                            <ul class="mt-2 list-disc list-inside">${siblingList}</ul>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 mb-4">
+                            <div class="bg-primary-50 p-3 rounded-lg">
+                                <p class="text-sm text-gray-600">Admission Discount</p>
+                                <p class="text-xl font-bold text-primary-700">${data.admissionDiscount || 0}%</p>
+                            </div>
+                            <div class="bg-indigo-50 p-3 rounded-lg">
+                                <p class="text-sm text-gray-600">Tuition Discount</p>
+                                <p class="text-xl font-bold text-indigo-700">${data.tuitionDiscount || 0}%</p>
+                            </div>
+                        </div>
+                        <button onclick="applySiblingDiscount(${data.admissionDiscount || 0}, ${data.tuitionDiscount || 0}, ${data.siblingCount || 0})" 
+                                class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-all text-sm">
+                            Apply Sibling Discount
+                        </button>
+                    </div>
+                `;
+            }
+            
+            const modalHTML = `
+                <div id="categoryDiscountModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" style="animation: fadeIn 0.3s;">
+                    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4" style="animation: slideUp 0.3s;">
+                        <div class="bg-gradient-primary px-6 py-4 rounded-t-xl flex justify-between items-center">
+                            <h3 class="text-xl font-semibold text-white">Apply Category Discount</h3>
+                            <button onclick="closeCategoryDiscountModal()" class="text-white hover:text-gray-200 text-2xl">&times;</button>
+                        </div>
+                        <div class="p-6">${modalContent}</div>
+                    </div>
+                </div>
+            `;
+            
+            const existingModal = document.getElementById('categoryDiscountModal');
+            if (existingModal) existingModal.remove();
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
+
+        function showAlternateCNICPrompt(categoryId) {
+            const modalHTML = `
+                <div id="alternateCNICModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" style="animation: fadeIn 0.3s;">
+                    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4" style="animation: slideUp 0.3s;">
+                        <div class="bg-gradient-primary px-6 py-4 rounded-t-xl">
+                            <h3 class="text-xl font-semibold text-white">No Employee Found</h3>
+                        </div>
+                        <div class="p-6">
+                            <p class="text-gray-700 mb-4">Father CNIC is not an active employee. Please enter Mother or Sibling CNIC.</p>
+                            <input type="text" id="alternateCNIC" class="w-full px-4 py-2 border border-primary-200 rounded-md cnic-input mb-4" placeholder="12345-1234567-1" />
+                            <div class="flex gap-3">
+                                <button onclick="checkAlternateCNIC('${categoryId}')" class="flex-1 bg-gradient-primary hover:bg-primary-700 text-white px-4 py-2 rounded-lg">
+                                    Check CNIC
+                                </button>
+                                <button onclick="closeAlternateCNICModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const existingModal = document.getElementById('alternateCNICModal');
+            if (existingModal) existingModal.remove();
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
+
+        window.checkAlternateCNIC = function(categoryId) {
+            const cnic = document.getElementById('alternateCNIC').value;
+            if (cnic.replace(/\D/g, '').length === 13) {
+                closeAlternateCNICModal();
+                checkCategoryDiscount(cnic, categoryId, 'EmployeeParent');
+            } else {
+                alert('Please enter a valid 13-digit CNIC');
+            }
+        };
+
+        window.closeAlternateCNICModal = function() {
+            const modal = document.getElementById('alternateCNICModal');
+            if (modal) modal.remove();
+        };
+
+        window.closeCategoryDiscountModal = function() {
+            const modal = document.getElementById('categoryDiscountModal');
+            if (modal) modal.remove();
+        };
+
+        window.applyDiscount = function(employeeId, employeeName, admissionDiscount, tuitionDiscount, paymentMode) {
+            admissionDiscountInput.value = admissionDiscount;
+            tuitionDiscountInput.value = tuitionDiscount;
+            setHiddenField('SelectedEmployeeId', employeeId);
+            setHiddenField('PaymentMode', paymentMode);
+            closeCategoryDiscountModal();
+            showSuccess(`Discount applied! Payment mode: ${paymentMode}`);
+        };
+
+        window.applySiblingDiscount = function(admission, tuition, siblingCount) {
+            admissionDiscountInput.value = admission;
+            tuitionDiscountInput.value = tuition;
+            
+            // Store sibling count for backend processing
+            setHiddenField('CalculatedSiblingCount', siblingCount);
+            
+            closeCategoryDiscountModal();
+            
+            const message = siblingCount > 0 
+                ? `✓ Sibling discount applied! All ${siblingCount} sibling(s) will be updated.` 
+                : '✓ Sibling discount applied!';
+            showSuccess(message);
+        };
+
+        window.showCustomRatioModal = function(employeeId, employeeName, admissionDiscount, tuitionDiscount) {
+            const modalHTML = `
+                <div id="customRatioModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" style="animation: fadeIn 0.3s;">
+                    <div class="bg-white rounded-xl shadow-2xl max-w-md w/full mx-4" style="animation: slideUp 0.3s;">
+                        <div class="bg-gradient-primary px-6 py-4 rounded-t-xl">
+                            <h3 class="text-xl font-semibold text-white">Define Custom Ratio</h3>
+                        </div>
+                        <div class="p-6">
+                            <p class="text-sm text-gray-600 mb-4">Define fee split:</p>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Parent Payment %</label>
+                                    <input type="number" id="parentPercent" class="w-full px-4 py-2 border border-primary-200 rounded-md" min="0" max="100" value="50" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Salary Deduction %</label>
+                                    <input type="number" id="salaryPercent" class="w-full px-4 py-2 border border-primary-200 rounded-md" min="0" max="100" value="50" />
+                                </div>
+                            </div>
+                            <div class="flex gap-3 mt-4">
+                                <button onclick="applyCustomRatio(${employeeId}, '${employeeName}', ${admissionDiscount}, ${tuitionDiscount})" 
+                                        class="flex-1 bg-gradient_primary hover:bg-primary-700 text-white px-4 py-2 rounded-lg">
+                                    Apply
+                                </button>
+                                <button onclick="closeCustomRatioModal()" 
+                                        class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const existingModal = document.getElementById('customRatioModal');
+            if (existingModal) existingModal.remove();
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        };
+
+        window.applyCustomRatio = function(employeeId, employeeName, admissionDiscount, tuitionDiscount) {
+            const parentPercent = parseFloat(document.getElementById('parentPercent').value);
+            const salaryPercent = parseFloat(document.getElementById('salaryPercent').value);
+            
+            if (parentPercent + salaryPercent !== 100) {
+                alert('Total must equal 100%');
+                return;
+            }
+            
+            admissionDiscountInput.value = admissionDiscount;
+            tuitionDiscountInput.value = tuitionDiscount;
+            setHiddenField('SelectedEmployeeId', employeeId);
+            setHiddenField('PaymentMode', 'CustomRatio');
+            setHiddenField('FatherSalaryPercent', salaryPercent);
+            
+            closeCustomRatioModal();
+            closeCategoryDiscountModal();
+            showSuccess(`Custom ratio: ${parentPercent}% parent, ${salaryPercent}% salary`);
+        };
+
+        // ==================== DOM READY ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded - Edit Student Page');
+            
+            // Store initial values for section
+            const initialClassId = classSelect ? classSelect.value : null;
+            const initialSectionId = sectionSelect ? sectionSelect.value : null;
+            
+            console.log('Campus value on load:', campusSelect ? campusSelect.value : 'N/A');
+            console.log('Model StudentCategoryId:', '@Model.StudentCategoryId');
+            
+            // ✅ ALWAYS load categories if campus is present (don't rely on change event)
+            if (campusSelect && campusSelect.value) {
+                console.log('Campus has value, loading categories directly');
+                loadCategories();
+            } else if (campusSelect && campusSelect.options.length === 2) {
+                // Auto-select campus if only one option
+                campusSelect.selectedIndex = 1;
+                console.log('Auto-selected single campus, loading categories');
+                loadCategories();
+            }
+            
+            // Load sections if class already selected - WITH SECTION PRE-SELECTION
+            if (classSelect && classSelect.value) {
+                loadSectionsByClass(classSelect.value, initialSectionId);
+                loadOptionalCharges();
+            }
+
+            // FILE VALIDATION
+            document.querySelectorAll('.file-input').forEach(function(input) {
+                input.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    const errorSpan = e.target.nextElementSibling;
+
+                    if (file) {
+                        const fileType = file.type;
+                        const fileSize = file.size;
+                        const isImage = fileType.startsWith('image/') && (fileType === 'image/jpeg' || fileType === 'image/png' || fileType === 'image/jpg');
+                        const isPDF = fileType === 'application/pdf';
+
+                        if (!isImage && !isPDF) {
+                            if (errorSpan) {
+                                errorSpan.textContent = 'Only JPG, PNG images and PDF files are allowed';
+                                errorSpan.classList.remove('hidden');
+                            }
+                            e.target.value = '';
+                            e.target.classList.add('border-error');
+                            return;
+                        }
+
+                        const maxSize = isImage ? 2 * 1024 * 1024 : 10 * 1024 * 1024;
+                        if (fileSize > maxSize) {
+                            if (errorSpan) {
+                                errorSpan.textContent = isImage ? 'Image < 2MB' : 'PDF < 10MB';
+                                errorSpan.classList.remove('hidden');
+                            }
+                            e.target.value = '';
+                            e.target.classList.add('border-error');
+                            return;
+                        }
+
+                        if (errorSpan) errorSpan.classList.add('hidden');
+                        e.target.classList.remove('border-error');
+                    }
+                });
+            });
+
+            // CNIC INPUT
+            document.querySelectorAll('.cnic-input').forEach(function(input) {
+                input.addEventListener('input', function(e) {
+                    let digits = e.target.value.replace(/\D/g, '');
+                    if (digits.length > 13) digits = digits.substring(0, 13);
+
+                    let formatted = '';
+                    for (let i = 0; i < digits.length; i++) {
+                        if (i === 5 || i === 12) formatted += '-';
+                        formatted += digits[i];
+                    }
+
+                    e.target.value = formatted;
+                    validateCnic(e.target);
+                    
+                    if (digits.length === 13 && e.target.name === 'FatherCNIC') {
+                        checkFatherCNIC(formatted);
+                        
+                        if (categorySelect && categorySelect.value) {
+                            const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+                            const categoryType = selectedOption.getAttribute('data-type');
+                            const specialCategories = ['EmployeeParent', 'Sibling', 'Alumni'];
+                            
+                            if (specialCategories.includes(categoryType)) {
+                                checkCategoryDiscount(formatted, categorySelect.value, categoryType);
+                            }
+                        }
+                    }
+                });
+
+                input.addEventListener('blur', function(e) { validateCnic(e.target); });
+            });
+
+            // PHONE INPUT
+            document.querySelectorAll('.phone-input').forEach(function(input) {
+                if (!input.value || input.value.trim() === '' || input.value.trim() === '+92') {
+                    input.value = '+92 ';
+                }
+
+                input.addEventListener('input', function(e) {
+                    let value = e.target.value;
+                    if (!value.startsWith('+92')) {
+                        let digits = value.replace(/\D/g, '');
+                        if (digits.startsWith('92')) digits = digits.substring(2);
+                        value = '+92' + digits;
+                    }
+
+                    let afterPrefix = value.substring(3).replace(/\D/g, '');
+                    if (afterPrefix.length > 10) afterPrefix = afterPrefix.substring(0, 10);
+
+                    let formatted = '+92 ';
+                    for (let i = 0; i < afterPrefix.length; i++) {
+                        if (i === 3) formatted += ' ';
+                        formatted += afterPrefix[i];
+                    }
+
+                    e.target.value = formatted;
+                    validatePhone(e.target);
+                });
+
+                input.addEventListener('blur', function(e) {
+                    if (e.target.value.replace(/\D/g, '').length <= 2) e.target.value = '+92 ';
+                    validatePhone(e.target);
+                });
+            });
+
+            // EVENT LISTENERS
+            if (classSelect) {
+                classSelect.addEventListener('change', function() {
+                    loadSectionsByClass(this.value);
+                    loadOptionalCharges();
+                });
+            }
+            
+            if (campusSelect) {
+                campusSelect.addEventListener('change', function() {
+                    loadCategories();
+                    loadOptionalCharges();
+                });
+            }
+            
+            if (categorySelect) {
+                categorySelect.addEventListener('change', function() {
+                    const selectedOption = this.options[this.selectedIndex];
+                    const showDetailsBtn = document.getElementById('showCategoryDetails');
+                    const categoryType = selectedOption.getAttribute('data-type');
+                    
+                    clearEmployeeDataFields();
+                    
+                    if (selectedOption.value) {
+                        const admissionDiscount = parseFloat(selectedOption.getAttribute('data-admission') || 0);
+                        const tuitionDiscount = parseFloat(selectedOption.getAttribute('data-tuition') || 0);
+                        
+                        if (admissionDiscountInput) admissionDiscountInput.value = admissionDiscount;
+                        if (tuitionDiscountInput) tuitionDiscountInput.value = tuitionDiscount;
+                        
+                        if (showDetailsBtn) {
+                            showDetailsBtn.disabled = false;
+                            showDetailsBtn.title = 'Click to view category details or apply discount';
+                        }
+                        
+                        const specialCategories = ['EmployeeParent', 'Sibling', 'Alumni'];
+                        if (specialCategories.includes(categoryType)) {
+                            const fatherCnicInput = document.querySelector('[name="FatherCNIC"]');
+                            if (fatherCnicInput && fatherCnicInput.value.replace(/\D/g, '').length === 13) {
+                                checkCategoryDiscount(fatherCnicInput.value, selectedOption.value, categoryType);
+                            }
+                        }
+                    } else {
+                        if (admissionDiscountInput) admissionDiscountInput.value = 0;
+                        if (tuitionDiscountInput) tuitionDiscountInput.value = 0;
+                        
+                        if (showDetailsBtn) {
+                            showDetailsBtn.disabled = true;
+                            showDetailsBtn.title = 'Select a category first';
+                        }
+                    }
+                });
+            }
+
+            $('#isFatherDeceased').change(function() {
+                $('#guardianInfo').toggleClass('hidden', !this.checked);
+            });
+
+            if ($('#isFatherDeceased').is(':checked')) {
+                $('#guardianInfo').removeClass('hidden');
+            }
+
+            // FORM VALIDATION
+            $('#studentForm').on('submit', function(e) {
+                let isValid = true;
+                let errorMessages = [];
+
+                $('input[required], select[required], textarea[required]').each(function() {
+                    if (!$(this).val() || $(this).val() === '') {
+                        isValid = false;
+                        $(this).addClass('border-error');
+                    } else {
+                        $(this).removeClass('border-error');
+                    }
+                });
+
+                $('.cnic-input').each(function() {
+                    let digits = $(this).val().replace(/\D/g, '');
+                    let isRequired = $(this).attr('required');
+
+                    if ((isRequired && digits.length !== 13) || (digits.length > 0 && digits.length !== 13)) {
+                        isValid = false;
+                        $(this).addClass('border-error');
+                        $(this).parent().find('.cnic-error').removeClass('hidden');
+                        if (errorMessages.indexOf('CNIC must be 13 digits') === -1) {
+                            errorMessages.push('CNIC must be 13 digits');
+                        }
+                    }
+                });
+
+                $('.phone-input').each(function() {
+                    let afterPrefix = $(this).val().substring(3).replace(/\D/g, '');
+                    let isRequired = $(this).attr('required');
+
+                    if ((isRequired && afterPrefix.length !== 10) || (afterPrefix.length > 0 && afterPrefix.length !== 10)) {
+                        isValid = false;
+                        $(this).addClass('border-error');
+                        $(this).parent().find('.phone-error').removeClass('hidden');
+                        if (errorMessages.indexOf('Phone must be complete') === -1) {
+                            errorMessages.push('Phone must be complete');
+                        }
+                    }
+                });
+
+                if (!isValid) {
+                    e.preventDefault();
+                    alert('Please fix:\n\n' + errorMessages.join('\n'));
+                }
+            });
+        });
+    </script>
+
+    <style>
+        .animate-fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1, transform: translateY(0); } }
+        @@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        input:focus, select:focus, textarea:focus { outline: none; }
+        .border-error { border-color: #ef4444 !important; }
+        .text-error { color: #ef4444; }
+        .hidden { display: none; }
+    </style>
+}
