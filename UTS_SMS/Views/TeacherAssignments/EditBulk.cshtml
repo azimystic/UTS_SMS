@@ -1,0 +1,303 @@
+@model IEnumerable<TeacherAssignment>
+
+@{
+    ViewData["Title"] = "Edit Teacher Assignments";
+    var teacherId = ViewBag.TeacherId;
+    var subjectId = ViewBag.SubjectId;
+    var teacher = Model.FirstOrDefault()?.Teacher;
+    var subject = Model.FirstOrDefault()?.Subject;
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-primary-800">👨‍🏫 Edit Teacher Assignments</h1>
+            <p class="text-neutral-600 mt-2">
+                Editing assignments for <strong>@teacher?.FullName</strong> teaching <strong>@subject?.Name</strong>
+            </p>
+        </div>
+
+        <!-- Form -->
+        <div class="bg-white rounded-2xl shadow-sms-xl p-6">
+            <form id="assignmentForm" asp-action="EditBulk" method="post" class="space-y-6">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="teacherId" value="@teacherId" />
+                <input type="hidden" name="subjectId" value="@subjectId" />
+
+                <div id="validationSummary" class="hidden bg-error-light border-l-4 border-error text-error p-4 rounded-lg mb-4"></div>
+
+                <!-- Teacher and Subject Info (Read-only) -->
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border-2 border-blue-200">
+                    <h3 class="text-lg font-semibold text-primary-800 mb-4">Assignment Details</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Teacher (Read-only) -->
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-2">Teacher</label>
+                            <div class="w-full px-4 py-3 bg-neutral-100 border border-neutral-300 rounded-lg text-neutral-700">
+                                @teacher?.FullName
+                            </div>
+                        </div>
+
+                        <!-- Subject (Read-only) -->
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-2">Subject</label>
+                            <div class="w-full px-4 py-3 bg-neutral-100 border border-neutral-300 rounded-lg text-neutral-700">
+                                @subject?.Name (@subject?.Code)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Existing Assignments -->
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border-2 border-purple-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-primary-800">Class & Section Assignments</h3>
+                        <button type="button" onclick="addRow()" class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center text-sm shadow-md hover:shadow-lg">
+                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Add Row
+                        </button>
+                    </div>
+
+                    <div id="assignmentRows" class="space-y-3">
+                        @foreach (var assignment in Model)
+                        {
+                            <div class="assignment-row bg-white p-4 rounded-lg shadow-sm border border-primary-100" id="row-existing-@assignment.Id">
+                                <input type="hidden" name="assignmentIds" value="@assignment.Id" />
+                                <div class="flex items-center space-x-3">
+                                    <div class="flex-1">
+                                        <label class="block text-sm font-medium text-neutral-700 mb-1">Class <span class="text-red-500">*</span></label>
+                                        <select name="classIds" required 
+                                                class="class-select w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300"
+                                                onchange="loadSections(this, 'existing-@assignment.Id')">
+                                            <option value="">-- Select Class --</option>
+                                            @foreach (var item in (SelectList)ViewData["ClassId"])
+                                            {
+                                                <option value="@item.Value" selected="@(item.Value == assignment.ClassId.ToString())">@item.Text</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="flex-1">
+                                        <label class="block text-sm font-medium text-neutral-700 mb-1">Section <span class="text-red-500">*</span></label>
+                                        <select name="sectionIds" required id="section-existing-@assignment.Id"
+                                                class="section-select w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300">
+                                            <option value="@assignment.SectionId" selected>@assignment.Section?.Name</option>
+                                        </select>
+                                    </div>
+                                    <div class="pt-6">
+                                        <button type="button" onclick="removeRow('existing-@assignment.Id')" 
+                                                class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white p-2 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Submit Buttons -->
+                <div class="flex space-x-4 pt-6">
+                    <button type="submit" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-primary-600 hover:to-blue-700 text-white font-medium py-3 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-sms-lg flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Save Changes
+                    </button>
+                    <a asp-action="Index" class="bg-neutral-100 hover:bg-primary-100 text-primary-800 font-medium py-3 px-8 rounded-xl transition-all duration-300 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let rowCounter = 0;
+        let allClasses = @Html.Raw(Json.Serialize(ViewBag.ClassId));
+        let allSections = {}; // Will store sections by classId
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load sections for existing rows
+            document.querySelectorAll('.class-select').forEach(select => {
+                if (select.value) {
+                    const rowId = select.closest('.assignment-row').id.replace('row-', '');
+                    loadSections(select, rowId);
+                }
+            });
+        });
+
+        function addRow() {
+            rowCounter++;
+            const rowsContainer = document.getElementById('assignmentRows');
+            
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'assignment-row bg-white p-4 rounded-lg shadow-sm border border-green-200';
+            rowDiv.id = `row-new-${rowCounter}`;
+            rowDiv.innerHTML = `
+                <input type="hidden" name="assignmentIds" value="0" />
+                <div class="flex items-center space-x-3">
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Class <span class="text-red-500">*</span></label>
+                        <select name="classIds" required 
+                                class="class-select w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300"
+                                onchange="loadSections(this, 'new-${rowCounter}')">
+                            <option value="">-- Select Class --</option>
+                            ${allClasses.map(c => `<option value="${c.value}">${c.text}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Section <span class="text-red-500">*</span></label>
+                        <select name="sectionIds" required id="section-new-${rowCounter}"
+                                class="section-select w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300">
+                            <option value="">-- Select Section --</option>
+                        </select>
+                    </div>
+                    <div class="pt-6">
+                        <button type="button" onclick="removeRow('new-${rowCounter}')" 
+                                class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white p-2 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            rowsContainer.appendChild(rowDiv);
+        }
+
+        function removeRow(rowId) {
+            const row = document.getElementById(`row-${rowId}`);
+            if (row) {
+                if (confirm('Are you sure you want to remove this assignment?')) {
+                    row.remove();
+                }
+            }
+        }
+
+        function loadSections(selectElement, rowId) {
+            const classId = selectElement.value;
+            const sectionSelect = document.getElementById(`section-${rowId}`);
+            
+            if (!classId) {
+                sectionSelect.innerHTML = '<option value="">-- Select Section --</option>';
+                return;
+            }
+
+            // Save current selection if it exists
+            const currentSelection = sectionSelect.value;
+
+            // Check if we already have sections for this class
+            if (allSections[classId]) {
+                populateSections(sectionSelect, allSections[classId], currentSelection);
+                return;
+            }
+
+            // Fetch sections from server
+            fetch(`/TeacherAssignments/GetSectionsByClass?classId=${classId}`)
+                .then(response => response.json())
+                .then(data => {
+                    allSections[classId] = data;
+                    populateSections(sectionSelect, data, currentSelection);
+                })
+                .catch(error => {
+                    console.error('Error loading sections:', error);
+                    sectionSelect.innerHTML = '<option value="">Error loading sections</option>';
+                });
+        }
+
+        function populateSections(selectElement, sections, selectedValue = null) {
+            selectElement.innerHTML = '<option value="">-- Select Section --</option>';
+            sections.forEach(section => {
+                const option = document.createElement('option');
+                option.value = section.id;
+                option.textContent = section.name;
+                if (selectedValue && section.id == selectedValue) {
+                    option.selected = true;
+                }
+                selectElement.appendChild(option);
+            });
+        }
+
+        // Form validation before submission
+        document.getElementById('assignmentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const validationSummary = document.getElementById('validationSummary');
+            
+            // Clear previous validation messages
+            validationSummary.innerHTML = '';
+            validationSummary.classList.add('hidden');
+            
+            // Get all class and section values
+            const classSelects = document.querySelectorAll('select[name="classIds"]');
+            const sectionSelects = document.querySelectorAll('select[name="sectionIds"]');
+            
+            if (classSelects.length === 0) {
+                validationSummary.innerHTML = '<strong>Error:</strong> At least one assignment is required.';
+                validationSummary.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+            
+            const combinations = [];
+            let hasError = false;
+            
+            for (let i = 0; i < classSelects.length; i++) {
+                const classId = classSelects[i].value;
+                const sectionId = sectionSelects[i].value;
+                
+                if (!classId || !sectionId) {
+                    validationSummary.innerHTML = '<strong>Error:</strong> Please select both Class and Section for all rows.';
+                    validationSummary.classList.remove('hidden');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    hasError = true;
+                    break;
+                }
+                
+                const combo = `${classId}-${sectionId}`;
+                if (combinations.includes(combo)) {
+                    validationSummary.innerHTML = '<strong>Error:</strong> Duplicate Class and Section combination found. Each combination must be unique.';
+                    validationSummary.classList.remove('hidden');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    hasError = true;
+                    break;
+                }
+                
+                combinations.push(combo);
+            }
+            
+            if (!hasError) {
+                // Submit the form
+                this.submit();
+            }
+        });
+    </script>
+
+    <style>
+        .assignment-row {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+}

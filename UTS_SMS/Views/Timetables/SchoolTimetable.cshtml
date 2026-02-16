@@ -1,0 +1,164 @@
+﻿@model IEnumerable<Timetable>
+
+@{
+    ViewData["Title"] = "School Timetable";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="w-full mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-primary-800">🏫 School Timetable</h1>
+            <p class="text-neutral-600 mt-2">Complete overview of all class schedules</p>
+        </div>
+
+        <!-- Class Selection -->
+        <div class="bg-white rounded-2xl shadow-sms-xl p-6 mb-8">
+            <h2 class="text-xl font-semibold text-primary-800 mb-4">Class Selection</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                @foreach (var timetable in Model)
+                {
+                    <a href="#class-@timetable.Id"
+                       class="bg-primary-50 hover:bg-primary-100 text-primary-800 px-4 py-3 rounded-lg text-center transition-all duration-300 transform hover:scale-105">
+                        <div class="font-medium">@timetable.Class?.Name</div>
+                        <div class="text-sm">@timetable.Section?.Name</div>
+                    </a>
+                }
+            </div>
+        </div>
+
+        <!-- Individual Class Timetables - 2 Column Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            @foreach (var timetable in Model)
+            {
+                <div id="class-@timetable.Id" class="bg-white rounded-2xl shadow-sms-xl overflow-hidden">
+                    <div class="px-6 py-4 bg-neutral-50 border-b">
+                        <h2 class="text-xl font-semibold text-primary-800">@timetable.Class?.Name - @timetable.Section?.Name</h2>
+                        <p class="text-neutral-600 text-sm">Start Time: @timetable.StartTime.ToString("hh:mm tt") | Periods: @timetable.NumberOfLectures</p>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead class="bg-neutral-50">
+                                <tr>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-neutral-700">Day</th>
+                                    @* Build header dynamically based on slots *@
+                                    @{
+                                        var firstDaySlots = timetable.TimetableSlots
+                                            .Where(s => s.DayOfWeek == 1)
+                                            .OrderBy(s => s.StartTime)
+                                            .ToList();
+                                            
+                                        foreach (var slot in firstDaySlots)
+                                        {
+                                            <th class="px-2 py-2 text-center text-xs font-medium text-neutral-700 @(slot.IsBreak ? "bg-error-light" : slot.IsZeroPeriod ? "bg-warning-light" : "")">
+                                                @if (slot.IsZeroPeriod)
+                                                {
+                                                    <span class="text-yellow-700">Zero</span>
+                                                }
+                                                else if (slot.IsBreak)
+                                                {
+                                                    <span class="text-error">@slot.CustomTitle</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>P@(slot.PeriodNumber)</span>
+                                                }
+                                            </th>
+                                        }
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-primary-100">
+                                @foreach (var day in new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday" })
+                                {
+                                    var dayNum = Array.IndexOf(
+                                    new[] { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" },
+                                    day
+                                    );
+                                    var daySlots = timetable.TimetableSlots
+                                        .Where(s => s.DayOfWeek == dayNum)
+                                        .OrderBy(s => s.StartTime)
+                                        .ToList();
+
+                                    <tr class="hover:bg-neutral-50">
+                                        <td class="px-3 py-2 font-medium text-primary-800 text-xs">@day.Substring(0, 3)</td>
+
+                                        @foreach (var slot in daySlots)
+                                        {
+                                            <td class="px-2 py-2 text-xs @(slot.IsBreak ? "bg-error-light" : slot.IsZeroPeriod ? "bg-warning-light" : "")">
+                                                @if (slot.IsZeroPeriod)
+                                                {
+                                                    <div class="text-center">
+                                                        <span class="bg-warning-light text-yellow-800 px-1 py-0.5 rounded text-xs">Zero</span>
+                                                    </div>
+                                                }
+                                                else if (slot.IsBreak)
+                                                {
+                                                    <div class="bg-error-light text-error px-2 py-1 rounded-lg text-center">
+                                                        <div class="font-medium text-xs">@slot.CustomTitle</div>
+                                                        <div class="text-xs text-error mt-0.5">
+                                                            @slot.StartTime.ToString("HH:mm")-@slot.EndTime.ToString("HH:mm")
+                                                        </div>
+                                                    </div>
+                                                }
+                                                else if (slot.TeacherAssignment != null)
+                                                {
+                                                    <div>
+                                                        <div class="font-medium truncate">@slot.TeacherAssignment.Subject?.Name</div>
+                                                        <div class="text-neutral-600 text-xs truncate">@slot.TeacherAssignment.Teacher?.FullName</div>
+                                                        <div class="text-xs text-neutral-500 mt-0.5">
+                                                            @slot.StartTime.ToString("HH:mm")-@slot.EndTime.ToString("HH:mm")
+                                                        </div>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div>
+                                                        <span class="text-neutral-400 text-xs">Free</span>
+                                                        <div class="text-xs text-neutral-500 mt-0.5">
+                                                            @slot.StartTime.ToString("HH:mm")-@slot.EndTime.ToString("HH:mm")
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="px-6 py-3 bg-neutral-50 border-t flex justify-end">
+                        <a asp-action="Details" asp-route-id="@timetable.Id" class="text-primary-600 hover:text-primary-800 text-sm font-medium flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="bg-white rounded-2xl shadow-sms-xl p-12 text-center">
+                <svg class="w-16 h-16 text-neutral-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <h3 class="text-lg font-medium text-primary-800 mb-2">No timetables available</h3>
+                <p class="text-neutral-500 mb-4">Create timetables to see the school schedule.</p>
+                @if (User.IsInRole("Admin"))
+                {
+                    <a asp-action="Create" class="bg-gradient-primary hover:shadow-sms-lg text-white px-6 py-2 rounded-lg transition-all duration-300 inline-flex items-center shadow">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Create Timetable
+                    </a>
+                }
+            </div>
+        }
+    </div>
+</div>

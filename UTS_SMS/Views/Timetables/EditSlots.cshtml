@@ -1,0 +1,1062 @@
+﻿@model Timetable
+
+@{
+    ViewData["Title"] = "Assign Timetable Slots";
+    var teacherAssignments = ViewBag.TeacherAssignments as IEnumerable<TeacherAssignment>;
+    var daysOfWeek = new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday" };
+
+    // Get break after period from model, default to half if not set
+    int breakAfterPeriod = Model.BreakAfterPeriod > 0 ? Model.BreakAfterPeriod : Model.NumberOfLectures / 2;
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-primary-800">📅 Assign Teachers - @Model.Class?.Name @Model.Section?.Name</h1>
+            <p class="text-neutral-600 mt-2">Assign teachers to specific periods and configure breaks</p>
+        </div>
+
+        <!-- Success Message -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="bg-success-light border-l-4 border-success text-success p-4 mb-6 rounded-xl animate-fade-in">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    @TempData["SuccessMessage"]
+                </div>
+            </div>
+        }
+
+        <!-- Multiple Breaks Configuration Panel -->
+        <div class="bg-white rounded-2xl shadow-sms-xl p-6 mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-primary-800">Multiple Breaks Configuration</h2>
+                <button type="button" id="addBreakBtn" class="bg-success hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors">
+                    + Add Break
+                </button>
+            </div>
+            <div id="breaksContainer" class="space-y-4">
+                @if (Model.TimetableBreaks != null && Model.TimetableBreaks.Any())
+                {
+                    foreach (var tbreak in Model.TimetableBreaks.OrderBy(b => b.AfterPeriod))
+                    {
+                        <div class="break-item bg-neutral-50 p-4 rounded-lg border border-primary-200">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                                <div>
+                                    <label class="block text-sm font-medium text-neutral-700 mb-2">Title</label>
+                                    <input type="text" value="@tbreak.Title" class="break-title w-full px-3 py-2 border border-primary-200 rounded-lg" placeholder="e.g., Morning Break">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-neutral-700 mb-2">After Period</label>
+                                    <select class="break-after-period w-full px-3 py-2 border border-primary-200 rounded-lg">
+                                        @for (int i = 1; i < Model.NumberOfLectures; i++)
+                                        {
+                                            if (i == tbreak.AfterPeriod)
+                                            {
+                                                <option value="@i" selected>Period @i</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@i">Period @i</option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-neutral-700 mb-2">Duration (min)</label>
+                                    <input type="number" value="@tbreak.Duration" min="1" max="120" class="break-duration w-full px-3 py-2 border border-primary-200 rounded-lg">
+                                </div>
+                                <div>
+                                    <button type="button" class="remove-break-btn bg-error hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors w-full" data-break-id="@tbreak.Id">
+                                        Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center py-8 text-neutral-500">
+                        <p>No breaks configured. Click "Add Break" to add multiple breaks.</p>
+                    </div>
+                }
+            </div>
+            <div class="mt-4 flex justify-end">
+                <button type="button" id="saveBreaksBtn" class="bg-gradient-primary hover:shadow-sms-lg text-white px-6 py-2 rounded-lg transition-all duration-300">
+                    Save Breaks Configuration
+                </button>
+            </div>
+        </div>
+
+        <!-- Teacher Assignments Info -->
+        <div class="bg-white rounded-2xl shadow-sms-xl p-6 mb-8">
+            <h2 class="text-xl font-semibold text-primary-800 mb-4">Available Teacher Assignments</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="teacherAssignmentsContainer">
+                @if (teacherAssignments != null && teacherAssignments.Any())
+                {
+                    @foreach (var ta in teacherAssignments)
+                    {
+                        var onTime = ta.Teacher?.OnTime?.ToString("hh\\:mm tt") ?? "N/A";
+                        var offTime = ta.Teacher?.OffTime?.ToString("hh\\:mm tt") ?? "N/A";
+                        <div class="teacher-assignment-card bg-primary-50 rounded-lg p-4 border border-blue-200 cursor-pointer hover:bg-primary-100 transition-colors duration-200" 
+                             data-ta-id="@ta.Id" 
+                             data-subject="@ta.Subject?.Name" 
+                             data-teacher="@ta.Teacher?.FullName"
+                             data-on-time="@(ta.Teacher?.OnTime?.ToString("HH:mm") ?? "")"
+                             data-off-time="@(ta.Teacher?.OffTime?.ToString("HH:mm") ?? "")"
+                             draggable="true">
+                            <div class="font-medium text-primary-800">@ta.Subject?.Name</div>
+                            <div class="text-sm text-neutral-600">@ta.Teacher?.FullName</div>
+                            @if (ta.Teacher?.OnTime != null && ta.Teacher?.OffTime != null)
+                            {
+                                <div class="text-xs text-success mt-1">
+                                    🕒 @onTime - @offTime
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-xs text-neutral-400 mt-1">
+                                    ⚠️ No time set
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="col-span-full text-center py-8 text-neutral-500">
+                        <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <p>No teacher assignments found for this class and section.</p>
+                        <a asp-controller="TeacherAssignments" asp-action="Create" class="text-primary-600 hover:text-primary-800 mt-2 inline-block">
+                            Create Teacher Assignment
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Timetable Slots -->
+        <div class="bg-white rounded-2xl shadow-sms-xl overflow-hidden">
+            <div class="px-6 py-4 bg-neutral-50 border-b">
+                <h2 class="text-lg font-semibold text-primary-800">Weekly Schedule Assignment</h2>
+                <p class="text-sm text-neutral-600">
+                    Drag teacher assignments to periods. Break periods and zero periods are not assignable.
+                </p>
+            </div>
+
+            <form id="slotForm" method="post">
+                @Html.AntiForgeryToken()
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-neutral-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-sm font-medium text-neutral-700">Day/Period</th>
+                                @if (Model.ZeroPeriodDuration > 0)
+                                {
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-neutral-700 bg-yellow-100">
+                                        <span class="text-yellow-800 font-semibold">Zero</span>
+                                    </th>
+                                }
+                                @{
+                                    var headerBreaks = Model.TimetableBreaks?.OrderBy(b => b.AfterPeriod).ToList() ?? new List<TimetableBreak>();
+                                }
+                                @for (int p = 1; p <= Model.NumberOfLectures; p++)
+                                {
+                                    @* Check for additional breaks *@
+                                    @if (headerBreaks.Any())
+                                    {
+                                        var breakAfterPrevPeriod = headerBreaks.FirstOrDefault(b => b.AfterPeriod == p - 1);
+                                        if (breakAfterPrevPeriod != null)
+                                        {
+                                            <th class="px-6 py-3 text-center text-sm font-medium text-neutral-700 bg-red-100">
+                                                <span class="text-red-700 font-semibold">@breakAfterPrevPeriod.Title</span>
+                                            </th>
+                                        }
+                                    }
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-neutral-700">
+                                        <span>@p</span>
+                                    </th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-primary-100">
+                            @for (int day = 1; day <= 5; day++)
+                            {
+                                var daySlots = Model.TimetableSlots?
+                                .Where(s => s.DayOfWeek == day)
+                                .OrderBy(s => s.StartTime)
+                                .ToList() ?? new List<TimetableSlot>();
+
+                                var dayBreaks = Model.TimetableBreaks?.OrderBy(b => b.AfterPeriod).ToList() ?? new List<TimetableBreak>();
+
+                                <tr>
+                                    <td class="px-6 py-4 font-medium text-primary-800 bg-neutral-50">@daysOfWeek[day - 1]</td>
+                                    
+                                    @* Zero Period *@
+                                    @if (Model.ZeroPeriodDuration > 0)
+                                    {
+                                        var zeroSlot = daySlots.FirstOrDefault(s => s.PeriodNumber == 0);
+                                        <td class="px-4 py-3 text-sm bg-yellow-100 timetable-slot" data-slot-id="@(zeroSlot?.Id ?? 0)" data-day="@day" data-period="0" data-is-zero="true">
+                                            @if (zeroSlot != null)
+                                            {
+                                                <div class="text-center">
+                                                    <span class="inline-block bg-yellow-200 text-yellow-800 px-3 py-1.5 rounded text-xs font-semibold border border-yellow-300">ZERO PERIOD</span>
+                                                    <div class="text-xs text-gray-600 mt-1">
+                                                        @zeroSlot.StartTime.ToString("HH:mm") - @zeroSlot.EndTime.ToString("HH:mm")
+                                                    </div>
+                                                    <div class="text-xs text-gray-500 mt-1">Not assignable</div>
+                                                </div>
+                                            }
+                                        </td>
+                                    }
+
+                                    @* Regular periods with breaks *@
+                                    @for (int p = 1; p <= Model.NumberOfLectures; p++)
+                                    {
+                                        @* Show break before this period if configured *@
+                                        @if (dayBreaks.Any())
+                                        {
+                                            var breakAfterPrevPeriod = dayBreaks.FirstOrDefault(b => b.AfterPeriod == p - 1);
+                                            if (breakAfterPrevPeriod != null)
+                                            {
+                                                var breakSlot = daySlots.FirstOrDefault(s => s.IsBreak && s.CustomTitle == breakAfterPrevPeriod.Title);
+                                                <td class="px-4 py-3 text-sm bg-red-100 timetable-slot" data-slot-id="@(breakSlot?.Id ?? 0)" data-day="@day" data-period="@(breakSlot?.PeriodNumber ?? 999)" data-is-break="true">
+                                                    @if (breakSlot != null)
+                                                    {
+                                                        <div class="text-center">
+                                                            <span class="inline-block bg-red-200 text-red-800 px-3 py-1.5 rounded text-xs font-semibold border border-red-300">@breakAfterPrevPeriod.Title</span>
+                                                            <div class="text-xs text-gray-600 mt-1">
+                                                                @breakSlot.StartTime.ToString("HH:mm") - @breakSlot.EndTime.ToString("HH:mm")
+                                                            </div>
+                                                            <div class="text-xs text-gray-500 mt-1">Not assignable</div>
+                                                        </div>
+                                                    }
+                                                </td>
+                                            }
+                                        }
+
+                                         @* Regular period *@
+                                        var slot = daySlots.FirstOrDefault(s => s.PeriodNumber == p);
+                                        <td class="px-4 py-3 text-sm bg-white timetable-slot" data-slot-id="@(slot?.Id ?? 0)" data-day="@day" data-period="@p">
+                                            @if (slot != null && slot.Id > 0)
+                                            {
+                                                <div>
+                                                    <div class="text-xs text-neutral-500 mb-1">
+                                                        @slot.StartTime.ToString("HH:mm") - @slot.EndTime.ToString("HH:mm")
+                                                    </div>
+                                                    <div class="slot-content min-h-[60px] p-2 rounded border border-dashed border-primary-200 drop-zone"
+                                                         data-ta-id="@(slot.TeacherAssignmentId?.ToString() ?? "")">
+                                                        @if (slot.TeacherAssignmentId.HasValue && teacherAssignments != null)
+                                                        {
+                                                            var ta = teacherAssignments.FirstOrDefault(t => t.Id == slot.TeacherAssignmentId);
+                                                            if (ta != null)
+                                                            {
+                                                                <div class="bg-success-light p-2 rounded">
+                                                                    <div class="font-medium text-sm">@ta.Subject?.Name</div>
+                                                                    <div class="text-xs">@ta.Teacher?.FullName</div>
+                                                                    <button type="button" class="mt-1 text-error text-xs clear-slot hover:underline">Remove</button>
+                                                                </div>
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="text-neutral-400 text-xs flex items-center justify-center h-full">
+                                                                Drag teacher here
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="text-xs text-neutral-500 mb-1">No slot data</div>
+                                                <div class="min-h-[60px] p-2 rounded border border-dashed border-red-300 bg-error-light">
+                                                    <div class="text-red-400 text-xs flex items-center justify-center h-full">
+                                                        Slot error - refresh page
+                                                    </div>
+                                                </div>
+                                            }
+                                        </td>
+                                         }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+
+            <!-- Actions -->
+            <div class="px-6 py-4 bg-neutral-50 border-t flex justify-end space-x-4">
+                <button type="button" id="autoCompleteBtn" class="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300 flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    Auto Complete
+                </button>
+                <button type="button" id="saveBtn" class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300 flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Save Assignments
+                </button>
+                <a asp-action="Details" asp-route-id="@Model.Id" class="bg-neutral-100 hover:bg-primary-100 text-primary-800 font-medium py-2 px-6 rounded-lg transition-all duration-300 flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Back to Details
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Auto Complete Modal -->
+<div id="autoCompleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6">
+        <h3 class="text-xl font-bold text-primary-800 mb-4">Auto Complete Timetable</h3>
+        <p class="text-neutral-600 mb-6">Choose how to auto-fill the timetable slots:</p>
+        
+        <div class="space-y-4 mb-6">
+            <button type="button" id="fillRemainingBtn" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 flex items-center justify-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Fill Remaining Empty Slots
+            </button>
+            
+            <button type="button" id="clearAndFillBtn" class="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 flex items-center justify-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                Clear All & Fill
+            </button>
+        </div>
+        
+        <button type="button" id="cancelAutoCompleteBtn" class="w-full bg-neutral-200 hover:bg-neutral-300 text-neutral-700 font-medium py-2 px-6 rounded-lg transition-all duration-300">
+            Cancel
+        </button>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Initializing timetable editor...');
+            
+            const saveBtn = document.getElementById('saveBtn');
+            const teacherCards = document.querySelectorAll('.teacher-assignment-card');
+            const dropZones = document.querySelectorAll('.drop-zone');
+            let changes = new Map();
+            let selectedTeacherId = null;
+
+            console.log(`Found ${teacherCards.length} teacher cards and ${dropZones.length} drop zones`);
+
+            // Setup teacher cards for dragging
+            teacherCards.forEach((card, index) => {
+                console.log(`Setting up teacher card ${index}:`, card.dataset.taId);
+                
+                card.setAttribute('draggable', 'true');
+
+                card.addEventListener('dragstart', function(e) {
+                    console.log('Drag started for teacher:', this.dataset.taId);
+                    e.dataTransfer.setData('text/plain', this.dataset.taId);
+                    e.dataTransfer.setData('application/json', JSON.stringify({
+                        taId: this.dataset.taId,
+                        subject: this.dataset.subject,
+                        teacher: this.dataset.teacher
+                    }));
+                    e.dataTransfer.effectAllowed = 'copy';
+                    this.classList.add('opacity-50', 'scale-95');
+                });
+
+                card.addEventListener('dragend', function() {
+                    this.classList.remove('opacity-50', 'scale-95');
+                });
+
+                card.addEventListener('click', function() {
+                    selectTeacherAssignment(this.dataset.taId, this.dataset.subject);
+                });
+            });
+
+            // Setup drop zones
+            dropZones.forEach((zone, index) => {
+                const slotContainer = zone.closest('.timetable-slot');
+                const slotId = slotContainer.dataset.slotId;
+                
+                console.log(`Setting up drop zone ${index} with slot ID: ${slotId}`);
+
+                if (slotId === '0') {
+                    console.warn(`Drop zone ${index} has invalid slot ID (0)`);
+                }
+
+                zone.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'copy';
+                    this.classList.add('bg-primary-50', 'border-blue-400', 'border-2');
+                });
+
+                zone.addEventListener('dragenter', function(e) {
+                    e.preventDefault();
+                    this.classList.add('bg-primary-50', 'border-blue-400', 'border-2');
+                });
+
+                zone.addEventListener('dragleave', function(e) {
+                    const rect = this.getBoundingClientRect();
+                    const x = e.clientX;
+                    const y = e.clientY;
+                    
+                    if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
+                        this.classList.remove('bg-primary-50', 'border-blue-400', 'border-2');
+                    }
+                });
+
+                zone.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('bg-primary-50', 'border-blue-400', 'border-2');
+                    
+                    console.log('Drop event triggered!');
+                    
+                    const taId = e.dataTransfer.getData('text/plain');
+                    let teacherData;
+                    
+                    try {
+                        teacherData = JSON.parse(e.dataTransfer.getData('application/json'));
+                    } catch (ex) {
+                        const card = document.querySelector(`[data-ta-id="${taId}"]`);
+                        if (card) {
+                            teacherData = {
+                                taId: taId,
+                                subject: card.dataset.subject,
+                                teacher: card.dataset.teacher
+                            };
+                        }
+                    }
+                    
+                    if (taId && teacherData) {
+                        console.log('Assigning teacher:', teacherData);
+                        assignTeacherToSlot(this, teacherData);
+                    } else {
+                        console.error('No teacher data found in drop event');
+                    }
+                });
+
+                zone.addEventListener('click', function() {
+                    if (selectedTeacherId) {
+                        const card = document.querySelector(`[data-ta-id="${selectedTeacherId}"]`);
+                        if (card) {
+                            const teacherData = {
+                                taId: selectedTeacherId,
+                                subject: card.dataset.subject,
+                                teacher: card.dataset.teacher
+                            };
+                            assignTeacherToSlot(this, teacherData);
+                        }
+                    }
+                });
+            });
+
+            function selectTeacherAssignment(taId, subjectName) {
+                console.log('Selecting teacher:', taId);
+                
+                teacherCards.forEach(card => {
+                    card.classList.remove('ring-2', 'ring-blue-500', 'ring-offset-2');
+                });
+
+                const selectedCard = document.querySelector(`[data-ta-id="${taId}"]`);
+                if (selectedCard) {
+                    selectedCard.classList.add('ring-2', 'ring-blue-500', 'ring-offset-2');
+                    selectedTeacherId = taId;
+                    showNotification(`Selected: ${subjectName}`, 'info');
+                }
+            }
+
+            function assignTeacherToSlot(dropZone, teacherData) {
+                console.log('Starting assignment process...');
+                
+                const slotContainer = dropZone.closest('.timetable-slot');
+                const slotId = slotContainer.dataset.slotId;
+
+                console.log('Slot details:', { slotId });
+
+                if (!slotId || slotId === '0') {
+                    showNotification('Invalid slot - please refresh the page and try again.', 'error');
+                    return;
+                }
+
+                // Get slot time information
+                const timeElement = slotContainer.querySelector('.text-xs.text-neutral-500');
+                let slotStartTime = null;
+                let slotEndTime = null;
+                
+                if (timeElement) {
+                    const timeText = timeElement.textContent.trim();
+                    const timeMatch = timeText.match(/(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
+                    if (timeMatch) {
+                        slotStartTime = timeMatch[1];
+                        slotEndTime = timeMatch[2];
+                    }
+                }
+
+                // Validate teacher availability if time data exists
+                const teacherCard = document.querySelector(`[data-ta-id="${teacherData.taId}"]`);
+                if (teacherCard && slotStartTime && slotEndTime) {
+                    const teacherOnTime = teacherCard.dataset.onTime;
+                    const teacherOffTime = teacherCard.dataset.offTime;
+                    
+                    if (teacherOnTime && teacherOffTime) {
+                        // Convert time strings to minutes for proper comparison
+                        const toMinutes = (timeStr) => {
+                            const [h, m] = timeStr.split(':').map(Number);
+                            return h * 60 + m;
+                        };
+                        
+                        const slotStart = toMinutes(slotStartTime);
+                        const slotEnd = toMinutes(slotEndTime);
+                        const teacherStart = toMinutes(teacherOnTime);
+                        const teacherEnd = toMinutes(teacherOffTime);
+                        
+                        // Compare times
+                        if (slotStart < teacherStart || slotEnd > teacherEnd) {
+                            showNotification(
+                                `⚠️ ${teacherData.teacher} is not available during this slot!\n` +
+                                `Teacher hours: ${teacherOnTime} - ${teacherOffTime}\n` +
+                                `Slot time: ${slotStartTime} - ${slotEndTime}`,
+                                'error'
+                            );
+                            return;
+                        }
+                    }
+                }
+
+                const newContent = `
+                    <div class="bg-success-light p-2 rounded">
+                        <div class="font-medium text-sm">${teacherData.subject}</div>
+                        <div class="text-xs">${teacherData.teacher}</div>
+                        <button type="button" class="mt-1 text-error text-xs clear-slot hover:underline">Remove</button>
+                    </div>
+                `;
+
+                dropZone.innerHTML = newContent;
+                dropZone.setAttribute('data-ta-id', teacherData.taId);
+
+                const clearBtn = dropZone.querySelector('.clear-slot');
+                if (clearBtn) {
+                    clearBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        clearSlotAssignment(dropZone);
+                    });
+                }
+
+                changes.set(parseInt(slotId), parseInt(teacherData.taId));
+                dropZone.classList.add('changed');
+
+                showNotification(`Assigned ${teacherData.teacher} (${teacherData.subject})`, 'success');
+            }
+
+            function clearSlotAssignment(dropZone) {
+                const slotContainer = dropZone.closest('.timetable-slot');
+                const slotId = slotContainer.dataset.slotId;
+
+                dropZone.innerHTML = `
+                    <div class="text-neutral-400 text-xs flex items-center justify-center h-full">
+                        Drag teacher here
+                    </div>
+                `;
+                dropZone.setAttribute('data-ta-id', '');
+
+                changes.set(parseInt(slotId), null);
+                dropZone.classList.add('changed');
+
+                showNotification('Assignment cleared', 'info');
+            }
+
+            // Handle existing clear buttons
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('clear-slot')) {
+                    e.stopPropagation();
+                    const dropZone = e.target.closest('.drop-zone');
+                    if (dropZone) {
+                        clearSlotAssignment(dropZone);
+                    }
+                }
+            });
+
+            // Save functionality
+            saveBtn.addEventListener('click', async function() {
+                if (changes.size === 0) {
+                    showNotification('No changes to save.', 'info');
+                    return;
+                }
+
+                console.log('Saving changes:', Array.from(changes.entries()));
+
+                try {
+                    saveBtn.disabled = true;
+                    saveBtn.innerHTML = '<svg class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>Saving...';
+
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                    const updates = Array.from(changes.entries()).map(([slotId, teacherAssignmentId]) => ({
+                        slotId: slotId,
+                        teacherAssignmentId: teacherAssignmentId
+                    }));
+
+                    console.log('Sending updates:', updates);
+
+                    const response = await fetch('/Timetables/UpdateSlots', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': token
+                        },
+                        body: JSON.stringify(updates)
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(errorText || `Server error: ${response.status}`);
+                    }
+
+                    changes.clear();
+                    document.querySelectorAll('.changed').forEach(el => el.classList.remove('changed'));
+
+                    showNotification('Assignments saved successfully!', 'success');
+
+                } catch (error) {
+                    console.error('Save error:', error);
+                    showNotification(`Error saving assignments: ${error.message}`, 'error');
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Save Assignments';
+                }
+            });
+
+            function showNotification(message, type) {
+                document.querySelectorAll('.custom-notification').forEach(el => el.remove());
+
+                const notification = document.createElement('div');
+                notification.className = `custom-notification fixed top-4 right-4 p-4 rounded-lg shadow-sms-lg z-50 transform transition-all duration-300 ${
+                    type === 'success' ? 'bg-success-light border-l-4 border-success text-success' :
+                    type === 'error' ? 'bg-error-light border-l-4 border-error text-error' :
+                    'bg-primary-100 border-l-4 border-primary-400 text-blue-700'
+                }`;
+                
+                const icon = type === 'success' ? 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' :
+                           type === 'error' ? 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' :
+                           'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z';
+
+                notification.innerHTML = `
+                    <div class="flex items-center">
+                        <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${icon}"></path>
+                        </svg>
+                        ${message}
+                    </div>
+                `;
+
+                document.body.appendChild(notification);
+
+                setTimeout(() => notification.classList.add('opacity-100'), 10);
+
+                setTimeout(() => {
+                    notification.classList.remove('opacity-100');
+                    notification.classList.add('opacity-0');
+                    setTimeout(() => notification.remove(), 300);
+                }, 5000);
+            }
+
+            console.log('Timetable editor initialized successfully!');
+            
+            // ============ Multiple Breaks Management ============
+            const addBreakBtn = document.getElementById('addBreakBtn');
+            const saveBreaksBtn = document.getElementById('saveBreaksBtn');
+            const breaksContainer = document.getElementById('breaksContainer');
+            
+            // Add break button handler
+            addBreakBtn.addEventListener('click', function() {
+                const maxPeriods = parseInt(addBreakBtn.getAttribute('data-max-periods') || '@Model.NumberOfLectures');
+                const breakItem = document.createElement('div');
+                breakItem.className = 'break-item bg-neutral-50 p-4 rounded-lg border border-primary-200';
+                
+                let periodOptions = '';
+                for (let i = 1; i < maxPeriods; i++) {
+                    periodOptions += `<option value="${i}">Period ${i}</option>`;
+                }
+                
+                breakItem.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-2">Title</label>
+                            <input type="text" class="break-title w-full px-3 py-2 border border-primary-200 rounded-lg" placeholder="e.g., Morning Break">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-2">After Period</label>
+                            <select class="break-after-period w-full px-3 py-2 border border-primary-200 rounded-lg">
+                                ${periodOptions}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-2">Duration (min)</label>
+                            <input type="number" min="1" max="120" value="15" class="break-duration w-full px-3 py-2 border border-primary-200 rounded-lg">
+                        </div>
+                        <div>
+                            <button type="button" class="remove-break-btn bg-error hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors w-full" data-break-id="new">
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                // Clear placeholder if exists
+                const placeholder = breaksContainer.querySelector('.text-center');
+                if (placeholder) {
+                    placeholder.remove();
+                }
+                
+                breaksContainer.appendChild(breakItem);
+                
+                // Add event listener for remove button
+                const removeBtn = breakItem.querySelector('.remove-break-btn');
+                removeBtn.addEventListener('click', function() {
+                    breakItem.remove();
+                    
+                    // Show placeholder if no breaks
+                    if (breaksContainer.children.length === 0) {
+                        breaksContainer.innerHTML = `
+                            <div class="text-center py-8 text-neutral-500">
+                                <p>No breaks configured. Click "Add Break" to add multiple breaks.</p>
+                            </div>
+                        `;
+                    }
+                });
+            });
+            
+            // Store max periods as data attribute on button
+            addBreakBtn.setAttribute('data-max-periods', '@Model.NumberOfLectures');
+            
+            // Handle remove button clicks for existing breaks
+            document.querySelectorAll('.remove-break-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    this.closest('.break-item').remove();
+                    
+                    // Show placeholder if no breaks
+                    if (breaksContainer.querySelectorAll('.break-item').length === 0) {
+                        breaksContainer.innerHTML = `
+                            <div class="text-center py-8 text-neutral-500">
+                                <p>No breaks configured. Click "Add Break" to add multiple breaks.</p>
+                            </div>
+                        `;
+                    }
+                });
+            });
+            
+            // Save breaks configuration
+            saveBreaksBtn.addEventListener('click', async function() {
+                const breakItems = breaksContainer.querySelectorAll('.break-item');
+                const breaks = [];
+                
+                breakItems.forEach(item => {
+                    const title = item.querySelector('.break-title').value;
+                    const afterPeriod = parseInt(item.querySelector('.break-after-period').value);
+                    const duration = parseInt(item.querySelector('.break-duration').value);
+                    
+                    if (title && afterPeriod && duration) {
+                        breaks.push({ title, afterPeriod, duration });
+                    }
+                });
+                
+                try {
+                    saveBreaksBtn.disabled = true;
+                    saveBreaksBtn.textContent = 'Saving...';
+                    
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                    
+                    const response = await fetch('/Timetables/UpdateMultipleBreaks', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': token
+                        },
+                        body: JSON.stringify({
+                            timetableId: @Model.Id,
+                            breaks: breaks
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        showNotification('Breaks configuration saved! Page will reload...', 'success');
+                        setTimeout(() => window.location.reload(), 2000);
+                    } else {
+                        const error = await response.text();
+                        throw new Error(error || 'Failed to save breaks');
+                    }
+                } catch (error) {
+                    console.error('Error saving breaks:', error);
+                    showNotification('Error saving breaks: ' + error.message, 'error');
+                } finally {
+                    saveBreaksBtn.disabled = false;
+                    saveBreaksBtn.textContent = 'Save Breaks Configuration';
+                }
+            });
+            
+            // ============ Auto Complete Functionality ============
+            const autoCompleteBtn = document.getElementById('autoCompleteBtn');
+            const autoCompleteModal = document.getElementById('autoCompleteModal');
+            const fillRemainingBtn = document.getElementById('fillRemainingBtn');
+            const clearAndFillBtn = document.getElementById('clearAndFillBtn');
+            const cancelAutoCompleteBtn = document.getElementById('cancelAutoCompleteBtn');
+            
+            // Show modal
+            autoCompleteBtn.addEventListener('click', function() {
+                autoCompleteModal.classList.remove('hidden');
+            });
+            
+            // Hide modal
+            cancelAutoCompleteBtn.addEventListener('click', function() {
+                autoCompleteModal.classList.add('hidden');
+            });
+            
+            // Fill remaining empty slots
+            fillRemainingBtn.addEventListener('click', async function() {
+                autoCompleteModal.classList.add('hidden');
+                await autoFillSlots(false);
+            });
+            
+            // Clear all and fill
+            clearAndFillBtn.addEventListener('click', async function() {
+                autoCompleteModal.classList.add('hidden');
+                await autoFillSlots(true);
+            });
+            
+            async function autoFillSlots(clearExisting) {
+                try {
+                    showNotification('Auto-completing timetable...', 'info');
+                    
+                    // Get all teacher assignments
+                    const teacherAssignments = Array.from(document.querySelectorAll('.teacher-assignment-card')).map(card => ({
+                        id: parseInt(card.dataset.taId),
+                        subject: card.dataset.subject,
+                        teacher: card.dataset.teacher,
+                        onTime: card.dataset.onTime,
+                        offTime: card.dataset.offTime
+                    }));
+                    
+                    if (teacherAssignments.length === 0) {
+                        showNotification('No teacher assignments available to auto-fill.', 'error');
+                        return;
+                    }
+                    
+                    // Get all slots
+                    const allSlots = document.querySelectorAll('.timetable-slot:not([data-is-zero]):not([data-is-break])');
+                    const slots = Array.from(allSlots).filter(slot => {
+                        const slotId = parseInt(slot.dataset.slotId);
+                        return slotId > 0; // Valid slots only
+                    });
+                    
+                    // Track teacher usage per day/period to avoid conflicts
+                    const teacherSchedule = {}; // { day: { period: [teacherIds] } }
+                    const teacherAssignmentByDay = {}; // { day: [teacherAssignmentIds] } - to prevent same TA on same day
+                    
+                    // Helper function to convert time string to minutes
+                    const toMinutes = (timeStr) => {
+                        if (!timeStr || typeof timeStr !== 'string') return 0;
+                        const parts = timeStr.split(':');
+                        if (parts.length !== 2) return 0;
+                        const [h, m] = parts.map(Number);
+                        if (isNaN(h) || isNaN(m)) return 0;
+                        return h * 60 + m;
+                    };
+                    
+                    // If not clearing, track existing assignments
+                    if (!clearExisting) {
+                        slots.forEach(slotEl => {
+                            const day = parseInt(slotEl.dataset.day);
+                            const period = parseInt(slotEl.dataset.period);
+                            const dropZone = slotEl.querySelector('.drop-zone');
+                            const existingTaId = dropZone?.dataset.taId;
+                            
+                            if (existingTaId && existingTaId !== '') {
+                                const taId = parseInt(existingTaId);
+                                
+                                // Track by period
+                                if (!teacherSchedule[day]) teacherSchedule[day] = {};
+                                if (!teacherSchedule[day][period]) teacherSchedule[day][period] = [];
+                                teacherSchedule[day][period].push(taId);
+                                
+                                // Track by day to prevent duplicate teacher assignments on same day
+                                if (!teacherAssignmentByDay[day]) teacherAssignmentByDay[day] = [];
+                                if (!teacherAssignmentByDay[day].includes(taId)) {
+                                    teacherAssignmentByDay[day].push(taId);
+                                }
+                            }
+                        });
+                    } else {
+                        // Clear all existing assignments
+                        slots.forEach(slotEl => {
+                            const dropZone = slotEl.querySelector('.drop-zone');
+                            if (dropZone) {
+                                dropZone.innerHTML = `
+                                    <div class="text-neutral-400 text-xs flex items-center justify-center h-full">
+                                        Drag teacher here
+                                    </div>
+                                `;
+                                dropZone.setAttribute('data-ta-id', '');
+                            }
+                        });
+                        changes.clear();
+                    }
+                    
+                    // Helper function to check if teacher is available for a slot
+                    function isTeacherAvailable(teacher, slotTime) {
+                        if (!teacher.onTime || !teacher.offTime || !slotTime) return true;
+                        
+                        // Validate time format
+                        if (!slotTime.includes(' - ')) {
+                            console.warn('Invalid slot time format:', slotTime);
+                            return true; // Allow assignment if format is unexpected
+                        }
+                        
+                        const [slotStart, slotEnd] = slotTime.split(' - ');
+                        if (!slotStart || !slotEnd) return true;
+                        
+                        const slotStartMins = toMinutes(slotStart);
+                        const slotEndMins = toMinutes(slotEnd);
+                        const teacherStartMins = toMinutes(teacher.onTime);
+                        const teacherEndMins = toMinutes(teacher.offTime);
+                        
+                        return slotStartMins >= teacherStartMins && slotEndMins <= teacherEndMins;
+                    }
+                    
+                    // Auto-fill logic
+                    let assignedCount = 0;
+                    let skippedCount = 0;
+                    let taIndex = 0;
+                    
+                    for (const slotEl of slots) {
+                        const dropZone = slotEl.querySelector('.drop-zone');
+                        if (!dropZone) continue;
+                        
+                        const existingTaId = dropZone.dataset.taId;
+                        
+                        // Skip if already assigned (when not clearing)
+                        if (!clearExisting && existingTaId && existingTaId !== '') {
+                            continue;
+                        }
+                        
+                        const day = parseInt(slotEl.dataset.day);
+                        const period = parseInt(slotEl.dataset.period);
+                        const slotId = parseInt(slotEl.dataset.slotId);
+                        
+                        // Get slot time
+                        const timeElement = slotEl.querySelector('.text-xs.text-neutral-500');
+                        const slotTime = timeElement ? timeElement.textContent.trim() : null;
+                        
+                        // Find an available teacher
+                        let assigned = false;
+                        let attempts = 0;
+                        const maxAttempts = teacherAssignments.length;
+                        
+                        while (!assigned && attempts < maxAttempts) {
+                            const teacher = teacherAssignments[taIndex % teacherAssignments.length];
+                            
+                            // Check if teacher is already assigned to this period
+                            if (!teacherSchedule[day]) teacherSchedule[day] = {};
+                            if (!teacherSchedule[day][period]) teacherSchedule[day][period] = [];
+                            
+                            // Check if teacher assignment already used on this day (to avoid duplication)
+                            if (!teacherAssignmentByDay[day]) teacherAssignmentByDay[day] = [];
+                            
+                            const teacherBusyInPeriod = teacherSchedule[day][period].includes(teacher.id);
+                            const teacherAssignmentUsedToday = teacherAssignmentByDay[day].includes(teacher.id);
+                            const teacherAvailable = isTeacherAvailable(teacher, slotTime);
+                            
+                            // Prevent same teacher assignment from repeating on the same day
+                            if (!teacherBusyInPeriod && !teacherAssignmentUsedToday && teacherAvailable) {
+                                // Assign this teacher to the slot
+                                const teacherData = {
+                                    taId: teacher.id.toString(),
+                                    subject: teacher.subject,
+                                    teacher: teacher.teacher
+                                };
+                                
+                                assignTeacherToSlot(dropZone, teacherData);
+                                
+                                // Track the assignment by period
+                                teacherSchedule[day][period].push(teacher.id);
+                                // Track the assignment by day
+                                teacherAssignmentByDay[day].push(teacher.id);
+                                
+                                assigned = true;
+                                assignedCount++;
+                                
+                                // Move to next teacher for variety
+                                taIndex++;
+                            } else {
+                                // Try next teacher
+                                taIndex++;
+                                attempts++;
+                            }
+                        }
+                        
+                        if (!assigned) {
+                            skippedCount++;
+                        }
+                    }
+                    
+                    let message = `Auto-complete finished! Assigned ${assignedCount} slot(s).`;
+                    if (skippedCount > 0) {
+                        message += ` ${skippedCount} slot(s) could not be filled due to teacher conflicts or availability constraints.`;
+                    }
+                    message += ` Click "Save Assignments" to save.`;
+                    
+                    showNotification(message, assignedCount > 0 ? 'success' : 'info');
+                    
+                } catch (error) {
+                    console.error('Auto-fill error:', error);
+                    showNotification('Error during auto-fill: ' + error.message, 'error');
+                }
+            }
+        });
+    </script>
+
+    <style>
+        .teacher-assignment-card {
+            transition: all 0.2s ease;
+            cursor: grab;
+        }
+
+        .teacher-assignment-card:active {
+            cursor: grabbing;
+        }
+
+        .drop-zone {
+            transition: all 0.2s ease;
+        }
+
+        .drop-zone.changed {
+            border: 2px dashed #3B82F6 !important;
+            background-color: #EFF6FF;
+        }
+
+        .custom-notification {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+
+        .custom-notification.opacity-100 {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .custom-notification.opacity-0 {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+    </style>
+}

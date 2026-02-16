@@ -1,0 +1,118 @@
+@model Substitution
+
+@{
+    ViewData["Title"] = "Edit Substitution";
+    var availableEmployees = ViewData["AvailableEmployees"] as IEnumerable<Employee>;
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-primary-800">✏️ Edit Substitution</h1>
+            <p class="text-neutral-600 mt-2">Update substitute teacher assignment</p>
+        </div>
+
+        <!-- Edit Form -->
+        <div class="bg-white rounded-2xl shadow-sms-xl p-6">
+            <!-- Substitution Info -->
+            <div class="bg-neutral-50 p-4 rounded-lg mb-6">
+                <h3 class="text-lg font-semibold text-primary-800 mb-4">Substitution Details</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <span class="font-medium text-neutral-700">Date:</span>
+                        <span class="text-primary-800 ml-2">@Model.Date.ToString("MMM dd, yyyy (dddd)")</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-neutral-700">Class/Section:</span>
+                        <span class="text-primary-800 ml-2">@Model.TimetableSlot?.Timetable?.Class?.Name @Model.TimetableSlot?.Timetable?.Section?.Name</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-neutral-700">Period:</span>
+                        <span class="text-primary-800 ml-2">Period @Model.TimetableSlot?.PeriodNumber</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-neutral-700">Time:</span>
+                        <span class="text-primary-800 ml-2">@Model.TimetableSlot?.StartTime.ToString("hh:mm tt") - @Model.TimetableSlot?.EndTime.ToString("hh:mm tt")</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-neutral-700">Subject:</span>
+                        <span class="text-primary-800 ml-2">@(Model.TimetableSlot?.TeacherAssignment?.Subject?.Name ?? "N/A")</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-neutral-700">Original Teacher:</span>
+                        <span class="text-primary-800 ml-2">@Model.OriginalTeacher?.FullName</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Form -->
+            <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+                @Html.AntiForgeryToken()
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Substitute Employee *</label>
+                    <select name="substituteEmployeeId" required class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                        <option value="">Select Employee</option>
+                        @foreach (var emp in availableEmployees)
+                        {
+                            <option value="@emp.Id" selected="@(emp.Id == Model.SubstituteEmployeeId ? "selected" : null)">
+                                @emp.FullName (@emp.Role) - @(emp.OnTime?.ToString("hh:mm tt") ?? "N/A") to @(emp.OffTime?.ToString("hh:mm tt") ?? "N/A")
+                            </option>
+                        }
+                    </select>
+                    <p class="text-xs text-neutral-500 mt-1">Available employees who are free during this time slot</p>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Reason</label>
+                    <textarea name="reason" rows="4" class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Optional: Reason for substitution">@Model.Reason</textarea>
+                </div>
+
+                <div class="flex justify-end space-x-4">
+                    <a asp-action="Index" class="px-6 py-2 border border-neutral-300 rounded-lg text-neutral-700 hover:bg-neutral-50 transition-colors">
+                        Cancel
+                    </a>
+                    <button type="submit" class="bg-gradient-primary hover:shadow-sms-lg text-white px-6 py-2 rounded-lg transition-all duration-300">
+                        Update Substitution
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Additional Info -->
+        <div class="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+            <div class="flex">
+                <svg class="w-5 h-5 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div>
+                    <p class="text-sm text-blue-700">
+                        <span class="font-medium">Created by:</span> @Model.CreatedBy
+                        <span class="mx-2">•</span>
+                        <span class="font-medium">Created on:</span> @Model.CreatedDate.ToString("MMM dd, yyyy hh:mm tt")
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @@@@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+}

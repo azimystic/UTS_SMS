@@ -1,0 +1,216 @@
+@model SMS.Models.TeacherPerformance
+
+@{
+    ViewData["Title"] = "Performance Details";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-5xl mx-auto">
+        <!-- Header - Compact -->
+        <div class="bg-white rounded-2xl shadow-sms-lg p-4 mb-4">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-primary-800 flex items-center">
+                        Performance Details
+                    </h1>
+                    <p class="text-sm text-neutral-600 mt-1">@Model.Teacher?.FullName - @System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(Model.Month) @Model.Year</p>
+                </div>
+                <a asp-action="Index" asp-route-month="@Model.Month" asp-route-year="@Model.Year"
+                   class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center text-sm shadow-md mt-3 lg:mt-0">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Back
+                </a>
+            </div>
+        </div>
+
+        <!-- Teacher Info Card - Compact -->
+        <div class="bg-white rounded-2xl shadow-sms-lg p-4 mb-4">
+            <div class="flex items-center">
+                <div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-xl flex items-center justify-center mr-4">
+                    <span class="text-xl font-bold text-white">@Model.Teacher?.FullName?.Substring(0, 1)</span>
+                </div>
+                <div class="flex-1">
+                    <h2 class="text-xl font-bold text-primary-800">@Model.Teacher?.FullName</h2>
+                    <p class="text-sm text-neutral-600">@Model.Campus?.Name Campus</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-3xl font-bold text-primary-600">@Model.TotalScore.ToString("F2")</div>
+                    <div class="text-xs text-neutral-500">out of 20.0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Breakdown - Compact Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <!-- Attendance Score -->
+            <div class="bg-white rounded-xl shadow-sms-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-base font-semibold text-primary-800 flex items-center">
+                        <span class="text-xl mr-2"> </span> Attendance
+                    </h3>
+                    <span class="text-xl font-bold text-primary-600">@Model.AttendanceScore.ToString("F2")</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+                    <div class="bg-primary-500 h-2 rounded-full" style="width: @((Model.AttendanceScore / 3.5m * 100).ToString("F0"))%"></div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                        <div class="font-semibold text-gray-800">@Model.AttendedDays</div>
+                        <div class="text-gray-500">Present</div>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-gray-800">@Model.TotalWorkingDays</div>
+                        <div class="text-gray-500">Total Days</div>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-gray-800">@((Model.TotalWorkingDays > 0 ? (decimal)Model.AttendedDays / Model.TotalWorkingDays * 100 : 0).ToString("F1"))%</div>
+                        <div class="text-gray-500">Rate</div>
+                    </div>
+                </div>
+                <div class="text-xs text-neutral-500 mt-2">Max: 3.5 marks</div>
+            </div>
+
+            <!-- Punctuality Score -->
+            <div class="bg-white rounded-xl shadow-sms-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-base font-semibold text-primary-800 flex items-center">
+                        <span class="text-xl mr-2"> </span> Punctuality
+                    </h3>
+                    <span class="text-xl font-bold text-success">@Model.PunctualityScore.ToString("F2")</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+                    <div class="bg-green-500 h-2 rounded-full" style="width: @((Model.PunctualityScore / 2.5m * 100).ToString("F0"))%"></div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                        <div class="font-semibold text-gray-800">@Model.OnTimeDays</div>
+                        <div class="text-gray-500">On-Time</div>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-gray-800">@Model.AttendedDays</div>
+                        <div class="text-gray-500">Attended</div>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-gray-800">@((Model.AttendedDays > 0 ? (decimal)Model.OnTimeDays / Model.AttendedDays * 100 : 0).ToString("F1"))%</div>
+                        <div class="text-gray-500">Rate</div>
+                    </div>
+                </div>
+                <div class="text-xs text-neutral-500 mt-2">Max: 2.5 marks</div>
+            </div>
+
+            <!-- Test Average Score -->
+            <div class="bg-white rounded-xl shadow-sms-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-base font-semibold text-primary-800 flex items-center">
+                        <span class="text-xl mr-2"> </span> Test Average
+                    </h3>
+                    <span class="text-xl font-bold text-primary-600">@Model.TestAverageScore.ToString("F2")</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+                    <div class="bg-purple-500 h-2 rounded-full" style="width: @((Model.TestAverageScore / 5.5m * 100).ToString("F0"))%"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                        <div class="font-semibold text-gray-800">@Model.AverageTestMarks.ToString("F1")%</div>
+                        <div class="text-gray-500">Average Marks</div>
+                    </div>
+                    <div>
+                        <div class="font-semibold @(Model.AverageTestMarks >= 80 ? "text-success" : Model.AverageTestMarks >= 60 ? "text-accent-600" : "text-error")">
+                            @(Model.AverageTestMarks >= 80 ? "Excellent" : Model.AverageTestMarks >= 60 ? "Good" : "Needs Work")
+                        </div>
+                        <div class="text-gray-500">Level</div>
+                    </div>
+                </div>
+                <div class="text-xs text-neutral-500 mt-2">Max: 5.5 marks</div>
+            </div>
+
+            <!-- Survey Score -->
+            <div class="bg-white rounded-xl shadow-sms-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-base font-semibold text-primary-800 flex items-center">
+                        <span class="text-xl mr-2">⭐</span> Student Survey
+                    </h3>
+                    <span class="text-xl font-bold text-accent-600">@Model.SurveyScore.ToString("F2")</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+                    <div class="bg-yellow-500 h-2 rounded-full" style="width: @((Model.SurveyScore / 6m * 100).ToString("F0"))%"></div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                        <div class="font-semibold text-gray-800">@Model.PositiveSurveyResponses</div>
+                        <div class="text-gray-500">Positive</div>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-gray-800">@Model.TotalSurveyResponses</div>
+                        <div class="text-gray-500">Total</div>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-gray-800">@((Model.TotalSurveyResponses > 0 ? (decimal)Model.PositiveSurveyResponses / Model.TotalSurveyResponses * 100 : 0).ToString("F1"))%</div>
+                        <div class="text-gray-500">Rate</div>
+                    </div>
+                </div>
+                <div class="text-xs text-neutral-500 mt-2">Max: 6.0 marks</div>
+            </div>
+
+            <!-- Test Return Score -->
+            <div class="bg-white rounded-xl shadow-sms-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-base font-semibold text-primary-800 flex items-center">
+                        <span class="text-xl mr-2"> </span> Test Return
+                    </h3>
+                    <span class="text-xl font-bold text-error">@Model.TestReturnScore.ToString("F2")</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+                    <div class="bg-red-500 h-2 rounded-full" style="width: @((Model.TestReturnScore / 1.5m * 100).ToString("F0"))%"></div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                        <div class="font-semibold text-gray-800">@Model.TestsReturnedOnTime</div>
+                        <div class="text-gray-500">On-Time</div>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-gray-800">@Model.TotalTestsToReturn</div>
+                        <div class="text-gray-500">Total</div>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-gray-800">@((Model.TotalTestsToReturn > 0 ? (decimal)Model.TestsReturnedOnTime / Model.TotalTestsToReturn * 100 : 0).ToString("F1"))%</div>
+                        <div class="text-gray-500">Rate</div>
+                    </div>
+                </div>
+                <div class="text-xs text-neutral-500 mt-2">Max: 1.5 marks</div>
+            </div>
+
+            <!-- Checking Quality Score -->
+            <div class="bg-white rounded-xl shadow-sms-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-base font-semibold text-primary-800 flex items-center">
+                        <span class="text-xl mr-2"> </span> Checking Quality
+                    </h3>
+                    <span class="text-xl font-bold text-info">@Model.CheckingQualityScore.ToString("F2")</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+                    <div class="bg-indigo-500 h-2 rounded-full" style="width: @((Model.CheckingQualityScore / 1m * 100).ToString("F0"))%"></div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                        <div class="font-semibold text-success">@Model.BetterCheckingCount</div>
+                        <div class="text-gray-500">Better</div>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-accent-600">@Model.GoodCheckingCount</div>
+                        <div class="text-gray-500">Good</div>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-error">@Model.BadCheckingCount</div>
+                        <div class="text-gray-500">Poor</div>
+                    </div>
+                </div>
+                <div class="text-xs text-neutral-500 mt-2">Max: 1.0 mark</div>
+            </div>
+        </div>
+
+ 
+    </div>
+</div>

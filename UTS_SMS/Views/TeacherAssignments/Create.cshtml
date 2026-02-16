@@ -1,0 +1,272 @@
+@{
+    ViewData["Title"] = "Create Teacher Assignment";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-primary-800">👨‍🏫 Create Teacher Assignment</h1>
+            <p class="text-neutral-600 mt-2">Assign a teacher to multiple class-section combinations for a subject</p>
+        </div>
+
+        <!-- Form -->
+        <div class="bg-white rounded-2xl shadow-sms-xl p-6">
+            <form id="assignmentForm" asp-action="Create" method="post" class="space-y-6">
+                @Html.AntiForgeryToken()
+
+                <div id="validationSummary" class="hidden bg-error-light border-l-4 border-error text-error p-4 rounded-lg mb-4"></div>
+
+                <!-- Step 1: Teacher and Subject Selection -->
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border-2 border-blue-200">
+                    <h3 class="text-lg font-semibold text-primary-800 mb-4">Step 1: Select Teacher and Subject</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Teacher -->
+                        <div>
+                            <label for="teacherId" class="block text-sm font-medium text-neutral-700 mb-2">Teacher <span class="text-red-500">*</span></label>
+                            <select id="teacherId" name="teacherId" required class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300" asp-items="ViewBag.TeacherId">
+                                <option value="">-- Select Teacher --</option>
+                            </select>
+                        </div>
+
+                        <!-- Subject -->
+                        <div>
+                            <label for="subjectId" class="block text-sm font-medium text-neutral-700 mb-2">Subject <span class="text-red-500">*</span></label>
+                            <select id="subjectId" name="subjectId" required class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300" asp-items="ViewBag.SubjectId">
+                                <option value="">-- Select Subject --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Class and Section Assignments -->
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border-2 border-green-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-primary-800">Step 2: Add Class & Section Combinations</h3>
+                        <button type="button" onclick="addRow()" class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center text-sm shadow-md hover:shadow-lg">
+                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Add Row
+                        </button>
+                    </div>
+
+                    <div id="assignmentRows" class="space-y-3">
+                        <!-- Dynamic rows will be added here -->
+                    </div>
+
+                    <div id="emptyMessage" class="text-center py-8 text-neutral-500">
+                        <svg class="w-12 h-12 text-neutral-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        <p>Click "Add Row" to add class and section combinations</p>
+                    </div>
+                </div>
+
+                <!-- Submit Buttons -->
+                <div class="flex space-x-4 pt-6">
+                    <button type="submit" class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium py-3 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-sms-lg flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Create Assignments
+                    </button>
+                    <a asp-action="Index" class="bg-neutral-100 hover:bg-primary-100 text-primary-800 font-medium py-3 px-8 rounded-xl transition-all duration-300 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let rowCounter = 0;
+        let allClasses = @Html.Raw(Json.Serialize(ViewBag.ClassId));
+        let allSections = {}; // Will store sections by classId
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Automatically add first row
+            addRow();
+        });
+
+        function addRow() {
+            rowCounter++;
+            const rowsContainer = document.getElementById('assignmentRows');
+            const emptyMessage = document.getElementById('emptyMessage');
+            
+            emptyMessage.classList.add('hidden');
+            
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'assignment-row bg-white p-4 rounded-lg shadow-sm border border-primary-100';
+            rowDiv.id = `row-${rowCounter}`;
+            rowDiv.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Class <span class="text-red-500">*</span></label>
+                        <select name="classIds" required 
+                                class="class-select w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300"
+                                onchange="loadSections(this, ${rowCounter})">
+                            <option value="">-- Select Class --</option>
+                            ${allClasses.map(c => `<option value="${c.value}">${c.text}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Section <span class="text-red-500">*</span></label>
+                        <select name="sectionIds" required id="section-${rowCounter}"
+                                class="section-select w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300">
+                            <option value="">-- Select Section --</option>
+                        </select>
+                    </div>
+                    <div class="pt-6">
+                        <button type="button" onclick="removeRow(${rowCounter})" 
+                                class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white p-2 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            rowsContainer.appendChild(rowDiv);
+        }
+
+        function removeRow(rowId) {
+            const row = document.getElementById(`row-${rowId}`);
+            if (row) {
+                row.remove();
+                
+                // Show empty message if no rows left
+                const rowsContainer = document.getElementById('assignmentRows');
+                const emptyMessage = document.getElementById('emptyMessage');
+                if (rowsContainer.children.length === 0) {
+                    emptyMessage.classList.remove('hidden');
+                }
+            }
+        }
+
+        function loadSections(selectElement, rowId) {
+            const classId = selectElement.value;
+            const sectionSelect = document.getElementById(`section-${rowId}`);
+            
+            if (!classId) {
+                sectionSelect.innerHTML = '<option value="">-- Select Section --</option>';
+                return;
+            }
+
+            // Check if we already have sections for this class
+            if (allSections[classId]) {
+                populateSections(sectionSelect, allSections[classId]);
+                return;
+            }
+
+            // Fetch sections from server
+            fetch(`/TeacherAssignments/GetSectionsByClass?classId=${classId}`)
+                .then(response => response.json())
+                .then(data => {
+                    allSections[classId] = data;
+                    populateSections(sectionSelect, data);
+                })
+                .catch(error => {
+                    console.error('Error loading sections:', error);
+                    sectionSelect.innerHTML = '<option value="">Error loading sections</option>';
+                });
+        }
+
+        function populateSections(selectElement, sections) {
+            selectElement.innerHTML = '<option value="">-- Select Section --</option>';
+            sections.forEach(section => {
+                const option = document.createElement('option');
+                option.value = section.id;
+                option.textContent = section.name;
+                selectElement.appendChild(option);
+            });
+        }
+
+        // Form validation before submission
+        document.getElementById('assignmentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const teacherId = document.getElementById('teacherId').value;
+            const subjectId = document.getElementById('subjectId').value;
+            const validationSummary = document.getElementById('validationSummary');
+            
+            // Clear previous validation messages
+            validationSummary.innerHTML = '';
+            validationSummary.classList.add('hidden');
+            
+            // Validate teacher and subject
+            if (!teacherId || !subjectId) {
+                validationSummary.innerHTML = '<strong>Error:</strong> Please select both Teacher and Subject.';
+                validationSummary.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+            
+            // Get all class and section values
+            const classSelects = document.querySelectorAll('select[name="classIds"]');
+            const sectionSelects = document.querySelectorAll('select[name="sectionIds"]');
+            
+            if (classSelects.length === 0) {
+                validationSummary.innerHTML = '<strong>Error:</strong> Please add at least one class and section combination.';
+                validationSummary.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+            
+            const combinations = [];
+            let hasError = false;
+            
+            for (let i = 0; i < classSelects.length; i++) {
+                const classId = classSelects[i].value;
+                const sectionId = sectionSelects[i].value;
+                
+                if (!classId || !sectionId) {
+                    validationSummary.innerHTML = '<strong>Error:</strong> Please select both Class and Section for all rows.';
+                    validationSummary.classList.remove('hidden');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    hasError = true;
+                    break;
+                }
+                
+                const combo = `${classId}-${sectionId}`;
+                if (combinations.includes(combo)) {
+                    validationSummary.innerHTML = '<strong>Error:</strong> Duplicate Class and Section combination found. Each combination must be unique.';
+                    validationSummary.classList.remove('hidden');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    hasError = true;
+                    break;
+                }
+                
+                combinations.push(combo);
+            }
+            
+            if (!hasError) {
+                // Submit the form
+                this.submit();
+            }
+        });
+    </script>
+
+    <style>
+        .assignment-row {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+}

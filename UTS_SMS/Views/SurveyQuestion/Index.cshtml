@@ -1,0 +1,357 @@
+@model IEnumerable<SMS.Models.SurveyQuestion>
+
+@{
+    ViewData["Title"] = "Survey Questions";
+    var campusList = ViewBag.CampusList as List<SMS.Models.Campus> ?? new List<SMS.Models.Campus>();
+}
+
+<div class="min-h-screen">
+    <!-- Header Section -->
+    <div class="shadow-sm border-b border-primary-100">
+        <div class="px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-2xl font-bold text-primary-800 sm:text-3xl">Survey Questions</h1>
+                    <p class="mt-1 text-sm text-neutral-500">
+                        Manage survey questions with yes/no responses for student feedback
+                    </p>
+                </div>
+                
+                <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:space-x-3 md:mt-0">
+                    <a asp-action="Create" 
+                       class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-primary hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-400 transition-colors duration-200">
+                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Add Question
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    @if (campusList.Any())
+    {
+        <div class="border-b border-primary-100">
+            <div class="px-4 sm:px-6 lg:px-8 py-4">
+                <!-- Mobile filter toggle -->
+                <div class="md:hidden mb-4">
+                    <button type="button" id="mobile-filter-toggle" 
+                            class="w-full flex items-center justify-center px-4 py-2 border border-primary-200 rounded-lg text-sm font-medium text-neutral-700 bg-white hover:bg-neutral-50">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                        </svg>
+                        Filter Options
+                    </button>
+                </div>
+
+                <!-- Filter Panel -->
+                <div id="filter-panel" class="hidden md:block">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <!-- Campus Filter -->
+                        <div>
+                            <label for="campus-filter" class="block text-sm font-medium text-neutral-700 mb-1">Campus</label>
+                            <select id="campus-filter" name="campusFilter" class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 text-sm">
+                                <option value="">All Campuses</option>
+                                @foreach (var campus in campusList)
+                                {
+                                    <option value="@campus.Id">@campus.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Search Filter -->
+                        <div>
+                            <label for="search-filter" class="block text-sm font-medium text-neutral-700 mb-1">Search</label>
+                            <input type="text" id="search-filter" 
+                                   class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 text-sm" 
+                                   placeholder="Search questions...">
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="flex space-x-2">
+                            <button type="button" id="clear-filters-btn" class="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-colors duration-200 text-sm font-medium">
+                                Clear Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Stats Section -->
+    <div class="px-4 sm:px-6 lg:px-8 py-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-primary-100">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-primary-100">
+                        <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-neutral-600">Total Questions</p>
+                        <p class="text-2xl font-bold text-primary-800">@Model.Count()</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-primary-100">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-success-light">
+                        <svg class="w-8 h-8 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-neutral-600">Active Questions</p>
+                        <p class="text-2xl font-bold text-primary-800">@Model.Count(q => q.IsActive)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Questions List -->
+        <div class="bg-white shadow-sm rounded-lg border border-primary-100 overflow-hidden">
+            @if (Model.Any())
+            {
+                <!-- Desktop Table -->
+                <div class="hidden lg:block">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-primary-100">
+                            <thead class="bg-neutral-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Order</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Question</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Campus</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-primary-100" id="questions-table-body">
+                                @foreach (var item in Model)
+                                {
+                                    <tr class="hover:bg-neutral-50 question-row" 
+                                        data-question-id="@item.Id"
+                                        data-campus-id="@item.CampusId" 
+                                        data-search-text="@item.QuestionText.ToLower()">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <span class="drag-handle cursor-move text-neutral-400 mr-2">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path>
+                                                    </svg>
+                                                </span>
+                                                <span class="text-sm font-medium text-primary-800">@item.QuestionOrder</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm text-primary-800 max-w-md">@item.QuestionText</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-primary-800">@item.Campus?.Name</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                             <a asp-action="Edit" asp-route-id="@item.Id" class="text-info hover:text-indigo-900">Edit</a>
+                                            <a asp-action="Delete" asp-route-id="@item.Id" class="text-error hover:text-error">Delete</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Mobile Cards -->
+                <div class="lg:hidden">
+                    <div class="divide-y divide-primary-100" id="questions-mobile-list">
+                        @foreach (var item in Model)
+                        {
+                            <div class="p-4 question-card" 
+                                 data-question-id="@item.Id"
+                                 data-campus-id="@item.CampusId" 
+                                 data-search-text="@item.QuestionText.ToLower()">
+                                
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex-1">
+                                        <div class="flex items-center mb-2">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                                                Order @item.QuestionOrder
+                                            </span>
+                                            <span class="ml-2 text-sm text-neutral-600">@item.Campus?.Name</span>
+                                        </div>
+                                        <p class="text-sm text-primary-800">@item.QuestionText</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex space-x-3">
+                                    <a asp-action="Details" asp-route-id="@item.Id" 
+                                       class="flex-1 bg-gradient-primary hover:bg-primary-700 text-white text-center py-2 px-4 rounded-lg text-sm transition-all duration-300">
+                                        Details
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@item.Id" 
+                                       class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-center py-2 px-4 rounded-lg text-sm transition-all duration-300">
+                                        Edit
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="p-8 text-center">
+                    <svg class="mx-auto h-12 w-12 text-neutral-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <p class="text-lg font-medium text-neutral-500 mb-2">No survey questions found</p>
+                    <p class="text-sm text-neutral-500">Create your first survey question to gather student feedback.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+<!-- Include SortableJS for drag and drop - Offline -->
+<script src="~/lib/sortablejs/Sortable.min.js" asp-append-version="true"></script>
+<script>
+    // Mobile filter toggle
+    document.getElementById('mobile-filter-toggle')?.addEventListener('click', function() {
+        const filterPanel = document.getElementById('filter-panel');
+        filterPanel.classList.toggle('hidden');
+    });
+
+    // Search and filter functionality
+    function applyFilters() {
+        const searchTerm = document.getElementById('search-filter').value.toLowerCase();
+        const campusFilter = document.getElementById('campus-filter')?.value || '';
+
+        // Desktop table rows
+        document.querySelectorAll('.question-row').forEach(row => {
+            const searchText = row.getAttribute('data-search-text');
+            const campusId = row.getAttribute('data-campus-id');
+            
+            let showRow = true;
+            
+            if (searchTerm && !searchText.includes(searchTerm)) {
+                showRow = false;
+            }
+            
+            if (campusFilter && campusId !== campusFilter) {
+                showRow = false;
+            }
+            
+            row.style.display = showRow ? '' : 'none';
+        });
+
+        // Mobile cards
+        document.querySelectorAll('.question-card').forEach(card => {
+            const searchText = card.getAttribute('data-search-text');
+            const campusId = card.getAttribute('data-campus-id');
+            
+            let showCard = true;
+            
+            if (searchTerm && !searchText.includes(searchTerm)) {
+                showCard = false;
+            }
+            
+            if (campusFilter && campusId !== campusFilter) {
+                showCard = false;
+            }
+            
+            card.style.display = showCard ? '' : 'none';
+        });
+    }
+
+    // Event listeners
+    document.getElementById('search-filter')?.addEventListener('input', applyFilters);
+    document.getElementById('campus-filter')?.addEventListener('change', applyFilters);
+    
+    // Clear filters button
+    document.getElementById('clear-filters-btn')?.addEventListener('click', function() {
+        document.getElementById('search-filter').value = '';
+        if (document.getElementById('campus-filter')) {
+            document.getElementById('campus-filter').value = '';
+        }
+        applyFilters();
+    });
+
+    // Enable drag and drop on page load with instant save
+    (function() {
+        const tbody = document.getElementById('questions-table-body');
+        if (!tbody) return;
+
+        new Sortable(tbody, {
+            handle: '.drag-handle',
+            animation: 150,
+            onEnd: function (evt) {
+                // Update visual order numbers
+                const rows = tbody.querySelectorAll('.question-row');
+                rows.forEach((row, index) => {
+                    const orderCell = row.querySelector('td:first-child span:last-child');
+                    if (orderCell) {
+                        orderCell.textContent = index + 1;
+                    }
+                });
+                
+                // Instant save - no button required
+                saveQuestionOrder();
+            }
+        });
+    })();
+
+    function saveQuestionOrder() {
+        const rows = document.querySelectorAll('.question-row');
+        const questionIds = Array.from(rows).map(row => parseInt(row.getAttribute('data-question-id')));
+
+        fetch('@Url.Action("Reorder")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+            },
+            body: JSON.stringify(questionIds)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show subtle success feedback
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300';
+                notification.textContent = '✓ Question order saved';
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    setTimeout(() => notification.remove(), 300);
+                }, 2000);
+            } else {
+                // Show error notification
+                const errorNotification = document.createElement('div');
+                errorNotification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300';
+                errorNotification.textContent = '✗ Error saving order: ' + (data.message || 'Unknown error');
+                document.body.appendChild(errorNotification);
+                
+                setTimeout(() => {
+                    errorNotification.style.opacity = '0';
+                    setTimeout(() => errorNotification.remove(), 300);
+                }, 4000);
+            }
+        })
+        .catch(error => {
+            console.error('Error saving order:', error);
+            // Show error notification to user
+            const errorNotification = document.createElement('div');
+            errorNotification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300';
+            errorNotification.textContent = '✗ Error saving order. Please try again.';
+            document.body.appendChild(errorNotification);
+            
+            setTimeout(() => {
+                errorNotification.style.opacity = '0';
+                setTimeout(() => errorNotification.remove(), 300);
+            }, 4000);
+        });
+    }
+</script>
+

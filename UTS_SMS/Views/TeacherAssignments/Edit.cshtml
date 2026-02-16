@@ -1,0 +1,120 @@
+﻿@model TeacherAssignment
+
+@{
+    ViewData["Title"] = "Edit Teacher Assignment";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-primary-800">👨‍🏫 Edit Teacher Assignment</h1>
+            <p class="text-neutral-600 mt-2">Update teacher assignment details</p>
+        </div>
+
+        <!-- Form -->
+        <div class="bg-white rounded-2xl shadow-sms-xl p-6">
+            <form asp-action="Edit" class="space-y-6">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="CampusId" />
+
+                <div asp-validation-summary="ModelOnly" class="bg-error-light border-l-4 border-error text-error p-4 rounded-lg"></div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Teacher -->
+                    <div>
+                        <label asp-for="TeacherId" class="block text-sm font-medium text-neutral-700 mb-2"></label>
+                        <select asp-for="TeacherId" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300" asp-items="ViewBag.TeacherId">
+                            <option value="">-- Select Teacher --</option>
+                        </select>
+                        <span asp-validation-for="TeacherId" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Class -->
+                    <div>
+                        <label asp-for="ClassId" class="block text-sm font-medium text-neutral-700 mb-2"></label>
+                        <select asp-for="ClassId" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300" asp-items="ViewBag.ClassId">
+                            <option value="">-- Select Class --</option>
+                        </select>
+                        <span asp-validation-for="ClassId" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Section -->
+                    <div>
+                        <label asp-for="SectionId" class="block text-sm font-medium text-neutral-700 mb-2"></label>
+                        <select asp-for="SectionId" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300" asp-items="ViewBag.SectionId">
+                            <option value="">-- Select Section --</option>
+                        </select>
+                        <span asp-validation-for="SectionId" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Subject -->
+                    <div>
+                        <label asp-for="SubjectId" class="block text-sm font-medium text-neutral-700 mb-2"></label>
+                        <select asp-for="SubjectId" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300" asp-items="ViewBag.SubjectId">
+                            <option value="">-- Select Subject --</option>
+                        </select>
+                        <span asp-validation-for="SubjectId" class="text-error text-sm"></span>
+                    </div>
+
+                     
+                </div>
+
+                <div class="flex space-x-4 pt-6">
+                    <button type="submit" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-primary-600 hover:to-blue-700 text-white font-medium py-3 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-sms-lg flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Save Changes
+                    </button>
+                    <a asp-action="Index" class="bg-neutral-100 hover:bg-primary-100 text-primary-800 font-medium py-3 px-8 rounded-xl transition-all duration-300 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cascade sections based on class selection
+            const classSelect = document.getElementById('ClassId');
+            const sectionSelect = document.getElementById('SectionId');
+
+            classSelect.addEventListener('change', function() {
+                const classId = this.value;
+                if (classId) {
+                    fetch(`/TeacherAssignments/GetSectionsByClass?classId=${classId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            sectionSelect.innerHTML = '<option value="">-- Select Section --</option>';
+                            data.forEach(section => {
+                                const option = document.createElement('option');
+                                option.value = section.id;
+                                option.textContent = section.name;
+                                sectionSelect.appendChild(option);
+                            });
+                            // Set the previously selected section if available
+                            if ('@Model.SectionId' !== '0') {
+                                sectionSelect.value = '@Model.SectionId';
+                            }
+                        })
+                        .catch(error => console.error('Error loading sections:', error));
+                } else {
+                    sectionSelect.innerHTML = '<option value="">-- Select Section --</option>';
+                }
+            });
+
+            // Trigger change event on page load to load sections
+            if (classSelect.value) {
+                classSelect.dispatchEvent(new Event('change'));
+            }
+        });
+    </script>
+}

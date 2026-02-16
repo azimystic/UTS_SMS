@@ -1,0 +1,268 @@
+@model SMS.Models.TestReturn
+
+@{
+    ViewData["Title"] = "Edit Test Return";
+}
+
+<div class="min-h-screen bg-neutral-50">
+    <!-- Header Section -->
+    <div class="bg-white shadow-sm border-b border-primary-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-2xl font-bold text-primary-800 sm:text-3xl">Edit Test Return</h1>
+                    <p class="mt-1 text-sm text-neutral-500">Update test return status and checking quality</p>
+                </div>
+                <div class="mt-4 md:mt-0">
+                    <a asp-action="Index" class="inline-flex items-center px-4 py-2 border border-primary-200 rounded-lg shadow-sm text-sm font-medium text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-400">
+                        <svg class="-ml-1 mr-2 h-5 w-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Section -->
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="bg-white shadow-sm rounded-lg border border-primary-100">
+            <div class="px-6 py-4 border-b border-primary-100">
+                <h2 class="text-lg font-medium text-primary-800">Test Return Information</h2>
+                <p class="mt-1 text-sm text-neutral-600">Update the details for the test return record</p>
+            </div>
+
+            <form asp-action="Edit" method="post" class="p-6 space-y-6">
+                <div asp-validation-summary="ModelOnly" class="text-error"></div>
+                
+                <input asp-for="Id" type="hidden" />
+                <input asp-for="CreatedDate" type="hidden" />
+                <input asp-for="CreatedBy" type="hidden" />
+
+                <!-- Row 1: Exam and Subject -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <label asp-for="ExamId" class="block text-sm font-medium text-neutral-700 mb-2">Exam *</label>
+                        <select asp-for="ExamId" asp-items="ViewBag.ExamId" 
+                                class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200">
+                            <option value="">Select Exam</option>
+                        </select>
+                        <span asp-validation-for="ExamId" class="text-error text-sm"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="SubjectId" class="block text-sm font-medium text-neutral-700 mb-2">Subject *</label>
+                        <select asp-for="SubjectId" asp-items="ViewBag.SubjectId" 
+                                class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200">
+                            <option value="">Select Subject</option>
+                        </select>
+                        <span asp-validation-for="SubjectId" class="text-error text-sm"></span>
+                    </div>
+                </div>
+
+                <!-- Row 2: Class and Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <label asp-for="ClassId" class="block text-sm font-medium text-neutral-700 mb-2">Class *</label>
+                        <select asp-for="ClassId" asp-items="ViewBag.ClassId" id="ClassId"
+                                class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200">
+                            <option value="">Select Class</option>
+                        </select>
+                        <span asp-validation-for="ClassId" class="text-error text-sm"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="SectionId" class="block text-sm font-medium text-neutral-700 mb-2">Section *</label>
+                        <select asp-for="SectionId" asp-items="ViewBag.SectionId" id="SectionId"
+                                class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200">
+                            <option value="">Select Section</option>
+                        </select>
+                        <span asp-validation-for="SectionId" class="text-error text-sm"></span>
+                    </div>
+                </div>
+
+                <!-- Row 3: Teacher and Campus -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <label asp-for="TeacherId" class="block text-sm font-medium text-neutral-700 mb-2">Teacher *</label>
+                        <select asp-for="TeacherId" asp-items="ViewBag.TeacherId" 
+                                class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200">
+                            <option value="">Select Teacher</option>
+                        </select>
+                        <span asp-validation-for="TeacherId" class="text-error text-sm"></span>
+                    </div>
+
+                    @if (ViewBag.CampusId != null)
+                    {
+                        <div>
+                            <label asp-for="CampusId" class="block text-sm font-medium text-neutral-700 mb-2">Campus *</label>
+                            <select asp-for="CampusId" asp-items="ViewBag.CampusId" 
+                                    class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200">
+                                <option value="">Select Campus</option>
+                            </select>
+                            <span asp-validation-for="CampusId" class="text-error text-sm"></span>
+                        </div>
+                    }
+                    else
+                    {
+                        <input asp-for="CampusId" type="hidden" />
+                    }
+                </div>
+
+                <!-- Row 4: Dates -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <label asp-for="ExamDate" class="block text-sm font-medium text-neutral-700 mb-2">Exam Date *</label>
+                        <input asp-for="ExamDate" type="date" 
+                               class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200" />
+                        <span asp-validation-for="ExamDate" class="text-error text-sm"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="ReturnDate" class="block text-sm font-medium text-neutral-700 mb-2">Return Date</label>
+                        <input asp-for="ReturnDate" type="date" 
+                               class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200" />
+                        <span asp-validation-for="ReturnDate" class="text-error text-sm"></span>
+                    </div>
+                </div>
+
+                <!-- Row 5: Return Status and Quality -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">Return Status</label>
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                <input asp-for="IsReturnedOnTime" type="radio" value="true" 
+                                       class="h-4 w-4 text-primary-600 border-primary-200 focus:ring-primary-400" />
+                                <label class="ml-3 block text-sm font-medium text-neutral-700">
+                                    Returned On Time
+                                </label>
+                            </div>
+                            <div class="flex items-center">
+                                <input asp-for="IsReturnedOnTime" type="radio" value="false" 
+                                       class="h-4 w-4 text-primary-600 border-primary-200 focus:ring-primary-400" />
+                                <label class="ml-3 block text-sm font-medium text-neutral-700">
+                                    Returned Late
+                                </label>
+                            </div>
+                        </div>
+                        <span asp-validation-for="IsReturnedOnTime" class="text-error text-sm"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="CheckingQuality" class="block text-sm font-medium text-neutral-700 mb-2">Checking Quality *</label>
+                        <select asp-for="CheckingQuality" 
+                                class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200">
+                            <option value="">Select Quality</option>
+                            <option value="Better">Better</option>
+                            <option value="Good">Good</option>
+                            <option value="Bad">Bad</option>
+                        </select>
+                        <span asp-validation-for="CheckingQuality" class="text-error text-sm"></span>
+                    </div>
+                </div>
+
+                <!-- Row 6: Remarks -->
+                <div>
+                    <label asp-for="Remarks" class="block text-sm font-medium text-neutral-700 mb-2">Remarks</label>
+                    <textarea asp-for="Remarks" rows="3" 
+                              class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200" 
+                              placeholder="Additional comments or notes..."></textarea>
+                    <span asp-validation-for="Remarks" class="text-error text-sm"></span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row sm:justify-end sm:space-x-3 space-y-3 sm:space-y-0 pt-6 border-t border-primary-100">
+                    <a asp-action="Index" 
+                       class="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-primary-200 shadow-sm text-sm font-medium rounded-lg text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-400 transition-colors duration-200">
+                        Cancel
+                    </a>
+                    <a asp-action="Details" asp-route-id="@Model.Id" 
+                       class="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-primary-200 shadow-sm text-sm font-medium rounded-lg text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-400 transition-colors duration-200">
+                        View Details
+                    </a>
+                    <button type="submit" 
+                            class="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-gradient-primary hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-400 transition-colors duration-200">
+                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Update Test Return
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        // Load sections when class is selected
+        document.getElementById('ClassId').addEventListener('change', function() {
+            var classId = this.value;
+            var sectionSelect = document.getElementById('SectionId');
+            
+            // Clear existing options except the selected one
+            var currentValue = sectionSelect.value;
+            sectionSelect.innerHTML = '<option value="">Select Section</option>';
+            
+            if (classId) {
+                fetch('@Url.Action("GetSectionsByClass")?classId=' + classId)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(function(section) {
+                            var option = new Option(section.name, section.id);
+                            if (section.id == currentValue) {
+                                option.selected = true;
+                            }
+                            sectionSelect.add(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error loading sections:', error);
+                    });
+            }
+        });
+
+        // Auto-populate return date when status changes to late
+        document.querySelectorAll('input[name="IsReturnedOnTime"]').forEach(function(radio) {
+            radio.addEventListener('change', function() {
+                if (this.value === 'false' && this.checked) {
+                    var returnDateInput = document.querySelector('input[name="ReturnDate"]');
+                    if (!returnDateInput.value) {
+                        // Set return date to today if it's marked as late and no date is set
+                        var today = new Date().toISOString().split('T')[0];
+                        returnDateInput.value = today;
+                    }
+                }
+            });
+        });
+
+        // Validate return date vs exam date
+        document.querySelector('form').addEventListener('submit', function(e) {
+            var examDate = document.querySelector('input[name="ExamDate"]').value;
+            var returnDate = document.querySelector('input[name="ReturnDate"]').value;
+            
+            if (examDate && returnDate) {
+                var examDateTime = new Date(examDate);
+                var returnDateTime = new Date(returnDate);
+                
+                if (returnDateTime < examDateTime) {
+                    e.preventDefault();
+                    alert('Return date cannot be before exam date.');
+                    return false;
+                }
+            }
+        });
+
+        // Initialize sections dropdown on page load
+        window.addEventListener('load', function() {
+            var classSelect = document.getElementById('ClassId');
+            if (classSelect.value) {
+                classSelect.dispatchEvent(new Event('change'));
+            }
+        });
+    </script>
+}

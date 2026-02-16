@@ -1,0 +1,277 @@
+@model IEnumerable<SMS.Models.AppMenuParent>
+
+@{
+    ViewData["Title"] = "User Roles & Menu Assignments";
+    var roles = ViewBag.Roles as List<Microsoft.AspNetCore.Identity.IdentityRole>;
+    var selectedRole = ViewBag.SelectedRole as string;
+    var assignedParentIds = ViewBag.AssignedParentIds as HashSet<int> ?? new HashSet<int>();
+    var assignedChildIds = ViewBag.AssignedChildIds as HashSet<int> ?? new HashSet<int>();
+}
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0"><i class="fas fa-user-shield"></i> User Roles & Menu Assignments</h4>
+                        <a asp-controller="AppMenus" asp-action="Index" class="btn btn-light btn-sm">
+                            <i class="fas fa-bars"></i> Manage Menus
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <!-- Role Selection -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0"><i class="fas fa-users-cog"></i> Select Role</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted mb-3">Choose a role to manage its menu assignments:</p>
+                                    <form method="get" asp-action="Index">
+                                        <div class="input-group">
+                                            <select name="selectedRole" class="form-select form-select-lg" required>
+                                                <option value="">-- Select a Role --</option>
+                                                @if (roles != null)
+                                                {
+                                                    foreach (var role in roles)
+                                                    {
+                                                        <option value="@role.Name" selected="@(role.Name == selectedRole)">@role.Name</option>
+                                                    }
+                                                }
+                                            </select>
+                                            <button type="submit" class="btn btn-primary btn-lg">
+                                                <i class="fas fa-search"></i> Load Menus
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-info">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Instructions</h5>
+                                </div>
+                                <div class="card-body">
+                                    <ol class="mb-0">
+                                        <li>Select a role from the dropdown</li>
+                                        <li>Check/uncheck menu items to assign/unassign</li>
+                                        <li>Click "Save Assignments" to update</li>
+                                    </ol>
+                                    <div class="alert alert-warning mt-2 mb-0" role="alert">
+                                        <small><strong>Note:</strong> Checking a parent will NOT auto-check children. You must select each individually.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(selectedRole) && Model != null && Model.Any())
+                    {
+                        <form method="post" asp-action="AssignMenus" id="assignmentForm">
+                            <input type="hidden" name="roleName" value="@selectedRole" />
+                            
+                            <div class="card border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-sitemap"></i> Menu Hierarchy for Role: <strong>@selectedRole</strong>
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover table-bordered">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th width="50" class="text-center">
+                                                        <input type="checkbox" id="selectAll" class="form-check-input" title="Select All" />
+                                                    </th>
+                                                    <th width="60">Order</th>
+                                                    <th>Icon</th>
+                                                    <th>Menu Name</th>
+                                                    <th>Type</th>
+                                                    <th>Controller/Action</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var parent in Model)
+                                                {
+                                                    var isParentChecked = assignedParentIds.Contains(parent.Id);
+                                                    
+                                                    <!-- Parent Row -->
+                                                    <tr class="table-primary">
+                                                        <td class="text-center">
+                                                            <input type="checkbox" 
+                                                                   name="parentMenuIds" 
+                                                                   value="@parent.Id"
+                                                                   class="form-check-input parent-checkbox"
+                                                                   checked="@isParentChecked" />
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge bg-secondary">@parent.DisplayOrder</span>
+                                                        </td>
+                                                        <td>
+                                                            @if (!string.IsNullOrEmpty(parent.IconClass))
+                                                            {
+                                                                <i class="@parent.IconClass fa-lg"></i>
+                                                            }
+                                                        </td>
+                                                        <td><strong>@parent.DisplayName</strong></td>
+                                                        <td>
+                                                            <span class="badge bg-primary">Parent</span>
+                                                        </td>
+                                                        <td>
+                                                            <code>@parent.ControllerName</code>
+                                                            @if (parent.HasChildren)
+                                                            {
+                                                                <span class="badge bg-info ms-2">Has Children</span>
+                                                            }
+                                                        </td>
+                                                        <td>
+                                                            @if (parent.IsActive)
+                                                            {
+                                                                <span class="badge bg-success">Active</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="badge bg-danger">Inactive</span>
+                                                            }
+                                                        </td>
+                                                    </tr>
+
+                                                    <!-- Children Rows -->
+                                                    @if (parent.Children != null && parent.Children.Any())
+                                                    {
+                                                        foreach (var child in parent.Children)
+                                                        {
+                                                            var isChildChecked = assignedChildIds.Contains(child.Id);
+                                                            
+                                                            <tr class="table-light">
+                                                                <td class="text-center">
+                                                                    <input type="checkbox" 
+                                                                           name="childMenuIds" 
+                                                                           value="@child.Id"
+                                                                           class="form-check-input child-checkbox"
+                                                                           data-parent-id="@parent.Id"
+                                                                           checked="@isChildChecked" />
+                                                                </td>
+                                                                <td class="ps-4">
+                                                                    <span class="badge bg-secondary">@child.DisplayOrder</span>
+                                                                </td>
+                                                                <td class="ps-4">
+                                                                    <i class="fas fa-level-up-alt fa-rotate-90 text-muted me-2"></i>
+                                                                    @if (!string.IsNullOrEmpty(child.IconClass))
+                                                                    {
+                                                                        <i class="@child.IconClass"></i>
+                                                                    }
+                                                                </td>
+                                                                <td class="ps-4">@child.DisplayName</td>
+                                                                <td>
+                                                                    <span class="badge bg-secondary">Child</span>
+                                                                </td>
+                                                                <td>
+                                                                    <code>@child.ActionName</code>
+                                                                    <br />
+                                                                    <small class="text-muted">@child.Url</small>
+                                                                </td>
+                                                                <td>
+                                                                    @if (child.IsActive && child.IsIncluded)
+                                                                    {
+                                                                        <span class="badge bg-success">Active</span>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <span class="badge bg-danger">Inactive</span>
+                                                                    }
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="row mt-4">
+                                        <div class="col-md-12 text-center">
+                                            <button type="submit" class="btn btn-success btn-lg">
+                                                <i class="fas fa-save"></i> Save Assignments
+                                            </button>
+                                            <a asp-action="Index" class="btn btn-secondary btn-lg ms-2">
+                                                <i class="fas fa-times"></i> Cancel
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    }
+                    else if (!string.IsNullOrEmpty(selectedRole))
+                    {
+                        <div class="alert alert-info text-center mt-4">
+                            <i class="fas fa-info-circle fa-2x mb-2"></i>
+                            <p class="mb-0">No menus available to assign. Please create menus first.</p>
+                            <a asp-controller="AppMenus" asp-action="Index" class="btn btn-primary mt-2">
+                                <i class="fas fa-plus"></i> Create Menus
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-secondary text-center mt-4">
+                            <i class="fas fa-arrow-up fa-2x mb-2"></i>
+                            <p class="mb-0">Please select a role above to view and manage menu assignments.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Select All functionality
+        document.getElementById('selectAll')?.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.parent-checkbox, .child-checkbox');
+            checkboxes.forEach(cb => cb.checked = this.checked);
+        });
+
+        // Update Select All state based on individual checkboxes
+        document.querySelectorAll('.parent-checkbox, .child-checkbox').forEach(cb => {
+            cb.addEventListener('change', updateSelectAllState);
+        });
+
+        function updateSelectAllState() {
+            const selectAll = document.getElementById('selectAll');
+            const allCheckboxes = document.querySelectorAll('.parent-checkbox, .child-checkbox');
+            const checkedCount = document.querySelectorAll('.parent-checkbox:checked, .child-checkbox:checked').length;
+            
+            if (selectAll) {
+                selectAll.checked = checkedCount === allCheckboxes.length;
+                selectAll.indeterminate = checkedCount > 0 && checkedCount < allCheckboxes.length;
+            }
+        }
+
+        // Initialize select all state
+        updateSelectAllState();
+    </script>
+}

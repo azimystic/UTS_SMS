@@ -1,0 +1,154 @@
+﻿@model Timetable
+
+@{
+    ViewData["Title"] = "Timetable Details";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-primary-800">📅 @Model.Class?.Name - @Model.Section?.Name Timetable</h1>
+            <p class="text-neutral-600 mt-2">View full weekly schedule</p>
+        </div>
+
+        <!-- Info Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-primary-50 rounded-xl p-4">
+                <h3 class="text-sm font-medium text-primary-800 uppercase tracking-wider mb-2">Start Time</h3>
+                <p class="text-xl font-semibold text-primary-800">@Model.StartTime.ToString("hh:mm tt")</p>
+            </div>
+            <div class="bg-success-light rounded-xl p-4">
+                <h3 class="text-sm font-medium text-success uppercase tracking-wider mb-2">Periods</h3>
+                <p class="text-xl font-semibold text-primary-800">@Model.NumberOfLectures</p>
+            </div>
+            <div class="bg-purple-50 rounded-xl p-4">
+                <h3 class="text-sm font-medium text-purple-800 uppercase tracking-wider mb-2">Duration</h3>
+                <p class="text-xl font-semibold text-primary-800">@Model.LectureDuration min</p>
+            </div>
+        </div>
+
+        <!-- Weekly Timetable -->
+        <div class="bg-white rounded-2xl shadow-sms-xl overflow-hidden">
+            <div class="px-6 py-4 bg-neutral-50 border-b">
+                <h2 class="text-lg font-semibold text-primary-800">Weekly Schedule</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-neutral-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-sm font-medium text-neutral-700">Day</th>
+                            @* Build header dynamically based on slots *@
+                            @{
+                                var firstDaySlots = Model.TimetableSlots
+                                    .Where(s => s.DayOfWeek == 1)
+                                    .OrderBy(s => s.StartTime)
+                                    .ToList();
+                                    
+                                foreach (var slot in firstDaySlots)
+                                {
+                                    <th class="px-6 py-3 text-center text-sm font-medium text-neutral-700 @(slot.IsBreak ? "bg-red-100" : slot.IsZeroPeriod ? "bg-yellow-100" : "")">
+                                        @if (slot.IsZeroPeriod)
+                                        {
+                                            <span class="text-yellow-800 font-semibold">Zero</span>
+                                        }
+                                        else if (slot.IsBreak)
+                                        {
+                                            <span class="text-red-700 font-semibold">@slot.CustomTitle</span>
+                                        }
+                                        else
+                                        {
+                                            <span>P@(slot.PeriodNumber)</span>
+                                        }
+                                    </th>
+                                }
+                            }
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-primary-100">
+                        @foreach (var day in new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday" })
+                        {
+                            var dayNum = Array.IndexOf(
+                            new[] { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" },
+                            day
+                            );
+                            var daySlots = Model.TimetableSlots
+                                .Where(s => s.DayOfWeek == dayNum)
+                                .OrderBy(s => s.StartTime)
+                                .ToList();
+
+                            <tr class="hover:bg-neutral-50">
+                                <td class="px-6 py-4 font-medium text-primary-800">@day</td>
+
+                                @foreach (var slot in daySlots)
+                                {
+                                    <td class="px-4 py-3 text-sm @(slot.IsBreak ? "bg-red-100" : slot.IsZeroPeriod ? "bg-yellow-100" : "")">
+                                        @if (slot.IsZeroPeriod)
+                                        {
+                                            <div class="text-center">
+                                                <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-semibold">Zero Period</span>
+                                                <div class="text-xs text-gray-600 mt-1">
+                                                    @slot.StartTime.ToString("HH:mm") - @slot.EndTime.ToString("HH:mm")
+                                                </div>
+                                            </div>
+                                        }
+                                        else if (slot.IsBreak)
+                                        {
+                                            <div class="bg-red-50 text-red-700 px-3 py-2 rounded-lg text-center border border-red-200">
+                                                <div class="font-medium text-sm">@slot.CustomTitle</div>
+                                                <div class="text-xs text-red-600 mt-1">
+                                                    @slot.StartTime.ToString("HH:mm") - @slot.EndTime.ToString("HH:mm")
+                                                </div>
+                                            </div>
+                                        }
+                                        else if (slot.TeacherAssignment != null)
+                                        {
+                                            <div>
+                                                <div class="font-medium">@slot.TeacherAssignment.Subject?.Name</div>
+                                                <div class="text-neutral-600 text-xs">@slot.TeacherAssignment.Teacher?.FullName</div>
+                                                <div class="text-xs text-neutral-500 mt-1">
+                                                    @slot.StartTime.ToString("HH:mm") - @slot.EndTime.ToString("HH:mm")
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div>
+                                                <span class="text-neutral-400 text-xs">Free</span>
+                                                <div class="text-xs text-neutral-500 mt-1">
+                                                    @slot.StartTime.ToString("HH:mm") - @slot.EndTime.ToString("HH:mm")
+                                                </div>
+                                            </div>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex flex-wrap gap-4 mt-8">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-primary-400 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300 flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                Edit
+            </a>
+            <a asp-action="EditSlots" asp-route-id="@Model.Id" class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300 flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                Assign Slots
+            </a>
+            <a asp-action="Index" class="bg-neutral-100 hover:bg-primary-100 text-primary-800 font-medium py-2 px-6 rounded-lg transition-all duration-300 flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to List
+            </a>
+        </div>
+    </div>
+</div>

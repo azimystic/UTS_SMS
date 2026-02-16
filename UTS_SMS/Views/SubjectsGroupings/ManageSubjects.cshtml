@@ -1,0 +1,105 @@
+﻿@model SubjectsGrouping
+
+@{
+    ViewData["Title"] = "Manage Subjects";
+    var allSubjects = ViewBag.AllSubjects as IEnumerable<Subject>;
+    var assignedSubjectIds = ViewBag.AssignedSubjectIds as List<int> ?? new List<int>();
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-primary-800">📚 Manage Subjects - @Model.Name</h1>
+            <p class="text-neutral-600 mt-2">Assign subjects to this group</p>
+        </div>
+
+        <!-- Current Subjects -->
+        <div class="bg-white rounded-2xl shadow-sms-xl p-6 mb-8">
+            <h2 class="text-xl font-semibold text-primary-800 mb-4">Current Subjects</h2>
+
+            @if (Model.SubjectsGroupingDetails != null && Model.SubjectsGroupingDetails.Any(sgd => sgd.IsActive))
+            {
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    @foreach (var subjectDetail in Model.SubjectsGroupingDetails.Where(sgd => sgd.IsActive))
+                    {
+                        <div class="bg-success-light rounded-lg p-4 border border-green-200">
+                            <div class="font-medium text-success">@subjectDetail.Subject?.Name</div>
+                            <div class="text-sm text-neutral-600">Code: @subjectDetail.Subject?.Code</div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="bg-warning-light border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg">
+                    <div class="flex items-center">
+                        <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <div>
+                            <p class="font-semibold">No subjects assigned</p>
+                            <p class="text-sm mt-1">Select subjects from the list below to add them to this group.</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Available Subjects -->
+        <div class="bg-white rounded-2xl shadow-sms-xl p-6">
+            <h2 class="text-xl font-semibold text-primary-800 mb-4">Available Subjects</h2>
+
+            <form asp-action="ManageSubjects" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    @foreach (var subject in allSubjects)
+                    {
+                        <div class="flex items-center p-3 border border-primary-100 rounded-lg hover:bg-primary-50 transition-colors duration-200">
+                            <input type="checkbox" name="selectedSubjects" value="@subject.Id"
+                                   @(assignedSubjectIds.Contains(subject.Id) ? "checked" : "")
+                                   class="h-4 w-4 text-primary-600 focus:ring-primary-400 border-primary-200 rounded mr-3" />
+                            <div>
+                                <div class="font-medium text-primary-800">@subject.Name</div>
+                                <div class="text-sm text-neutral-600">Code: @subject.Code</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @if (!allSubjects.Any())
+                {
+                    <div class="bg-warning-light border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg mb-6">
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            <div>
+                                <p class="font-semibold">No subjects available</p>
+                                <p class="text-sm mt-1">Please create subjects first before managing groups.</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Actions -->
+                <div class="flex space-x-4 pt-6 border-t border-primary-100">
+                    <button type="submit" class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300 flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Save Changes
+                    </button>
+                    <a asp-action="Details" asp-route-id="@Model.Id" class="bg-neutral-100 hover:bg-primary-100 text-primary-800 font-medium py-2 px-6 rounded-lg transition-all duration-300 flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        Back to Details
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

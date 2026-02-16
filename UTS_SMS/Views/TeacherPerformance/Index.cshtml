@@ -1,0 +1,355 @@
+@model IEnumerable<SMS.Models.TeacherPerformance>
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "Teacher of the Month - Performance Rankings";
+
+    // Normalize typed values from ViewBag to avoid runtime conversions/FormatException.
+    int currentMonth = ViewBag.CurrentMonth != null ? (int)ViewBag.CurrentMonth : DateTime.Now.Month;
+    int currentYear = ViewBag.CurrentYear != null ? (int)ViewBag.CurrentYear : DateTime.Now.Year;
+
+    var topPerformers = (ViewBag.TopPerformers as List<SMS.Models.TeacherPerformance>) ?? new List<SMS.Models.TeacherPerformance>();
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="mx-auto">
+        <!-- Header - More compact -->
+        <div class="bg-white rounded-2xl shadow-sms-lg p-4 mb-4">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center">
+                <div class="flex items-center gap-3 mb-3 lg:mb-0">
+                    <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center shadow-md">
+                        <span class="text-2xl"></span>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-primary-800">Teacher of the Month</h1>
+                        <p class="text-sm text-neutral-600">Rankings for @CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(currentMonth) @currentYear</p>
+                    </div>
+                </div>
+                <a asp-action="Calculate" asp-route-month="@currentMonth" asp-route-year="@currentYear"
+                   class="bg-success hover:bg-green-700 text-white py-2 rounded-lg transition-all duration-300 flex items-center text-sm shadow-md px-3">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                    Calculate
+                </a>
+            </div>
+        </div>
+
+        <!-- Month/Year Filter - More compact -->
+        <div class="bg-white rounded-2xl shadow-sms-lg p-4 mb-4">
+            <form method="get" class="flex flex-col md:flex-row gap-3 items-end">
+                <div class="flex-1">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Month</label>
+                    <select name="month" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 text-sm">
+                        @for (int i = 1; i <= 12; i++)
+                        {
+                            var monthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(i);
+                            var isSelected = (i == currentMonth);
+                            <option value="@i" selected="@(isSelected ? "selected" : null)">@monthName</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="flex-1">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Year</label>
+                    <select name="year" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 text-sm">
+                        @for (int i = DateTime.Now.Year; i >= DateTime.Now.Year - 5; i--)
+                        {
+                            var isSelected = (i == currentYear);
+                            <option value="@i" selected="@(isSelected ? "selected" : null)">@i</option>
+                        }
+                    </select>
+                </div>
+
+                <button type="submit" class="bg-gradient-primary hover:bg-primary-700 text-white px-6 py-2 rounded-lg transition-all duration-300 font-semibold shadow-md text-sm">
+                    Filter
+                </button>
+            </form>
+        </div>
+
+        @if (topPerformers.Any())
+        {
+            <!-- Top 3 Performers - Redesigned as Modern Cards -->
+            <div class="mb-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2"></span> Teacher of the Month
+                </h2>
+                
+                @{
+                    // Group top performers by score to handle ties
+                    var topScore = topPerformers.First().TotalScore;
+                    var champions = topPerformers.Where(p => p.TotalScore == topScore).ToList();
+                    var hasCoWinners = champions.Count > 1;
+                }
+                
+                @if (hasCoWinners)
+                {
+                    <!-- Co-Winners Display -->
+                    <div class="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-400 rounded-2xl p-6 mb-4">
+                        <div class="text-center mb-4">
+                            <div class="text-4xl mb-2"> </div>
+                            <h3 class="text-2xl font-bold text-yellow-800">Co-Winners!</h3>
+                            <p class="text-sm text-yellow-700 mt-1">Multiple teachers share the top position</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-@(Math.Min(champions.Count, 3)) gap-4">
+                            @foreach (var champion in champions)
+                            {
+                                <div class="bg-white rounded-xl shadow-lg p-5 border-2 border-yellow-400 transform hover:scale-105 transition-all duration-200">
+                                    <div class="flex items-center mb-3">
+                                        @if (!string.IsNullOrEmpty(champion.Teacher?.ProfilePicture))
+                                        {
+                                            <img src="@champion.Teacher.ProfilePicture" alt="@champion.Teacher?.FullName" class="w-16 h-16 rounded-full object-cover mr-3 border-3 border-yellow-400" />
+                                        }
+                                        else
+                                        {
+                                            <div class="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mr-3 shadow-md">
+                                                <span class="text-white font-bold text-2xl">@(champion.Teacher?.FullName?.Substring(0, 1) ?? "?")</span>
+                                            </div>
+                                        }
+                                        <div class="flex-1">
+                                            <div class="text-lg font-bold text-gray-800">@champion.Teacher?.FullName</div>
+                                            <div class="text-xs text-gray-600">@champion.Teacher?.Email</div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-yellow-100 rounded-lg p-3 text-center">
+                                        <div class="text-3xl font-bold text-yellow-800">@champion.TotalScore.ToString("F2")</div>
+                                        <div class="text-xs text-yellow-700">out of 20.0</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <!-- Single Winner Display -->
+                    <div class="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl shadow-2xl p-8 mb-4 text-white">
+                        <div class="flex flex-col md:flex-row items-center justify-between">
+                            <div class="flex items-center mb-4 md:mb-0">
+                                <div class="text-6xl mr-4">🏆</div>
+                                <div class="flex items-center">
+                                    @if (!string.IsNullOrEmpty(topPerformers[0].Teacher?.ProfilePicture))
+                                    {
+                                        <img src="@topPerformers[0].Teacher.ProfilePicture" alt="@topPerformers[0].Teacher?.FullName" class="w-20 h-20 rounded-full object-cover mr-4 border-4 border-white shadow-xl" />
+                                    }
+                                    else
+                                    {
+                                        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mr-4 shadow-xl">
+                                            <span class="text-yellow-600 font-bold text-3xl">@(topPerformers[0].Teacher?.FullName?.Substring(0, 1) ?? "?")</span>
+                                        </div>
+                                    }
+                                    <div>
+                                        <div class="text-sm font-semibold opacity-90">Teacher of the Month</div>
+                                        <h3 class="text-3xl font-bold">@topPerformers[0].Teacher?.FullName</h3>
+                                        <p class="text-sm opacity-90">@topPerformers[0].Teacher?.Email</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-black/20 backdrop-blur rounded-2xl p-6 text-center">
+                                <div class="text-5xl font-bold mb-1">@topPerformers[0].TotalScore.ToString("F2")</div>
+                                <div class="text-sm opacity-90">out of 20.0</div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                
+                
+            </div>
+        }
+
+        <!-- Performance Details Table - More compact -->
+        <div class="bg-white rounded-2xl shadow-sms-lg overflow-hidden mb-4">
+            <div class="bg-gradient-primary px-4 py-3 text-white">
+                <h2 class="text-lg font-bold flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    All Teacher Performances
+                </h2>
+            </div>
+            
+            @if (Model != null && Model.Any())
+            {
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-bold text-gray-600 uppercase">Rank</th>
+                                <th class="px-4 py-2 text-left text-xs font-bold text-gray-600 uppercase">Teacher</th>
+                                <th class="px-4 py-2 text-left text-xs font-bold text-gray-600 uppercase">Att.(3.5)</th>
+                                <th class="px-4 py-2 text-left text-xs font-bold text-gray-600 uppercase">Punc.(2.5)</th>
+                                <th class="px-4 py-2 text-left text-xs font-bold text-gray-600 uppercase">Tests(5.5)</th>
+                                <th class="px-4 py-2 text-left text-xs font-bold text-gray-600 uppercase">Survey(6)</th>
+                                <th class="px-4 py-2 text-left text-xs font-bold text-gray-600 uppercase">Return(1.5)</th>
+                                <th class="px-4 py-2 text-left text-xs font-bold text-gray-600 uppercase">Quality(1)</th>
+                                <th class="px-4 py-2 text-left text-xs font-bold text-gray-600 uppercase">Total</th>
+                                <th class="px-4 py-2 text-left text-xs font-bold text-gray-600 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-100">
+                            @{
+                                int displayRank = 1;
+                                decimal? previousScore = null;
+                                int actualPosition = 0;
+                            }
+                            @foreach (var performance in Model.OrderByDescending(p => p.TotalScore))
+                            {
+                                actualPosition++;
+                                
+                                // Handle ties: if same score as previous, use same rank
+                                if (previousScore.HasValue && performance.TotalScore == previousScore.Value)
+                                {
+                                    // Keep displayRank the same
+                                }
+                                else
+                                {
+                                    displayRank = actualPosition;
+                                }
+                                
+                                previousScore = performance.TotalScore;
+                                var rankBadgeClass = displayRank <= 3 ? "bg-gradient-to-br from-yellow-400 to-orange-500 text-white" : "bg-gray-100 text-gray-700";
+                                
+                                <tr class="hover:bg-primary-50 transition-all duration-200">
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg @rankBadgeClass font-bold text-sm shadow-sm">
+                                            @displayRank
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            @if (!string.IsNullOrEmpty(performance.Teacher?.ProfilePicture))
+                                            {
+                                                <img src="@performance.Teacher.ProfilePicture" alt="@performance.Teacher?.FullName" class="w-10 h-10 rounded-full object-cover mr-3 border-2 border-gray-200" />
+                                            }
+                                            else
+                                            {
+                                                <div class="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center mr-3">
+                                                    <span class="text-white font-semibold text-sm">@(performance.Teacher?.FullName?.Substring(0, 1) ?? "?")</span>
+                                                </div>
+                                            }
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-800">@performance.Teacher?.FullName</div>
+                                                <div class="text-xs text-gray-500">@performance.Teacher?.Email</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                        <div class="font-bold text-gray-800">@performance.AttendanceScore.ToString("F2")</div>
+                                        <div class="text-xs text-gray-500">@performance.AttendedDays/@performance.TotalWorkingDays</div>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                        <div class="font-bold text-gray-800">@performance.PunctualityScore.ToString("F2")</div>
+                                        <div class="text-xs text-gray-500">@performance.OnTimeDays on-time</div>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                        <div class="font-bold text-gray-800">@performance.TestAverageScore.ToString("F2")</div>
+                                        <div class="text-xs text-gray-500">@performance.AverageTestMarks.ToString("F1")%</div>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                        <div class="font-bold text-gray-800">@performance.SurveyScore.ToString("F2")</div>
+                                        <div class="text-xs text-gray-500">@performance.PositiveSurveyResponses/@performance.TotalSurveyResponses</div>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                        <div class="font-bold text-gray-800">@performance.TestReturnScore.ToString("F2")</div>
+                                        <div class="text-xs text-gray-500">@performance.TestsReturnedOnTime/@performance.TotalTestsToReturn</div>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                        <div class="font-bold text-gray-800">@performance.CheckingQualityScore.ToString("F2")</div>
+                                        <div class="text-xs text-gray-500">@performance.BetterCheckingCount better</div>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <div class="bg-gradient-primary text-white rounded-lg px-3 py-2 inline-block">
+                                            <div class="text-lg font-bold">@performance.TotalScore.ToString("F2")</div>
+                                            <div class="text-xs opacity-90">/ 20.0</div>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3 whitespace-nowrap">
+                                        <a asp-action="Details" asp-route-id="@performance.Id" 
+                                           class="inline-flex items-center px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium transition-all duration-200">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                            </svg>
+                                            View
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="p-8 text-center">
+                    <div class="text-5xl mb-3"> </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">No Performance Data Available</h3>
+                    <p class="text-gray-600 mb-6">
+                        Calculate teacher performances for @CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(currentMonth) @currentYear to see rankings.
+                    </p>
+                    <a asp-action="Calculate" asp-route-month="@currentMonth" asp-route-year="@currentYear"
+                       class="inline-flex items-center bg-success hover:bg-green-700 text-white py-3 rounded-lg transition-all duration-300 font-semibold shadow-md px-4">
+                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                        Calculate Performance Now
+                    </a>
+                </div>
+            }
+        </div>
+
+        <!-- Performance Criteria Info - Compact -->
+        <div class="bg-primary-50 rounded-2xl p-4">
+            <h3 class="text-base font-bold text-primary-800 mb-3 flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Performance Evaluation Criteria
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+                <div class="bg-white rounded-lg p-2 shadow-sm border border-primary-200">
+                    <div class="flex items-center mb-1">
+                        <span class="text-lg mr-1"> </span>
+                        <div class="font-bold text-gray-800 text-sm">Attendance</div>
+                    </div>
+                    <div class="text-xs text-gray-600">3.5 marks</div>
+                </div>
+                <div class="bg-white rounded-lg p-2 shadow-sm border border-success">
+                    <div class="flex items-center mb-1">
+                        <span class="text-lg mr-1"> </span>
+                        <div class="font-bold text-gray-800 text-sm">Punctuality</div>
+                    </div>
+                    <div class="text-xs text-gray-600">2.5 marks</div>
+                </div>
+                <div class="bg-white rounded-lg p-2 shadow-sm border border-primary-300">
+                    <div class="flex items-center mb-1">
+                        <span class="text-lg mr-1"> </span>
+                        <div class="font-bold text-gray-800 text-sm">Test Average</div>
+                    </div>
+                    <div class="text-xs text-gray-600">5.5 marks</div>
+                </div>
+                <div class="bg-white rounded-lg p-2 shadow-sm border border-accent-400">
+                    <div class="flex items-center mb-1">
+                        <span class="text-lg mr-1">⭐</span>
+                        <div class="font-bold text-gray-800 text-sm">Survey</div>
+                    </div>
+                    <div class="text-xs text-gray-600">6 marks</div>
+                </div>
+                <div class="bg-white rounded-lg p-2 shadow-sm border border-warning">
+                    <div class="flex items-center mb-1">
+                        <span class="text-lg mr-1"> </span>
+                        <div class="font-bold text-gray-800 text-sm">Test Return</div>
+                    </div>
+                    <div class="text-xs text-gray-600">1.5 marks</div>
+                </div>
+                <div class="bg-white rounded-lg p-2 shadow-sm border border-primary-400">
+                    <div class="flex items-center mb-1">
+                        <span class="text-lg mr-1"> </span>
+                        <div class="font-bold text-gray-800 text-sm">Quality</div>
+                    </div>
+                    <div class="text-xs text-gray-600">1 mark</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,65 @@
+﻿@model Subject
+
+@{
+    ViewData["Title"] = "Subject Details";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-primary-800">📖 Subject Details</h1>
+            <p class="text-neutral-600 mt-2">View subject curriculum information</p>
+        </div>
+
+        <!-- Details Card -->
+        <div class="bg-white rounded-2xl shadow-sms-xl overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gradient-primary px-6 py-4 text-white">
+                <h2 class="text-xl font-semibold">Subject Information</h2>
+                <p class="text-blue-100">ID: @Model.Id</p>
+            </div>
+
+            <!-- Content -->
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Subject Info -->
+                    <div class="bg-primary-50 rounded-xl p-4">
+                        <h3 class="text-sm font-medium text-primary-800 uppercase tracking-wider mb-3">Subject</h3>
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold text-lg mr-3">
+                                @Model.Name?.Substring(0, 1).ToUpper()
+                            </div>
+                            <div>
+                                <div class="text-lg font-semibold text-primary-800">@Model.Name</div>
+                                <div class="text-sm text-neutral-600">Code: @Model.Code</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="bg-success-light rounded-xl p-4 md:col-span-2">
+                        <h3 class="text-sm font-medium text-success uppercase tracking-wider mb-3">Description</h3>
+                        <p class="text-primary-800">@Model.Description</p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex space-x-4 mt-8 pt-6 border-t border-primary-100">
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-primary-600 hover:to-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300 flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                        Edit
+                    </a>
+                    <a asp-action="Index" class="bg-neutral-100 hover:bg-primary-100 text-primary-800 font-medium py-2 px-6 rounded-lg transition-all duration-300 flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

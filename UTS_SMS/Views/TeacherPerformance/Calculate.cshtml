@@ -1,0 +1,216 @@
+@model IEnumerable<SMS.Models.TeacherPerformance>
+
+@{
+    ViewData["Title"] = "Calculate Teacher Performance";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-primary-800 flex items-center">
+                     Calculate Teacher Performance
+                </h1>
+                <p class="text-neutral-600 mt-2">Review and save performance calculations for @System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName((int)ViewBag.TargetMonth) @ViewBag.TargetYear</p>
+            </div>
+            <div class="flex space-x-3 mt-4 lg:mt-0">
+                <a asp-action="Index" asp-route-month="@ViewBag.TargetMonth" asp-route-year="@ViewBag.TargetYear"
+                   class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl transition-all duration-300 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Back to Rankings
+                </a>
+            </div>
+        </div>
+
+        <!-- Calculation Summary -->
+        <div class="bg-white rounded-2xl shadow-sms-lg p-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-primary-600">@ViewBag.TeachersCount</div>
+                    <div class="text-sm text-neutral-600">Teachers Evaluated</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-success">@Model.Count()</div>
+                    <div class="text-sm text-neutral-600">Calculations Generated</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-primary-600">
+                        @(Model.Any() ? Model.Max(p => p.TotalScore).ToString("F2") : "0")
+                    </div>
+                    <div class="text-sm text-neutral-600">Highest Score</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-warning">
+                        @(Model.Any() ? Model.Average(p => p.TotalScore).ToString("F2") : "0")
+                    </div>
+                    <div class="text-sm text-neutral-600">Average Score</div>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.Any())
+        {
+            <!-- Save Calculations Form -->
+            <div class="bg-white rounded-2xl shadow-sms-lg p-6 mb-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h2 class="text-xl font-semibold text-primary-800">Ready to Save Calculations</h2>
+                        <p class="text-neutral-600 mt-1">Review the calculated performances below and save them to the database</p>
+                    </div>
+                    <form method="post" asp-action="SaveCalculations">
+                        <input type="hidden" name="month" value="@ViewBag.TargetMonth" />
+                        <input type="hidden" name="year" value="@ViewBag.TargetYear" />
+                        <button type="submit" class="bg-success hover:bg-green-700 text-white px-6 py-3 rounded-xl transition-all duration-300 flex items-center whitespace-nowrap"
+                                onclick="return confirm('This will overwrite existing performance data for this month. Continue?')">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h2m0 0h9a2 2 0 002-2V9a2 2 0 00-2-2H9m11 11v-5h-4m-5 5a2 2 0 01-2-2V9a2 2 0 012-2h2v5"></path>
+                            </svg>
+                            Save All Calculations
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Calculated Performances Table -->
+            <div class="bg-white rounded-2xl shadow-sms-lg overflow-hidden">
+                <div class="px-6 py-4 bg-gradient-primary border-b">
+                    <h2 class="text-xl font-semibold text-white">Calculated Performance Scores</h2>
+                    <p class="text-sm text-white opacity-90 mt-1">Detailed breakdown of all performance calculations</p>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Teacher</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Attendance</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Punctuality</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Tests</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Survey</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Return</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Quality</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Total Score</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-100">
+                            @foreach (var performance in Model.OrderByDescending(p => p.TotalScore))
+                            {
+                                <tr class="hover:bg-primary-50 transition-colors duration-200">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            @if (!string.IsNullOrEmpty(performance.Teacher?.ProfilePicture))
+                                            {
+                                                <img src="@performance.Teacher.ProfilePicture" alt="@performance.Teacher?.FullName" class="w-10 h-10 rounded-full object-cover mr-4 border-2 border-primary-100" />
+                                            }
+                                            else
+                                            {
+                                                <div class="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center mr-4">
+                                                    <span class="text-sm font-semibold text-primary-800">@((performance.Teacher?.FullName ?? "T").Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(n => n[0]).Take(2).Aggregate("", (a, b) => a + b))</span>
+                                                </div>
+                                            }
+                                            <div class="min-w-0">
+                                                <div class="text-sm font-medium text-primary-800 truncate">@performance.Teacher?.FullName</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 w-12 h-2 bg-gray-200 rounded-full mr-3">
+                                                <div class="h-2 bg-blue-500 rounded-full" style="width: @((performance.AttendanceScore / 3.5m * 100).ToString("F0"))%"></div>
+                                            </div>
+                                            <span class="text-sm font-medium text-gray-800">@performance.AttendanceScore.ToString("F2")</span>
+                                        </div>
+                                        <div class="text-xs text-gray-500 ml-15">@performance.AttendedDays/@performance.TotalWorkingDays days</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 w-12 h-2 bg-gray-200 rounded-full mr-3">
+                                                <div class="h-2 bg-green-500 rounded-full" style="width: @((performance.PunctualityScore / 2.5m * 100).ToString("F0"))%"></div>
+                                            </div>
+                                            <span class="text-sm font-medium text-gray-800">@performance.PunctualityScore.ToString("F2")</span>
+                                        </div>
+                                        <div class="text-xs text-gray-500 ml-15">@performance.OnTimeDays on-time</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 w-12 h-2 bg-gray-200 rounded-full mr-3">
+                                                <div class="h-2 bg-purple-500 rounded-full" style="width: @((performance.TestAverageScore / 5.5m * 100).ToString("F0"))%"></div>
+                                            </div>
+                                            <span class="text-sm font-medium text-gray-800">@performance.TestAverageScore.ToString("F2")</span>
+                                        </div>
+                                        <div class="text-xs text-gray-500 ml-15">@performance.AverageTestMarks.ToString("F1")% avg</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 w-12 h-2 bg-gray-200 rounded-full mr-3">
+                                                <div class="h-2 bg-yellow-500 rounded-full" style="width: @((performance.SurveyScore / 6m * 100).ToString("F0"))%"></div>
+                                            </div>
+                                            <span class="text-sm font-medium text-gray-800">@performance.SurveyScore.ToString("F2")</span>
+                                        </div>
+                                        <div class="text-xs text-gray-500 ml-15">@performance.PositiveSurveyResponses/@performance.TotalSurveyResponses positive</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 w-12 h-2 bg-gray-200 rounded-full mr-3">
+                                                <div class="h-2 bg-pink-500 rounded-full" style="width: @((performance.TestReturnScore / 1.5m * 100).ToString("F0"))%"></div>
+                                            </div>
+                                            <span class="text-sm font-medium text-gray-800">@performance.TestReturnScore.ToString("F2")</span>
+                                        </div>
+                                        <div class="text-xs text-gray-500 ml-15">@performance.TestsReturnedOnTime/@performance.TotalTestsToReturn on-time</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 w-12 h-2 bg-gray-200 rounded-full mr-3">
+                                                <div class="h-2 bg-indigo-500 rounded-full" style="width: @((performance.CheckingQualityScore / 1m * 100).ToString("F0"))%"></div>
+                                            </div>
+                                            <span class="text-sm font-medium text-gray-800">@performance.CheckingQualityScore.ToString("F2")</span>
+                                        </div>
+                                        <div class="text-xs text-gray-500 ml-15">@performance.BetterCheckingCount better</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 w-16 h-3 bg-gray-200 rounded-full mr-3">
+                                                <div class="h-3 bg-gradient-to-r from-green-400 to-blue-500 rounded-full" style="width: @((performance.TotalScore / 20m * 100).ToString("F0"))%"></div>
+                                            </div>
+                                            <span class="text-lg font-bold text-primary-600">@performance.TotalScore.ToString("F2")</span>
+                                        </div>
+                                        <div class="text-xs text-gray-500 ml-19">/ 20.0</div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="bg-white rounded-2xl shadow-sms-lg p-12 text-center">
+                <div class="text-6xl mb-4">⚠️</div>
+                <h3 class="text-lg font-medium text-primary-800 mb-2">No Performance Data to Calculate</h3>
+                <p class="text-neutral-600 mb-6">There might not be sufficient data available for calculation, or no active teachers found for the selected period.</p>
+                <a asp-action="Index" class="bg-gradient-primary hover:bg-primary-700 text-white px-6 py-3 rounded-lg transition-all duration-300">
+                    Return to Rankings
+                </a>
+            </div>
+        }
+
+        <!-- Calculation Method Info -->
+        <div class="bg-yellow-50 rounded-2xl p-6 mt-6 border border-yellow-200">
+            <h3 class="text-lg font-semibold text-yellow-900 mb-4">ℹ️ Calculation Methodology</h3>
+            <div class="text-sm text-yellow-800 space-y-2">
+                <p><strong>Working Days:</strong> Total days in month excluding Sundays and holidays from calendar</p>
+                <p><strong>Attendance:</strong> (Attended Days ÷ Working Days) × 3.5</p>
+                <p><strong>Punctuality:</strong> (On-time Days ÷ Working Days) × 2.5 (Late arrivals count as absent)</p>
+                <p><strong>Tests:</strong> (Average Class Percentage ÷ 100) × 5.5 | <em>Full marks (5.5) if no tests conducted</em></p>
+                <p><strong>Survey:</strong> (Positive Responses ÷ Total Responses) × 6 | <em>Full marks (6.0) if no surveys filled</em></p>
+                <p><strong>Test Return:</strong> (On-time Returns ÷ Total Tests) × 1.5 | <em>Full marks (1.5) if no tests to return</em></p>
+                <p><strong>Quality:</strong> ((Better × 1 + Good × 0.7) ÷ Total Tests) capped at 1.0 | <em>Full marks (1.0) if no tests</em></p>
+                <p class="mt-3 pt-3 border-t border-yellow-300"><strong>Note:</strong> Missing data is not penalized - teachers receive full marks for categories where they have no data (benefit of doubt principle).</p>
+            </div>
+        </div>
+    </div>
+</div>

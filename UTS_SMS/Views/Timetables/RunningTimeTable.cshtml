@@ -1,0 +1,148 @@
+@{
+    ViewData["Title"] = "Running Timetable";
+    var groupedTimetables = ViewData["GroupedTimetables"] as Dictionary<string, List<Timetable>>;
+    var substitutionsBySlot = ViewData["SubstitutionsBySlot"] as Dictionary<int, Substitution>;
+    var selectedDate = ViewData["SelectedDate"] as string;
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-full mx-auto">
+        <!-- Header -->
+        <div class="mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-primary-800">Running Timetable Dashboard</h1>
+                <p class="text-neutral-600 mt-2">Live status of all classes and sections with substitution data</p>
+            </div>
+            <div>
+                <a asp-action="Index" class="bg-neutral-200 hover:bg-neutral-300 text-neutral-700 px-4 py-2 rounded-lg transition-colors">
+                    Back to Timetables
+                </a>
+            </div>
+        </div>
+
+        <!-- Date Filter -->
+        <div class="bg-white rounded-2xl shadow-sms-xl p-6 mb-8">
+            <form method="get" asp-action="RunningTimeTable" class="flex gap-4 items-end">
+                <div class="flex-1 max-w-xs">
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Select Date</label>
+                    <input type="date" name="date" value="@selectedDate" class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
+                </div>
+                <button type="submit" class="bg-primary-500 hover:bg-primary-600 text-white px-6 py-2 rounded-lg transition-all duration-300">
+                    Load Timetable
+                </button>
+            </form>
+        </div>
+
+        @if (groupedTimetables != null && groupedTimetables.Any())
+        {
+            @foreach (var gradeGroup in groupedTimetables)
+            {
+                <!-- Grade/Category Group -->
+                <div class="bg-white rounded-2xl shadow-sms-xl p-6 mb-8">
+                    <h2 class="text-2xl font-bold text-primary-800 mb-6 border-b-2 border-primary-200 pb-3">
+                        @gradeGroup.Key
+                    </h2>
+
+                    @foreach (var timetable in gradeGroup.Value)
+                    {
+                        var slots = timetable.TimetableSlots?.OrderBy(s => s.PeriodNumber).ToList() ?? new List<TimetableSlot>();
+                        var maxPeriod = slots.Any() ? slots.Max(s => s.PeriodNumber) : 0;
+
+                        <!-- 2D Matrix Table -->
+                        <div class="mb-8 overflow-x-auto">
+                            <div class="bg-gradient-to-r from-primary-100 to-primary-50 p-4 rounded-lg mb-4">
+                                <h3 class="text-xl font-semibold text-primary-800">
+                                    @timetable.Class.Name - Section @timetable.Section.Name
+                                </h3>
+                            </div>
+
+                            @if (slots.Any())
+                            {
+                                <table class="min-w-full border-collapse bg-white rounded-lg overflow-hidden shadow-md">
+                                    <thead>
+                                        <tr class="bg-primary-500 text-white">
+                                            <th class="px-4 py-3 text-left font-semibold border border-primary-400">Class-Section</th>
+                                            @for (int i = 1; i <= maxPeriod; i++)
+                                            {
+                                                <th class="px-4 py-3 text-center font-semibold border border-primary-400">
+                                                    @(i == 1 ? "1st" : i == 2 ? "2nd" : i == 3 ? "3rd" : $"{i}th") Lecture
+                                                </th>
+                                            }
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="hover:bg-primary-50 transition-colors">
+                                            <td class="px-4 py-3 border border-neutral-200 font-semibold text-primary-800 bg-primary-50">
+                                                @timetable.Class.Name - @timetable.Section.Name
+                                            </td>
+                                            @for (int period = 1; period <= maxPeriod; period++)
+                                            {
+                                                var slot = slots.FirstOrDefault(s => s.PeriodNumber == period);
+                                                var hasSubstitution = slot != null && (substitutionsBySlot?.ContainsKey(slot.Id) ?? false);
+                                                var substitution = hasSubstitution ? substitutionsBySlot[slot.Id] : null;
+                                                var cellClass = hasSubstitution ? "bg-yellow-50 border-2 border-yellow-400" : "border border-neutral-200";
+
+                                                <td class="px-4 py-3 @cellClass align-top">
+                                                    @if (slot != null)
+                                                    {
+                                                        var teacherName = slot.TeacherAssignment?.Teacher?.FullName ?? "Unassigned";
+                                                        var subjectName = slot.TeacherAssignment?.Subject?.Name ?? "N/A";
+                                                        var displayTeacherName = hasSubstitution && substitution?.SubstituteEmployee != null 
+                                                            ? substitution.SubstituteEmployee.FullName 
+                                                            : teacherName;
+
+                                                        <div class="space-y-1">
+                                                            @if (hasSubstitution)
+                                                            {
+                                                                <div class="text-xs font-bold text-yellow-700 mb-1">SUBSTITUTED</div>
+                                                            }
+                                                            <div class="font-semibold text-primary-800 text-sm">@subjectName</div>
+                                                            <div class="text-xs text-neutral-600">
+                                                                @slot.StartTime.ToString("hh:mm tt") - @slot.EndTime.ToString("hh:mm tt")
+                                                            </div>
+                                                            <div class="text-sm text-neutral-700">@displayTeacherName</div>
+                                                            @if (hasSubstitution && !string.IsNullOrEmpty(substitution.Reason))
+                                                            {
+                                                                <div class="text-xs text-neutral-500 italic mt-1 pt-1 border-t border-yellow-200">
+                                                                    Reason: @substitution.Reason
+                                                                </div>
+                                                            }
+                                                            @if (hasSubstitution)
+                                                            {
+                                                                <div class="text-xs text-neutral-500 mt-1">
+                                                                    Original: @teacherName
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="text-center text-neutral-400 text-sm">-</div>
+                                                    }
+                                                </td>
+                                            }
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            }
+                            else
+                            {
+                                <div class="bg-neutral-50 rounded-lg p-6 text-center">
+                                    <p class="text-neutral-500">No periods scheduled for this day</p>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <div class="bg-white rounded-2xl shadow-sms-xl p-12 text-center">
+                <div class="text-6xl mb-4">📅</div>
+                <h3 class="text-2xl font-bold text-neutral-700 mb-2">No Timetables Available</h3>
+                <p class="text-neutral-500">No timetables found for the selected date.</p>
+            </div>
+        }
+    </div>
+</div>

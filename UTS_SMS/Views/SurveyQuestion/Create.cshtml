@@ -1,0 +1,189 @@
+@model SMS.Models.SurveyQuestion
+
+@{
+    ViewData["Title"] = "Add Survey Question";
+}
+
+<div class="min-h-screen ">
+    <!-- Header Section -->
+    <div class=" shadow-sm border-b border-primary-100">
+        <div class=" mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-2xl font-bold text-primary-800 sm:text-3xl">Add Survey Question</h1>
+                    <p class="mt-1 text-sm text-neutral-500">Create a new yes/no survey question for student feedback</p>
+                </div>
+                <div class="mt-4 md:mt-0">
+                    <a asp-action="Index" class="inline-flex items-center px-4 py-2 border border-primary-200 rounded-lg shadow-sm text-sm font-medium text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-400">
+                        <svg class="-ml-1 mr-2 h-5 w-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Section -->
+    <div class=" mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class=" shadow-sm rounded-lg border border-primary-100">
+            <div class="px-6 py-4 border-b border-primary-100">
+                <h2 class="text-lg font-medium text-primary-800">Question Information</h2>
+                <p class="mt-1 text-sm text-neutral-600">Fill in the details for the new survey question</p>
+            </div>
+
+            <form asp-action="Create" method="post" class="p-6 space-y-6">
+                <div asp-validation-summary="ModelOnly" class="text-error"></div>
+
+                <!-- Question Text -->
+                <div>
+                    <label asp-for="QuestionText" class="block text-sm font-medium text-neutral-700 mb-2">Question Text *</label>
+                    <textarea asp-for="QuestionText" rows="4" 
+                              class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200" 
+                              placeholder="Enter your yes/no question here..."></textarea>
+                    <p class="mt-1 text-sm text-neutral-500">This question will be answered with Yes or No by students.</p>
+                    <span asp-validation-for="QuestionText" class="text-error text-sm"></span>
+                </div>
+
+                <!-- Campus Field Only -->
+                <div>
+                    @if (ViewBag.CampusId != null)
+                    {
+                        <div>
+                            <label asp-for="CampusId" class="block text-sm font-medium text-neutral-700 mb-2">Campus *</label>
+                            <select asp-for="CampusId" asp-items="ViewBag.CampusId" 
+                                    class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-colors duration-200">
+                                <option value="">Select Campus</option>
+                            </select>
+                            <span asp-validation-for="CampusId" class="text-error text-sm"></span>
+                        </div>
+                    }
+                    else
+                    {
+                        <input asp-for="CampusId" type="hidden" />
+                    }
+                </div>
+                
+                <!-- Hidden QuestionOrder field - auto-calculated -->
+                <input asp-for="QuestionOrder" type="hidden" />
+
+                <!-- Preview Section -->
+                <div class="bg-neutral-50 rounded-lg p-6">
+                    <h3 class="text-lg font-medium text-primary-800 mb-4">Question Preview</h3>
+                    <div class="rounded-lg p-4 border border-primary-100">
+                        <div class="mb-4">
+                            <p id="question-preview" class="text-primary-800 text-base">
+                                @if (!string.IsNullOrWhiteSpace(Model.QuestionText))
+                                {
+                                    @Model.QuestionText
+                                }
+                                else
+                                {
+                                    <span class="text-neutral-400">Your question will appear here...</span>
+                                }
+                            </p>
+                        </div>
+                        <div class="flex space-x-4">
+                            <label class="flex items-center">
+                                <input type="radio" name="preview" value="yes" class="h-4 w-4 text-success border-primary-200 focus:ring-green-500" disabled>
+                                <span class="ml-2 text-sm text-neutral-700">Yes</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="preview" value="no" class="h-4 w-4 text-error border-primary-200 focus:ring-red-500" disabled>
+                                <span class="ml-2 text-sm text-neutral-700">No</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row sm:justify-end sm:space-x-3 space-y-3 sm:space-y-0 pt-6 border-t border-primary-100">
+                    <a asp-action="Index" 
+                       class="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-primary-200 shadow-sm text-sm font-medium rounded-lg text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-400 transition-colors duration-200">
+                        Cancel
+                    </a>
+                    <button type="submit" 
+                            class="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-gradient-primary hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-400 transition-colors duration-200">
+                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Create Question
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        // Real-time preview update
+        document.getElementById('QuestionText').addEventListener('input', function() {
+            const previewElement = document.getElementById('question-preview');
+            const value = this.value.trim();
+            
+            if (value) {
+                previewElement.textContent = value;
+                previewElement.classList.remove('text-neutral-400');
+                previewElement.classList.add('text-primary-800');
+            } else {
+                previewElement.textContent = 'Your question will appear here...';
+                previewElement.classList.remove('text-primary-800');
+                previewElement.classList.add('text-neutral-400');
+            }
+        });
+
+        // Character counter
+        const questionTextarea = document.getElementById('QuestionText');
+        const maxLength = 500;
+        
+        // Create character counter element
+        const counterElement = document.createElement('div');
+        counterElement.className = 'mt-1 text-sm text-neutral-500 text-right';
+        counterElement.textContent = `0 / ${maxLength} characters`;
+        questionTextarea.parentNode.insertBefore(counterElement, questionTextarea.nextSibling.nextSibling);
+
+        questionTextarea.addEventListener('input', function() {
+            const length = this.value.length;
+            counterElement.textContent = `${length} / ${maxLength} characters`;
+            
+            if (length > maxLength * 0.9) {
+                counterElement.classList.remove('text-neutral-500');
+                counterElement.classList.add('text-accent-600');
+            } else if (length === maxLength) {
+                counterElement.classList.remove('text-accent-600');
+                counterElement.classList.add('text-error');
+            } else {
+                counterElement.classList.remove('text-accent-600', 'text-error');
+                counterElement.classList.add('text-neutral-500');
+            }
+        });
+
+        // Form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const questionText = document.getElementById('QuestionText').value.trim();
+            const questionOrder = document.getElementById('QuestionOrder').value;
+            
+            if (!questionText) {
+                e.preventDefault();
+                alert('Please enter a question text.');
+                return false;
+            }
+            
+            if (questionText.length > maxLength) {
+                e.preventDefault();
+                alert(`Question text must be ${maxLength} characters or less.`);
+                return false;
+            }
+            
+            if (!questionOrder || questionOrder < 1) {
+                e.preventDefault();
+                alert('Please enter a valid display order (1 or greater).');
+                return false;
+            }
+        });
+    </script>
+}
