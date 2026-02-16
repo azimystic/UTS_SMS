@@ -1,4 +1,4 @@
-namespace UTS_SMS.Models
+namespace SMS.Models
 {
     public class ErrorViewModel
     {
