@@ -1,18 +1,30 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
-using UTS_SMS.Models;
-using UTS_SMS;
+using SMS;
+using SMS.Models;
+using SMS.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllersWithViews();
+// Add response compression for better performance
+builder.Services.AddResponseCompression(options =>
+{
+    options.Providers.Add<GzipCompressionProvider>();
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/json" });
+});
+
+// Add caching
+builder.Services.AddMemoryCache();
+builder.Services.AddResponseCaching();
 
 // Add services to the container.
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection"),
         sqlServerOptions => sqlServerOptions.EnableRetryOnFailure(maxRetryCount: 3)));
+
+
 // Add Identity services
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
@@ -58,25 +70,89 @@ builder.Services.ConfigureApplicationCookie(options =>
         }
     };
 });
+
+// Add custom services
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IExtraChargeService, ExtraChargeService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ISalaryDeductionService, SalaryDeductionService>();
+builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<MessageService>();
+builder.Services.AddScoped<MenuService>();
+builder.Services.AddScoped<ReportService>();
+
+// Add background services
+builder.Services.AddHostedService<SalaryDeductionBackgroundService>();
+builder.Services.AddHostedService<NotificationBackgroundService>();
+builder.Services.AddHostedService<LeaveBalanceRolloverService>();
+
+builder.Services.AddControllersWithViews();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
+app.UseResponseCompression();
+app.UseResponseCaching();
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        // Cache static files for 30 days
+        ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=2592000");
+    }
+});
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Account}/{action=Login}/{id?}");
+
+// Initialize roles and create default admin user
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var userService = services.GetRequiredService<IUserService>();
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+
+    try
+    {
+        await userService.InitializeRolesAsync();
+        
+        var adminExists = await userManager.GetUsersInRoleAsync("Admin");
+        if (!adminExists.Any())
+        {
+            var result = await userService.CreateAdminUserAsync("campus1@gmail.com", "System Administrator");
+            if (result.Succeeded)
+            {
+                Console.WriteLine("✅ Default admin user created: campus1@gmail.com");
+            }
+        }
+        
+        var ownerExists = await userManager.GetUsersInRoleAsync("Owner");
+        if (!ownerExists.Any())
+        {
+            var result = await userService.CreateOwnerUserAsync("owner@gmail.com", "School Owner");
+            if (result.Succeeded)
+            {
+                Console.WriteLine("✅ Default owner user created: owner@gmail.com");
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"⚠️ Error during initialization: {ex.Message}");
+    }
+}
 
 app.Run();
