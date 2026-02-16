@@ -1,0 +1,310 @@
+﻿@model List<SMS.ViewModels.DailyAttendanceSummaryViewModel>
+@{
+    ViewData["Title"] = "Daily Attendance Summary";
+    var date = ViewBag.Date as DateTime? ?? DateTime.Today;
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-primary-800">Daily Attendance Summary</h1>
+                <p class="text-gray-600 mt-2">@date.ToString("dddd, MMMM dd, yyyy")</p>
+            </div>
+            <div class="flex space-x-3 mt-4 md:mt-0">
+                <a asp-action="Index"
+                   class="bg-gradient-primary hover:bg-primary-700 text-white px-4 py-2 rounded-xl transition-all duration-300 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Mark Attendance
+                </a>
+            </div>
+        </div>
+
+        <!-- Date Selection and Summary Cards Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Date Selection (Left Half) -->
+            <div class="bg-white rounded-2xl shadow-sms-lg p-6">
+                <h2 class="text-xl font-semibold text-primary-800 mb-4">Select Date</h2>
+                <form asp-action="DailySummary" method="get" class="flex flex-col space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Date</label>
+                        <input type="date" name="date" value="@date.ToString("yyyy-MM-dd")"
+                               max="@DateTime.Today.ToString("yyyy-MM-dd")"
+                               class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300" />
+                    </div>
+
+                    <button type="submit" class="bg-gradient-primary hover:bg-primary-700 text-white px-6 py-2 rounded-lg transition-all duration-300 flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        Load Summary
+                    </button>
+                </form>
+            </div>
+
+            <!-- Summary Cards (Right Half) - Stacked 2x2 -->
+            @{
+                var totalStudents = Model.Sum(s => s.TotalStudents);
+                var totalPresent = Model.Sum(s => s.Present);
+                var totalAbsent = Model.Sum(s => s.Absent);
+                var totalLeave = Model.Sum(s => s.Leave);
+                var totalLate = Model.Sum(s => s.Late);
+                var Present = totalPresent + totalLate;
+                var overallRate = totalStudents > 0 ? (totalPresent + totalLate) * 100 / totalStudents : 0;
+            }
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="bg-white rounded-2xl shadow-sms-lg p-6 transform hover:scale-105 transition-all duration-300">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center mr-4">
+                            <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-600">Total Students</h3>
+                            <p class="text-2xl font-bold text-primary-800">@totalStudents</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sms-lg p-6 transform hover:scale-105 transition-all duration-300">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-success-light rounded-xl flex items-center justify-center mr-4">
+                            <svg class="w-6 h-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-600">Present</h3>
+                            <p class="text-2xl font-bold text-primary-800">@Present</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sms-lg p-6 transform hover:scale-105 transition-all duration-300">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-error-light rounded-xl flex items-center justify-center mr-4">
+                            <svg class="w-6 h-6 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-600">Absent</h3>
+                            <p class="text-2xl font-bold text-primary-800">@totalAbsent</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sms-lg p-6 transform hover:scale-105 transition-all duration-300">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mr-4">
+                            <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-600">Attendance Rate</h3>
+                            <p class="text-2xl font-bold text-primary-800">@overallRate.ToString("0.0")%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <!-- Overall Distribution Chart -->
+            <div class="bg-white rounded-2xl shadow-sms-lg p-6">
+                <h2 class="text-xl font-semibold text-primary-800 mb-4">Overall Distribution</h2>
+                <div class="h-64">
+                    <canvas id="overallPieChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Class Performance Chart -->
+            <div class="bg-white rounded-2xl shadow-sms-lg p-6">
+                <h2 class="text-xl font-semibold text-primary-800 mb-4">Class Performance</h2>
+                <div class="h-64">
+                    <canvas id="classBarChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Table -->
+        <div class="bg-white rounded-2xl shadow-sms-lg overflow-hidden">
+            <div class="px-6 py-4 bg-gradient-to-r from-gray-800 to-gray-900 text-white">
+                <h2 class="text-xl font-semibold">Class-wise Summary</h2>
+                <p class="text-gray-300">Attendance breakdown by class and section</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Class</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Section</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Total</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Present</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Late</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Absent</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Leave</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Rate</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-gray-700 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-primary-100">
+                        @foreach (var item in Model)
+                        {
+                            <tr class="transition-all duration-300 hover:bg-gray-50">
+                                <td class="px-6 py-4 text-sm font-medium text-primary-800">@item.Class</td>
+                                <td class="px-6 py-4 text-sm text-gray-500">@item.Section</td>
+                                <td class="px-6 py-4 text-sm text-gray-500">@item.TotalStudents</td>
+                                <td class="px-6 py-4 text-sm text-success font-semibold">@item.Present</td>
+                                <td class="px-6 py-4 text-sm text-accent-600 font-semibold">@item.Late</td>
+                                <td class="px-6 py-4 text-sm text-error font-semibold">@item.Absent</td>
+                                <td class="px-6 py-4 text-sm text-accent-600 font-semibold">@item.Leave</td>
+                                <td class="px-6 py-4 text-sm">
+                                    <div class="flex items-center">
+                                        <div class="w-16 bg-primary-100 rounded-full h-2 mr-2">
+                                            <div class="bg-gradient-primary h-2 rounded-full" style="width: @item.AttendancePercentage%"></div>
+                                        </div>
+                                        <span class="font-semibold">@item.AttendancePercentage%</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-500">
+                                    <a asp-action="Summary"
+                                       asp-route-classId="@item.ClassID"
+                                       asp-route-sectionId="@item.SectionID"
+                                       asp-route-date="@date.ToString("yyyy-MM-dd")"
+                                       class="text-primary-600 hover:text-primary-800 transition-colors duration-300 flex items-center">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/chartjs/chart.min.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Overall Pie Chart
+            const overallCtx = document.getElementById('overallPieChart').getContext('2d');
+            new Chart(overallCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Present', 'Absent', 'Leave','Late'],
+                    datasets: [{
+                        data: [@totalPresent, @totalAbsent, @totalLeave,@totalLate],
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.9)',
+                            'rgba(239, 68, 68, 0.9)',
+                            'rgba(245, 158, 11, 0.9)',
+                            'rgba(285, 158, 11, 0.9)'
+                        ],
+                        borderColor: [
+                            'rgb(16, 185, 129)',
+                            'rgb(239, 68, 68)',
+                            'rgb(245, 158, 11)',
+                            'rgb(245, 158, 11)'
+                        ],
+                        borderWidth: 3,
+                        hoverOffset: 20
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    size: 14,
+                                    weight: '600'
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true,
+                        duration: 2000,
+                        easing: 'easeOutQuart'
+                    },
+                    cutout: '60%'
+                }
+            });
+
+            // Class Performance Bar Chart
+            const classCtx = document.getElementById('classBarChart').getContext('2d');
+            const classLabels = @Html.Raw(Json.Serialize(Model.Select(d => d.Class + "-" + d.Section)));
+            const attendanceRates = @Html.Raw(Json.Serialize(Model.Select(d => d.AttendancePercentage)));
+
+            new Chart(classCtx, {
+                type: 'bar',
+                data: {
+                    labels: classLabels,
+                    datasets: [{
+                        label: 'Attendance Rate %',
+                        data: attendanceRates,
+                        backgroundColor: 'rgba(79, 70, 229, 0.8)',
+                        borderColor: 'rgb(79, 70, 229)',
+                        borderWidth: 2,
+                        borderRadius: 6,
+                        hoverBackgroundColor: 'rgba(79, 70, 229, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Attendance: ' + context.raw + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        });
+    </script>
+}

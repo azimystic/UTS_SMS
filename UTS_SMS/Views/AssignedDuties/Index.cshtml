@@ -1,0 +1,432 @@
+@model IEnumerable<SMS.Models.AssignedDuty>
+
+@{
+    ViewData["Title"] = "Assigned Duties";
+}
+
+ <link rel="stylesheet" href="~/lib/sweetalert2/sweetalert2.min.css" />
+ 
+
+<div class="min-h-screen   p-4 md:p-6">
+    <div class="w-full max-w-full">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-primary-800">  Assigned Duties Management</h1>
+                <p class="text-neutral-600 mt-1">Manage and track all duty assignments</p>
+            </div>
+            <a asp-action="Create" class="bg-gradient-primary hover:bg-primary-700 text-white px-4 py-2 rounded-xl transition-all duration-300 flex items-center mt-4 md:mt-0">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Assign New Duty
+            </a>
+        </div>
+
+        <!-- Filters Card -->
+        <div class="bg-white rounded-2xl shadow-sms-lg p-6 mb-6">
+            <h3 class="text-lg font-semibold text-primary-800 mb-4">🔍 Filters</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-1">Search</label>
+                    <input type="text" id="searchString" placeholder="Title, description, employee..." 
+                           class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-1">Date</label>
+                    <input type="date" id="dateFilter" 
+                           class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-1">Status</label>
+                    <select id="statusFilter" class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400">
+                        <option value="">All Statuses</option>
+                        @foreach (var status in ViewBag.StatusOptions)
+                        {
+                            <option value="@status">@status</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-1">Employee</label>
+                    <select id="employeeFilter" class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400">
+                        <option value="">All Employees</option>
+                        @foreach (var employee in ViewBag.EmployeeOptions)
+                        {
+                            <option value="@employee.Id">@employee.FullName</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 mt-4">
+                <button type="button" id="clearFilters" class="bg-gray-400 hover:bg-neutral-500 text-white px-4 py-2 rounded-md transition-all duration-300">
+                    Clear Filters
+                </button>
+                <button type="button" id="toggleViewAll" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md transition-all duration-300">
+                    <span id="viewAllText">View All</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Success/Error Messages -->
+        <div id="messageContainer"></div>
+
+        <!-- Duties Grid -->
+        <div id="dutiesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Duties will be loaded here via AJAX -->
+        </div>
+
+        <!-- No Results Message -->
+        <div id="noResults" class="hidden bg-white rounded-2xl shadow-sms-lg p-12 text-center">
+            <svg class="w-16 h-16 text-neutral-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+            <h3 class="text-lg font-medium text-primary-800 mb-2">No duties found</h3>
+            <p class="text-neutral-500">Try adjusting your filters or assign new duties.</p>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="hidden text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+            <p class="text-neutral-600 mt-4">Loading duties...</p>
+        </div>
+    </div>
+</div>
+
+  
+ 
+
+
+    <script src="~/lib/sweetalert2/sweetalert2.min.js"></script>
+    <script>
+        let viewAll = false;
+
+        // Load duties on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDuties();
+            
+            // Add event listeners for filters
+            document.getElementById('searchString').addEventListener('input', debounce(loadDuties, 500));
+            document.getElementById('dateFilter').addEventListener('change', loadDuties);
+            document.getElementById('statusFilter').addEventListener('change', loadDuties);
+            document.getElementById('employeeFilter').addEventListener('change', loadDuties);
+            document.getElementById('clearFilters').addEventListener('click', clearFilters);
+            document.getElementById('toggleViewAll').addEventListener('click', toggleViewAll);
+        });
+
+        // Debounce function to limit API calls
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Load duties via AJAX
+        async function loadDuties() {
+            const searchString = document.getElementById('searchString').value;
+            const dateFilter = document.getElementById('dateFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const employeeFilter = document.getElementById('employeeFilter').value;
+
+            const params = new URLSearchParams({
+                searchString: searchString || '',
+                statusFilter: statusFilter || '',
+                employeeFilter: employeeFilter || '',
+                dateFilter: dateFilter || '',
+                viewAll: viewAll
+            });
+
+            showLoading();
+
+            try {
+                const response = await fetch(`/AssignedDuties/FilterDuties?${params}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    renderDuties(data.duties);
+                } else {
+                    showMessage('Error loading duties', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('Failed to load duties', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Render duties in the grid
+        function renderDuties(duties) {
+            const grid = document.getElementById('dutiesGrid');
+            const noResults = document.getElementById('noResults');
+
+            if (duties.length === 0) {
+                grid.innerHTML = '';
+                noResults.classList.remove('hidden');
+                return;
+            }
+
+            noResults.classList.add('hidden');
+            
+            grid.innerHTML = duties.map(duty => {
+                const priorityClass = {
+                    'High': 'bg-error-light text-error',
+                    'Medium': 'bg-warning-light text-yellow-800',
+                    'Low': 'bg-success-light text-success'
+                }[duty.priority] || 'bg-neutral-100 text-primary-800';
+
+                const statusClass = {
+                    'Assigned': 'bg-primary-100 text-primary-800',
+                    'In Progress': 'bg-warning-light text-yellow-800',
+                    'Completed': 'bg-success-light text-success',
+                    'Overdue': 'bg-error-light text-error',
+                    'Cancelled': 'bg-neutral-100 text-primary-800'
+                }[duty.status] || 'bg-neutral-100 text-primary-800';
+
+                return `
+                    <div class="bg-white rounded-2xl shadow-sms-lg overflow-hidden hover:shadow-sms-xl transition-shadow duration-300">
+                        <!-- Duty Header -->
+                        <div class="p-6 border-b border-primary-100">
+                            <div class="flex justify-between items-start mb-3">
+                                <h3 class="text-lg font-semibold text-primary-800 line-clamp-2">${duty.dutyTitle}</h3>
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full ${priorityClass}">
+                                    ${duty.priority}
+                                </span>
+                            </div>
+
+                            <div class="flex items-center text-sm text-neutral-600 mb-2">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                                ${duty.employeeName}
+                            </div>
+
+                            ${duty.studentNames && duty.studentNames.length > 0 ? `
+                            <div class="flex items-start text-sm text-neutral-600 mb-3">
+                                <svg class="w-4 h-4 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                </svg>
+                                <span class="flex-1">
+                                    <strong>Students:</strong> ${duty.studentNames.join(', ')}
+                                </span>
+                            </div>
+                            ` : ''}
+
+                            <div class="flex items-center text-sm text-neutral-600 mb-3">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                ${duty.startDate} - ${duty.dueDate}
+                            </div>
+
+                            ${duty.description ? `<p class="text-sm text-neutral-600 line-clamp-3">${duty.description}</p>` : ''}
+                        </div>
+
+                        <!-- Progress and Status -->
+                        <div class="p-6">
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-sm font-medium text-neutral-700">Progress</span>
+                                <span class="text-sm text-neutral-600">${duty.progressPercentage}%</span>
+                            </div>
+                            <div class="w-full bg-primary-100 rounded-full h-2 mb-4">
+                                <div class="bg-gradient-primary h-2 rounded-full" style="width: ${duty.progressPercentage}%"></div>
+                            </div>
+
+                            <div class="flex justify-between items-center mb-4">
+                                <span class="px-3 py-1 text-sm font-semibold rounded-full ${statusClass}">
+                                    ${duty.status}
+                                </span>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="grid grid-cols-2 gap-2">
+                                <a href="/AssignedDuties/Details/${duty.id}" 
+                                   class="bg-primary-50 hover:bg-primary-100 text-blue-700 text-center py-2 px-3 rounded-md text-sm font-medium transition-colors">
+                                    View
+                                </a>
+                                <a href="/AssignedDuties/Edit/${duty.id}" 
+                                   class="bg-success-light hover:bg-success text-success hover:text-white text-center py-2 px-3 rounded-md text-sm font-medium transition-colors">
+                                    Edit
+                                </a>
+                                ${duty.status !== 'Completed' ? `
+                                <button onclick="markAsCompleted(${duty.id})" 
+                                        class="bg-green-100 hover:bg-green-200 text-green-700 text-center py-2 px-3 rounded-md text-sm font-medium transition-colors">
+                                    ✓ Complete
+                                </button>
+                                ` : ''}
+                                ${duty.status !== 'Cancelled' && duty.status !== 'Completed' ? `
+                                <button onclick="markAsCancelled(${duty.id})" 
+                                        class="bg-yellow-100 hover:bg-yellow-200 text-yellow-700 text-center py-2 px-3 rounded-md text-sm font-medium transition-colors">
+                                    ✗ Cancel
+                                </button>
+                                ` : ''}
+                                <button onclick="deleteDuty(${duty.id})" 
+                                        class="bg-error-light hover:bg-error text-error hover:text-white text-center py-2 px-3 rounded-md text-sm font-medium transition-colors col-span-2">
+                                    🗑 Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Mark duty as completed
+        async function markAsCompleted(id) {
+            const result = await Swal.fire({
+                title: 'Mark as Completed?',
+                text: 'This will set the duty status to Completed and progress to 100%.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, mark as completed'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch('/AssignedDuties/MarkAsCompleted', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `id=${id}`
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        Swal.fire('Success!', data.message, 'success');
+                        loadDuties();
+                    } else {
+                        Swal.fire('Error!', data.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    Swal.fire('Error!', 'Failed to update duty', 'error');
+                }
+            }
+        }
+
+        // Mark duty as cancelled
+        async function markAsCancelled(id) {
+            const result = await Swal.fire({
+                title: 'Mark as Cancelled?',
+                text: 'This will set the duty status to Cancelled.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f59e0b',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, cancel duty'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch('/AssignedDuties/MarkAsCancelled', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `id=${id}`
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        Swal.fire('Success!', data.message, 'success');
+                        loadDuties();
+                    } else {
+                        Swal.fire('Error!', data.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    Swal.fire('Error!', 'Failed to update duty', 'error');
+                }
+            }
+        }
+
+        // Delete duty
+        async function deleteDuty(id) {
+            const result = await Swal.fire({
+                title: 'Delete Duty?',
+                text: 'This will permanently delete the duty. This action cannot be undone!',
+                icon: 'error',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, delete it!'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch('/AssignedDuties/HardDelete', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `id=${id}`
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        Swal.fire('Deleted!', data.message, 'success');
+                        loadDuties();
+                    } else {
+                        Swal.fire('Error!', data.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    Swal.fire('Error!', 'Failed to delete duty', 'error');
+                }
+            }
+        }
+
+        // Clear all filters
+        function clearFilters() {
+            document.getElementById('searchString').value = '';
+            document.getElementById('dateFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('employeeFilter').value = '';
+            loadDuties();
+        }
+
+        // Toggle view all
+        function toggleViewAll() {
+            viewAll = !viewAll;
+            const button = document.getElementById('viewAllText');
+            button.textContent = viewAll ? 'Hide Completed/Cancelled' : 'View All';
+            loadDuties();
+        }
+
+        // Show loading indicator
+        function showLoading() {
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+            document.getElementById('dutiesGrid').style.opacity = '0.5';
+        }
+
+        // Hide loading indicator
+        function hideLoading() {
+            document.getElementById('loadingIndicator').classList.add('hidden');
+            document.getElementById('dutiesGrid').style.opacity = '1';
+        }
+
+        // Show message
+        function showMessage(message, type) {
+            const container = document.getElementById('messageContainer');
+            const bgClass = type === 'error' ? 'bg-error-light border-red-400 text-error' : 'bg-success-light border-green-400 text-success';
+            container.innerHTML = `
+                <div class="${bgClass} border px-4 py-3 rounded-xl mb-6" role="alert">
+                    <span class="block sm:inline">${message}</span>
+                </div>
+            `;
+            setTimeout(() => { container.innerHTML = ''; }, 5000);
+        }
+    </script>
+

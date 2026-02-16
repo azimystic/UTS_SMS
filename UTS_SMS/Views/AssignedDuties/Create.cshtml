@@ -1,0 +1,370 @@
+@model SMS.Models.AssignedDuty
+
+@{
+    ViewData["Title"] = "Create Assigned Duty";
+}
+
+<div class="min-h-screen   p-4 md:p-6">
+    <div class="w-full max-w-full">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-primary-800">  Create Assigned Duty</h1>
+                <p class="text-neutral-600 mt-1">Assign duties to teachers and/or students</p>
+            </div>
+            <a asp-action="Index" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl transition-all duration-300 flex items-center mt-4 md:mt-0">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to List
+            </a>
+        </div>
+
+        <!-- Mode Selection -->
+        <div class="bg-white rounded-2xl shadow-sms-lg p-6 mb-6">
+            <h3 class="text-lg font-semibold text-primary-800 mb-4">📌 Assignment Mode</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button type="button" id="modeTeacher" class="mode-btn p-6 border-2 border-primary-200 rounded-xl hover:border-primary-600 hover:bg-primary-50 transition-all duration-300 text-center">
+                    <div class="text-4xl mb-3">👨‍🏫</div>
+                    <h4 class="font-semibold text-primary-800 mb-2">Teacher Only</h4>
+                    <p class="text-sm text-neutral-600">Assign duty to a teacher/employee</p>
+                </button>
+                <button type="button" id="modeStudent" class="mode-btn p-6 border-2 border-primary-200 rounded-xl hover:border-primary-600 hover:bg-primary-50 transition-all duration-300 text-center">
+                    <div class="text-4xl mb-3">👨‍🎓</div>
+                    <h4 class="font-semibold text-primary-800 mb-2">Student Only</h4>
+                    <p class="text-sm text-neutral-600">Assign duty to student(s)</p>
+                </button>
+                <button type="button" id="modeHybrid" class="mode-btn p-6 border-2 border-primary-200 rounded-xl hover:border-primary-600 hover:bg-primary-50 transition-all duration-300 text-center active">
+                    <div class="text-4xl mb-3">👥</div>
+                    <h4 class="font-semibold text-primary-800 mb-2">Hybrid</h4>
+                    <p class="text-sm text-neutral-600">Assign to both teacher and students</p>
+                </button>
+            </div>
+        </div>
+
+        <!-- Create Form -->
+        <div class="bg-white rounded-2xl shadow-sms-lg p-6">
+            <form asp-action="Create" method="post" id="createForm">
+                <div asp-validation-summary="ModelOnly" class="text-error mb-4"></div>
+                
+                <!-- Basic Information -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-primary-800 mb-4">📝 Duty Information</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="md:col-span-2">
+                            <label asp-for="DutyTitle" class="block text-sm font-medium text-neutral-700 mb-2">Duty Title <span class="text-error">*</span></label>
+                            <input asp-for="DutyTitle" class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400" />
+                            <span asp-validation-for="DutyTitle" class="text-error text-sm"></span>
+                        </div>
+                        
+                        <div class="md:col-span-2">
+                            <label asp-for="Description" class="block text-sm font-medium text-neutral-700 mb-2">Description</label>
+                            <textarea asp-for="Description" rows="3" class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400"></textarea>
+                            <span asp-validation-for="Description" class="text-error text-sm"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="Priority" class="block text-sm font-medium text-neutral-700 mb-2">Priority <span class="text-error">*</span></label>
+                            <select asp-for="Priority" class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400">
+                                <option value="">Select Priority</option>
+                                @foreach (var priority in ViewBag.PriorityOptions as List<string>)
+                                {
+                                    <option value="@priority">@priority</option>
+                                }
+                            </select>
+                            <span asp-validation-for="Priority" class="text-error text-sm"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="CampusId" class="block text-sm font-medium text-neutral-700 mb-2">Campus <span class="text-error">*</span></label>
+                            <select asp-for="CampusId" id="campusSelect" class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400" asp-items="ViewBag.CampusId">
+                                <option value="">Select Campus</option>
+                            </select>
+                            <span asp-validation-for="CampusId" class="text-error text-sm"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="StartDate" class="block text-sm font-medium text-neutral-700 mb-2">Start Date <span class="text-error">*</span></label>
+                            <input asp-for="StartDate" type="date" value="@DateTime.Today.ToString("yyyy-MM-dd")" class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400" />
+                            <span asp-validation-for="StartDate" class="text-error text-sm"></span>
+                        </div>
+                        
+                        <div>
+                            <label asp-for="DueDate" class="block text-sm font-medium text-neutral-700 mb-2">Due Date <span class="text-error">*</span></label>
+                            <input asp-for="DueDate" type="date" class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400" />
+                            <span asp-validation-for="DueDate" class="text-error text-sm"></span>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label asp-for="Instructions" class="block text-sm font-medium text-neutral-700 mb-2">Instructions</label>
+                            <textarea asp-for="Instructions" rows="3" class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400"></textarea>
+                            <span asp-validation-for="Instructions" class="text-error text-sm"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Employee Assignment Section -->
+                <div id="teacherSection" class="mb-6">
+                    <h3 class="text-lg font-semibold text-primary-800 mb-4"> Teacher/Employee Assignment</h3>
+                    <div class="grid grid-cols-1 gap-6">
+                        <div>
+                            <label asp-for="EmployeeId" class="block text-sm font-medium text-neutral-700 mb-2">Assign to Employee</label>
+                            <select asp-for="EmployeeId" id="employeeSelect" class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400" asp-items="ViewBag.EmployeeId">
+                                <option value="">Select Employee</option>
+                            </select>
+                            <span asp-validation-for="EmployeeId" class="text-error text-sm"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Student Selection Section -->
+                <div id="studentSection" class="mb-6">
+                    <h3 class="text-lg font-semibold text-primary-800 mb-4">  Student Assignment</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-2">Select Class</label>
+                            <select id="classSelect" class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 text-sm">
+                                <option value="">Select Class</option>
+                                @if (ViewBag.Classes != null)
+                                {
+                                    @foreach (var classItem in ViewBag.Classes as List<Class>)
+                                    {
+                                        <option value="@classItem.Id">@classItem.Name</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-2">Available Students</label>
+                            <select id="studentSelect" class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 text-sm" multiple size="6">
+                                <option value="">Select class first</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-2 mb-4">
+                        <button type="button" id="addStudents" class="w-full sm:w-auto px-4 py-2 bg-gradient-primary text-white rounded-md hover:bg-primary-700 transition-colors text-sm">
+                            Add Selected Students →
+                        </button>
+                        <button type="button" id="removeStudents" class="w-full sm:w-auto px-4 py-2 bg-error text-white rounded-md hover:bg-red-700 transition-colors text-sm">
+                            ← Remove Selected
+                        </button>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">Assigned Students</label>
+                        <div id="assignedStudents" class="border border-primary-200 rounded-md p-3 min-h-[120px] bg-neutral-50">
+                            <p class="text-neutral-500 text-sm">No students assigned yet</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Buttons -->
+                <div class="flex justify-end space-x-3">
+                    <a asp-action="Index" class="px-6 py-2 border border-primary-200 rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary-400 transition-colors">
+                        Cancel
+                    </a>
+                    <button type="submit" class="px-6 py-2 bg-gradient-primary text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-400 transition-colors">
+                        Create Duty
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        let selectedStudents = [];
+        let currentMode = 'hybrid'; // Default mode
+
+        // Mode selection handling
+        document.addEventListener('DOMContentLoaded', function() {
+            const modeButtons = {
+                teacher: document.getElementById('modeTeacher'),
+                student: document.getElementById('modeStudent'),
+                hybrid: document.getElementById('modeHybrid')
+            };
+
+            // Set initial mode
+            setMode('hybrid');
+
+            // Add click handlers
+            modeButtons.teacher.addEventListener('click', () => setMode('teacher'));
+            modeButtons.student.addEventListener('click', () => setMode('student'));
+            modeButtons.hybrid.addEventListener('click', () => setMode('hybrid'));
+
+            // Campus change handler
+            document.getElementById('campusSelect').addEventListener('change', function() {
+                const campusId = this.value;
+                loadClassesByCampus(campusId);
+            });
+
+            // Class change handler
+            document.getElementById('classSelect').addEventListener('change', function() {
+                const classId = this.value;
+                loadStudentsByClass(classId);
+            });
+
+            // Add students button
+            document.getElementById('addStudents').addEventListener('click', function() {
+                const studentSelect = document.getElementById('studentSelect');
+                const selectedOptions = Array.from(studentSelect.selectedOptions);
+                
+                selectedOptions.forEach(option => {
+                    if (option.value && !selectedStudents.find(s => s.id === option.value)) {
+                        selectedStudents.push({
+                            id: option.value,
+                            name: option.text
+                        });
+                    }
+                });
+                
+                updateAssignedStudentsDisplay();
+            });
+
+            // Remove students button
+            document.getElementById('removeStudents').addEventListener('click', function() {
+                const assignedList = document.querySelectorAll('.assigned-student-item.selected');
+                assignedList.forEach(item => {
+                    const studentId = item.dataset.studentId;
+                    selectedStudents = selectedStudents.filter(s => s.id !== studentId);
+                });
+                updateAssignedStudentsDisplay();
+            });
+
+            // Load initial data if campus is pre-selected
+            const campusSelect = document.getElementById('campusSelect');
+            if (campusSelect.value) {
+                loadClassesByCampus(campusSelect.value);
+            }
+
+            // Form submit handler - clean data based on mode
+            document.getElementById('createForm').addEventListener('submit', function(e) {
+                if (currentMode === 'teacher') {
+                    // Clear student data
+                    const studentInputs = document.querySelectorAll('input[name="selectedStudents"]');
+                    studentInputs.forEach(input => input.remove());
+                } else if (currentMode === 'student') {
+                    // Clear employee data
+                    const employeeSelect = document.getElementById('employeeSelect');
+                    employeeSelect.value = '';
+                }
+                // Hybrid mode keeps both
+            });
+        });
+
+        // Set mode and show/hide sections
+        function setMode(mode) {
+            currentMode = mode;
+            const teacherSection = document.getElementById('teacherSection');
+            const studentSection = document.getElementById('studentSection');
+            const modeButtons = document.querySelectorAll('.mode-btn');
+
+            // Update button styles
+            modeButtons.forEach(btn => {
+                btn.classList.remove('active', 'border-primary-600', 'bg-primary-50');
+                btn.classList.add('border-primary-200');
+            });
+
+            // Show/hide sections and clear data
+            if (mode === 'teacher') {
+                teacherSection.style.display = 'block';
+                studentSection.style.display = 'none';
+                document.getElementById('modeTeacher').classList.add('active', 'border-primary-600', 'bg-primary-50');
+                
+                // Clear student data
+                selectedStudents = [];
+                updateAssignedStudentsDisplay();
+            } else if (mode === 'student') {
+                teacherSection.style.display = 'none';
+                studentSection.style.display = 'block';
+                document.getElementById('modeStudent').classList.add('active', 'border-primary-600', 'bg-primary-50');
+                
+                // Clear employee data
+                document.getElementById('employeeSelect').value = '';
+            } else {
+                // Hybrid mode
+                teacherSection.style.display = 'block';
+                studentSection.style.display = 'block';
+                document.getElementById('modeHybrid').classList.add('active', 'border-primary-600', 'bg-primary-50');
+            }
+        }
+
+        // Load classes by campus
+        function loadClassesByCampus(campusId) {
+            if (!campusId) {
+                document.getElementById('classSelect').innerHTML = '<option value="">Select Class</option>';
+                document.getElementById('studentSelect').innerHTML = '<option value="">Select class first</option>';
+                return;
+            }
+
+            fetch(`/AssignedDuties/GetClassesByCampus?campusId=${campusId}`)
+                .then(response => response.json())
+                .then(classes => {
+                    const classSelect = document.getElementById('classSelect');
+                    classSelect.innerHTML = '<option value="">Select Class</option>';
+                    classes.forEach(cls => {
+                        classSelect.innerHTML += `<option value="${cls.id}">${cls.name}</option>`;
+                    });
+                })
+                .catch(error => console.error('Error loading classes:', error));
+        }
+
+        // Load students by class
+        function loadStudentsByClass(classId) {
+            if (!classId) {
+                document.getElementById('studentSelect').innerHTML = '<option value="">Select class first</option>';
+                return;
+            }
+
+            fetch(`/AssignedDuties/GetStudentsByClass?classId=${classId}`)
+                .then(response => response.json())
+                .then(students => {
+                    const studentSelect = document.getElementById('studentSelect');
+                    studentSelect.innerHTML = '';
+                    students.forEach(student => {
+                        studentSelect.innerHTML += `<option value="${student.id}">${student.name} (${student.fatherName})</option>`;
+                    });
+                })
+                .catch(error => console.error('Error loading students:', error));
+        }
+
+        // Update assigned students display
+        function updateAssignedStudentsDisplay() {
+            const container = document.getElementById('assignedStudents');
+            
+            if (selectedStudents.length === 0) {
+                container.innerHTML = '<p class="text-neutral-500 text-sm">No students assigned yet</p>';
+                return;
+            }
+
+            let html = '<div class="flex flex-wrap gap-2">';
+            selectedStudents.forEach(student => {
+                html += `
+                    <div class="assigned-student-item bg-primary-100 text-primary-800 px-3 py-1 rounded-full text-sm cursor-pointer hover:bg-blue-200" 
+                         data-student-id="${student.id}"
+                         onclick="toggleStudentSelection(this)">
+                        ${student.name}
+                        <input type="hidden" name="selectedStudents" value="${student.id}" />
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // Toggle student selection for removal
+        function toggleStudentSelection(element) {
+            element.classList.toggle('selected');
+            element.classList.toggle('bg-error-light');
+            element.classList.toggle('text-error');
+            element.classList.toggle('bg-primary-100');
+            element.classList.toggle('text-primary-800');
+        }
+    </script>
+}

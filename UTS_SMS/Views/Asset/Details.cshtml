@@ -1,0 +1,197 @@
+@model Asset
+
+@{
+    ViewData["Title"] = "Asset Details";
+}
+
+<div class="min-h-screen bg-neutral-50 p-3 md:p-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-primary-800 mb-2">Asset Details</h1>
+                <p class="text-neutral-600">@Model.Name</p>
+            </div>
+            <div class="flex space-x-3 mt-4 md:mt-0">
+                <a asp-action="Edit" asp-route-id="@Model.Id" 
+                   class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-all duration-300">
+                    Edit Asset
+                </a>
+                <a asp-action="Index" 
+                   class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-all duration-300">
+                    Back to Assets
+                </a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Main Asset Information -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-lg font-semibold text-primary-800 mb-4">Asset Information</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700">Asset Name</label>
+                            <div class="mt-1 text-sm text-primary-800">@Model.Name</div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.Category))
+                        {
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700">Category</label>
+                                <div class="mt-1">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-primary-100 text-primary-800">
+                                        @Model.Category
+                                    </span>
+                                </div>
+                            </div>
+                        }
+
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700">Price</label>
+                            <div class="mt-1 text-lg font-semibold text-success">@Model.Price.ToString("C")</div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700">Purchase Date</label>
+                            <div class="mt-1 text-sm text-primary-800">@Model.PurchaseDate.ToString("MMMM dd, yyyy")</div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.SerialNumber))
+                        {
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700">Serial Number</label>
+                                <div class="mt-1 text-sm text-primary-800 font-mono">@Model.SerialNumber</div>
+                            </div>
+                        }
+
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700">Condition</label>
+                            <div class="mt-1">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium 
+                                      @(Model.Condition == "New" || Model.Condition == "Like New" ? "bg-success-light text-success" :
+                                        Model.Condition == "Good" ? "bg-primary-100 text-primary-800" :
+                                        Model.Condition == "Fair" ? "bg-warning-light text-yellow-800" :
+                                        "bg-error-light text-error")">
+                                    @Model.Condition
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <div class="mt-6">
+                            <label class="block text-sm font-medium text-neutral-700 mb-2">Description</label>
+                            <div class="text-sm text-primary-800 bg-neutral-50 p-3 rounded-lg">
+                                @Model.Description
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Sidebar Information -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Financial Information -->
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-primary-800 mb-4">Financial Details</h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700">Purchase Price</label>
+                            <div class="mt-1 text-lg font-semibold text-primary-800">@Model.Price.ToString("C")</div>
+                        </div>
+
+                        @if (Model.Account != null)
+                        {
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700">Account Used</label>
+                                <div class="mt-1 text-sm text-primary-800">
+                                    <div class="font-medium">@Model.Account.AccountTitle</div>
+                                    <div class="text-neutral-500">@Model.Account.BankName</div>
+                                    <div class="text-neutral-500">@Model.Account.AccountNumber</div>
+                                </div>
+                            </div>
+                        }
+
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700">Campus</label>
+                            <div class="mt-1 text-sm text-primary-800">@Model.Campus?.Name</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Audit Information -->
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-primary-800 mb-4">Record Information</h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700">Created Date</label>
+                            <div class="mt-1 text-sm text-primary-800">@Model.CreatedDate.ToString("MMMM dd, yyyy 'at' hh:mm tt")</div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.CreatedBy))
+                        {
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700">Created By</label>
+                                <div class="mt-1 text-sm text-primary-800">@Model.CreatedBy</div>
+                            </div>
+                        }
+
+                        @if (Model.ModifiedDate.HasValue)
+                        {
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700">Last Modified</label>
+                                <div class="mt-1 text-sm text-primary-800">@Model.ModifiedDate.Value.ToString("MMMM dd, yyyy 'at' hh:mm tt")</div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(Model.ModifiedBy))
+                            {
+                                <div>
+                                    <label class="block text-sm font-medium text-neutral-700">Modified By</label>
+                                    <div class="mt-1 text-sm text-primary-800">@Model.ModifiedBy</div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+
+                <!-- Age and Depreciation Info -->
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-primary-800 mb-4">Asset Age</h3>
+                    
+                    @{
+                        var assetAge = DateTime.Now - Model.PurchaseDate;
+                        var years = (int)(assetAge.TotalDays / 365.25);
+                        var months = (int)((assetAge.TotalDays % 365.25) / 30.44);
+                    }
+                    
+                    <div class="space-y-2">
+                        <div class="text-2xl font-semibold text-primary-800">
+                            @if (years > 0)
+                            {
+                                <span>@years year@(years != 1 ? "s" : "")</span>
+                                if (months > 0)
+                                {
+                                    <span>, @months month@(months != 1 ? "s" : "")</span>
+                                }
+                            }
+                            else if (months > 0)
+                            {
+                                <span>@months month@(months != 1 ? "s" : "")</span>
+                            }
+                            else
+                            {
+                                <span>New</span>
+                            }
+                        </div>
+                        <div class="text-sm text-neutral-500">Since purchase</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

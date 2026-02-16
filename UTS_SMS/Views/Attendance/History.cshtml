@@ -1,0 +1,839 @@
+﻿@model List<SMS.Models.Attendance>
+@{
+    ViewData["Title"] = "Attendance History";
+    var studentName = ViewBag.StudentName as string;
+    var @class = ViewBag.Class as string;
+    var section = ViewBag.Section as string;
+    var registrationDate = ViewBag.RegistrationDate as DateTime? ?? DateTime.Now;
+    var campusId = ViewBag.CampusId as int? ?? 0;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <script src="~/lib/chartjs/chart.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        .attendance-history-container * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        .attendance-history-container {
+             min-height: 100vh;
+            padding: 1.5rem;
+        }
+
+        .attendance-history-container .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .attendance-history-container .header-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .attendance-history-container .header-card h1 {
+            color: #1a1a2e;
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .attendance-history-container .header-card p {
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        .attendance-history-container .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .attendance-history-container .stat-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .attendance-history-container .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .attendance-history-container .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .attendance-history-container .stat-icon.present { background: rgba(76, 175, 80, 0.15); color: #4CAF50; }
+        .attendance-history-container .stat-icon.absent { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .attendance-history-container .stat-icon.late { background: rgba(255, 152, 0, 0.15); color: #FF9800; }
+        .attendance-history-container .stat-icon.leave { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+
+        .attendance-history-container .stat-content {
+            flex: 1;
+        }
+
+        .attendance-history-container .stat-label {
+            color: #666;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .attendance-history-container .stat-value {
+            color: #1a1a2e;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .attendance-history-container .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .attendance-history-container .chart-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .attendance-history-container .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .attendance-history-container .chart-title {
+            color: #1a1a2e;
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .attendance-history-container .chart-title i {
+            color: #FFD700;
+        }
+
+        .attendance-history-container .toggle-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .attendance-history-container .toggle-btn {
+            padding: 0.375rem 0.875rem;
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            color: #333;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .attendance-history-container .toggle-btn:hover {
+            background: #e8e8e8;
+        }
+
+        .attendance-history-container .toggle-btn.active {
+            background: #FFD700;
+            color: #1a1a2e;
+            border-color: #FFD700;
+        }
+
+        .attendance-history-container .chart-container {
+            position: relative;
+            height: 280px;
+        }
+
+        .attendance-history-container .calendar-card {
+            width:33%;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .attendance-history-container .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .attendance-history-container .calendar-title {
+            color: #1a1a2e;
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .attendance-history-container .calendar-title i {
+            color: #FFD700;
+        }
+
+        .attendance-history-container .calendar-nav {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .attendance-history-container .nav-btn {
+            width: 32px;
+            height: 32px;
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            color: #333;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .attendance-history-container .nav-btn:hover {
+            background: #e8e8e8;
+            transform: scale(1.05);
+        }
+
+        .attendance-history-container .calendar-month {
+            color: #1a1a2e;
+            font-size: 0.95rem;
+            font-weight: 600;
+            min-width: 140px;
+            text-align: center;
+        }
+
+        .attendance-history-container .legend {
+            display: flex;
+            gap: 0.875rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 0.875rem;
+            padding: 0.625rem;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .attendance-history-container .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        .attendance-history-container .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 2px solid;
+        }
+
+        .attendance-history-container .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.375rem;
+        }
+
+        .attendance-history-container .calendar-day-header {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #666;
+            padding: 0.375rem;
+            font-weight: 600;
+        }
+
+        .attendance-history-container .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            position: relative;
+        }
+
+        .attendance-history-container .calendar-day:hover:not(.day-empty) {
+            transform: scale(1.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .attendance-history-container .day-empty {
+            background: transparent;
+        }
+
+        .attendance-history-container .day-present {
+            background: rgba(76, 175, 80, 0.15);
+            border-color: #4CAF50;
+            color: #2e7d32;
+        }
+
+        .attendance-history-container .day-absent {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: #ef4444;
+            color: #c62828;
+        }
+
+        .attendance-history-container .day-late {
+            background: rgba(255, 152, 0, 0.15);
+            border-color: #FF9800;
+            color: #e65100;
+        }
+
+        .attendance-history-container .day-leave {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: #f59e0b;
+            color: #b45309;
+        }
+
+        .attendance-history-container .day-sunday {
+            background: #f5f5f5;
+            color: #999;
+        }
+
+        .attendance-history-container .day-holiday {
+            background: rgba(33, 150, 243, 0.15);
+            border-color: #2196F3;
+            color: #1565c0;
+        }
+
+        .attendance-history-container .day-today {
+            box-shadow: 0 0 0 2px #FFD700;
+        }
+
+        @@media (max-width: 768px) {
+            .attendance-history-container .charts-row {
+                grid-template-columns: 1fr;
+            }
+            .attendance-history-container .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="attendance-history-container">
+        <div class="container">
+          
+            <div class="charts-row">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">
+                            <i class="fas fa-chart-pie"></i>
+                            Attendance Distribution
+                        </div>
+                        <div class="toggle-buttons">
+                            <button class="toggle-btn active" onclick="loadDistribution('thisMonth', event)">This Month</button>
+                            <button class="toggle-btn" onclick="loadDistribution('lastMonth', event)">Last Month</button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="distributionChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">
+                            <i class="fas fa-chart-bar"></i>
+                            Yearly Trend
+                        </div>
+                        <div class="toggle-buttons">
+                            <button class="toggle-btn active" onclick="loadYearlyTrend('thisYear', event)">This Year</button>
+                            <button class="toggle-btn" onclick="loadYearlyTrend('lastYear', event)">Last Year</button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="calendar-card">
+                <div class="calendar-header">
+                    <div class="calendar-title">
+                        <i class="fas fa-calendar-alt"></i>
+                        Monthly Overview
+                    </div>
+                    <div class="calendar-nav">
+                        <button class="nav-btn" onclick="changeMonth(-1)"><i class="fas fa-chevron-left"></i></button>
+                        <div class="calendar-month" id="currentMonthYear"></div>
+                        <button class="nav-btn" onclick="changeMonth(1)"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+                
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color day-present"></div>
+                        <span>Present</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color day-absent"></div>
+                        <span>Absent</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color day-late"></div>
+                        <span>Late</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color day-leave"></div>
+                        <span>Leave</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color day-holiday"></div>
+                        <span>Holiday</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color day-sunday"></div>
+                        <span>Sunday</span>
+                    </div>
+                </div>
+
+                <div class="calendar-grid" id="calendarGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const studentId = @ViewBag.StudentId;
+        const campusId = @campusId;
+        const registrationDate = new Date('@registrationDate.ToString("yyyy-MM-dd")');
+        const attendanceData = @Html.Raw(Json.Serialize(Model));
+        
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+        let distributionChart = null;
+        let trendChart = null;
+        let holidays = [];
+        let currentPeriodStats = { present: 0, absent: 0, late: 0, leave: 0 };
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            await loadHolidays();
+            await loadDistribution('thisMonth', null);
+            await loadYearlyTrend('thisYear', null);
+            renderCalendar();
+           
+        });
+
+        async function loadHolidays() {
+            try {
+                const response = await fetch(`/StudentDashboard/GetCalendarEventsByMonth?year=${currentYear}&month=${currentMonth + 1}`);
+                const data = await response.json();
+                if (data.success) {
+                    holidays = data.events.filter(e => e.isHoliday).map(e => new Date(e.startDate).toDateString());
+                }
+            } catch (error) {
+                console.error('Error loading holidays:', error);
+            }
+        }
+
+        function isSunday(date) {
+            return date.getDay() === 0;
+        }
+
+        function isHoliday(date) {
+            return holidays.includes(date.toDateString());
+        }
+
+        function getAttendanceForDate(date) {
+            const dateStr = date.toISOString().split('T')[0];
+            return attendanceData.find(a => {
+                const aDate = new Date(a.date);
+                const aDateStr = aDate.toISOString().split('T')[0];
+                return aDateStr === dateStr;
+            });
+        }
+ 
+
+        async function loadDistribution(period, clickEvent) {
+            if (clickEvent) {
+                document.querySelectorAll('.charts-row .chart-card:first-child .toggle-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                clickEvent.target.classList.add('active');
+            }
+
+            const now = new Date();
+            let startDate, endDate;
+
+            if (period === 'thisMonth') {
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            } else {
+                startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+            }
+
+            const response = await fetch(`/StudentDashboard/GetCalendarEventsByMonth?year=${startDate.getFullYear()}&month=${startDate.getMonth() + 1}`);
+            const data = await response.json();
+            let periodHolidays = [];
+            if (data.success) {
+                periodHolidays = data.events.filter(e => e.isHoliday).map(e => new Date(e.startDate).toDateString());
+            }
+
+            let present = 0, absent = 0, late = 0, leave = 0;
+
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                const currentD = new Date(d);
+                if (!isSunday(currentD) && !periodHolidays.includes(currentD.toDateString()) && currentD >= registrationDate && currentD <= new Date()) {
+                    const attendance = getAttendanceForDate(currentD);
+                    if (attendance) {
+                        if (attendance.status === 'P') present++;
+                        else if (attendance.status === 'A') absent++;
+                        else if (attendance.status === 'L') late++;
+                        else if (attendance.status === 'Leave') leave++;
+                    } else {
+                        present++;
+                    }
+                }
+            }
+
+            currentPeriodStats = { present, absent, late, leave };
+ 
+            if (distributionChart) {
+                distributionChart.destroy();
+            }
+
+            const ctx = document.getElementById('distributionChart').getContext('2d');
+            distributionChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Present', 'Absent', 'Late', 'Leave'],
+                    datasets: [{
+                        data: [present, absent, late, leave],
+                        backgroundColor: [
+                            'rgba(76, 175, 80, 0.8)',
+                            'rgba(239, 68, 68, 0.8)',
+                            'rgba(255, 152, 0, 0.8)',
+                            'rgba(245, 158, 11, 0.8)'
+                        ],
+                        borderColor: ['#4CAF50', '#ef4444', '#FF9800', '#f59e0b'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { 
+                                color: '#333', 
+                                font: { size: 11, weight: '500' },
+                                padding: 12
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                            borderWidth: 1
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+        }
+
+        async function loadYearlyTrend(period, clickEvent) {
+            if (clickEvent) {
+                document.querySelectorAll('.charts-row .chart-card:last-child .toggle-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                clickEvent.target.classList.add('active');
+            }
+
+            const year = period === 'thisYear' ? new Date().getFullYear() : new Date().getFullYear() - 1;
+            const regMonth = registrationDate.getMonth();
+            const regYear = registrationDate.getFullYear();
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const labels = [];
+            const presentData = [];
+            const absentData = [];
+            const lateData = [];
+            const leaveData = [];
+            const totalDaysData = [];
+
+            for (let month = 0; month < 12; month++) {
+                if (year < regYear || (year === regYear && month < regMonth)) continue;
+                if (year > currentYear || (year === currentYear && month > currentMonth)) break;
+
+                labels.push(monthNames[month]);
+
+                const startDate = new Date(year, month, 1);
+                const endDate = new Date(year, month + 1, 0);
+
+                const response = await fetch(`/StudentDashboard/GetCalendarEventsByMonth?year=${year}&month=${month + 1}`);
+                const data = await response.json();
+                let monthHolidays = [];
+                if (data.success) {
+                    monthHolidays = data.events.filter(e => e.isHoliday).map(e => new Date(e.startDate).toDateString());
+                }
+
+                let present = 0, absent = 0, late = 0, leave = 0, totalDays = 0;
+
+                for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                    const currentD = new Date(d);
+                    if (!isSunday(currentD) && !monthHolidays.includes(currentD.toDateString()) && currentD >= registrationDate && currentD <= new Date()) {
+                        totalDays++;
+                        const attendance = getAttendanceForDate(currentD);
+                        if (attendance) {
+                            if (attendance.status === 'P') present++;
+                            else if (attendance.status === 'A') absent++;
+                            else if (attendance.status === 'L') late++;
+                            else if (attendance.status === 'Leave') leave++;
+                        } else {
+                            present++;
+                        }
+                    }
+                }
+
+                presentData.push(present);
+                absentData.push(absent);
+                lateData.push(late);
+                leaveData.push(leave);
+                totalDaysData.push(totalDays);
+            }
+
+            if (trendChart) {
+                trendChart.destroy();
+            }
+
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            trendChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Present',
+                            data: presentData,
+                            backgroundColor: 'rgba(76, 175, 80, 0.8)',
+                            borderColor: '#4CAF50',
+                            borderWidth: 1,
+                            stack: 'stack0'
+                        },
+                        {
+                            label: 'Late',
+                            data: lateData,
+                            backgroundColor: 'rgba(255, 152, 0, 0.8)',
+                            borderColor: '#FF9800',
+                            borderWidth: 1,
+                            stack: 'stack0'
+                        },
+                        {
+                            label: 'Leave',
+                            data: leaveData,
+                            backgroundColor: 'rgba(245, 158, 11, 0.8)',
+                            borderColor: '#f59e0b',
+                            borderWidth: 1,
+                            stack: 'stack0'
+                        },
+                        {
+                            label: 'Absent',
+                            data: absentData,
+                            backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                            borderColor: '#ef4444',
+                            borderWidth: 1,
+                            stack: 'stack0'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { 
+                                color: '#333', 
+                                font: { size: 11, weight: '500' },
+                                padding: 12
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                            borderWidth: 1,
+                            callbacks: {
+                                title: function(context) {
+                                    const monthIndex = context[0].dataIndex;
+                                    return `${context[0].label} - Total Days: ${totalDaysData[monthIndex]}`;
+                                },
+                                footer: function(context) {
+                                    const index = context[0].dataIndex;
+                                    return `Present: ${presentData[index]}, Absent: ${absentData[index]}, Late: ${lateData[index]}, Leave: ${leaveData[index]}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: { color: '#666', font: { size: 10 } },
+                            grid: { color: 'rgba(0, 0, 0, 0.1)' }
+                        },
+                        x: {
+                            stacked: true,
+                            ticks: { color: '#666', font: { size: 10 } },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function changeMonth(direction) {
+            currentMonth += direction;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            } else if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+
+            const checkDate = new Date(currentYear, currentMonth, 1);
+            const regDate = new Date(registrationDate.getFullYear(), registrationDate.getMonth(), 1);
+            const now = new Date();
+            const currentDate = new Date(now.getFullYear(), now.getMonth(), 1);
+
+            if (checkDate < regDate || checkDate > currentDate) {
+                currentMonth -= direction;
+                if (currentMonth > 11) {
+                    currentMonth = 0;
+                    currentYear++;
+                } else if (currentMonth < 0) {
+                    currentMonth = 11;
+                    currentYear--;
+                }
+                return;
+            }
+
+            await loadHolidays();
+            renderCalendar();
+        }
+
+        async function renderCalendar() {
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            document.getElementById('currentMonthYear').textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            const today = new Date();
+
+            ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'calendar-day-header';
+                header.textContent = day;
+                grid.appendChild(header);
+            });
+
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const startDay = firstDay.getDay();
+
+            for (let i = 0; i < startDay; i++) {
+                const empty = document.createElement('div');
+                empty.className = 'calendar-day day-empty';
+                grid.appendChild(empty);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(currentYear, currentMonth, day);
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day';
+                dayEl.textContent = day;
+
+                if (date.toDateString() === today.toDateString()) {
+                    dayEl.classList.add('day-today');
+                }
+
+                if (isSunday(date)) {
+                    dayEl.classList.add('day-sunday');
+                    dayEl.title = 'Sunday';
+                } else if (isHoliday(date)) {
+                    dayEl.classList.add('day-holiday');
+                    dayEl.title = 'Holiday';
+                } else if (date >= registrationDate && date <= new Date()) {
+                    const attendance = getAttendanceForDate(date);
+                    if (attendance) {
+                        if (attendance.status === 'P') {
+                            dayEl.classList.add('day-present');
+                            dayEl.title = 'Present';
+                        }
+                        else if (attendance.status === 'A') {
+                            dayEl.classList.add('day-absent');
+                            dayEl.title = 'Absent';
+                        }
+                        else if (attendance.status === 'L') {
+                            dayEl.classList.add('day-late');
+                            dayEl.title = 'Late';
+                        }
+                        else if (attendance.status === 'Leave') {
+                            dayEl.classList.add('day-leave');
+                            dayEl.title = 'Leave';
+                        }
+                    } else {
+                        dayEl.classList.add('day-present');
+                        dayEl.title = 'Present (No record)';
+                    }
+                }
+
+                grid.appendChild(dayEl);
+            }
+        }
+    </script>
+</body>
+</html>
