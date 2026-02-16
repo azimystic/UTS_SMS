@@ -1,0 +1,653 @@
+﻿@model SMS.Models.ExamMarksEntryViewModel
+
+@{
+    ViewData["Title"] = "Exam Marks Entry";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-primary-800">Exam Marks Entry</h1>
+                <p class="text-neutral-600 mt-2">Record student exam marks with automatic grade calculation</p>
+            </div>
+            <div class="flex space-x-3 mt-4 md:mt-0">
+                
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Selection Form -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-2xl shadow-sms-lg p-6 sticky top-6">
+                    <div class="flex items-center mb-6">
+                        <div class="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center mr-4">
+                            <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2V9a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                        </div>
+                        <h2 class="text-xl font-semibold text-primary-800">Exam Setup</h2>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label for="campuses" class="block text-sm font-medium text-neutral-700 mb-2">Campus *</label>
+                            <select class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300"
+                                    id="campuses" onchange="loadClasses()">
+                                <option value="">Select Campus</option>
+                                @foreach (var category in Model.Campuses)
+                                {
+                                    <option value="@category.Id">@category.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <label for="examCategory" class="block text-sm font-medium text-neutral-700 mb-2">Exam Category *</label>
+                            <select class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300"
+                                    id="examCategory" onchange="loadExams()">
+                                <option value="">Select Exam Category</option>
+                                @foreach (var category in Model.ExamCategories)
+                                {
+                                    <option value="@category.Id">@category.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="exam" class="block text-sm font-medium text-neutral-700 mb-2">Exam *</label>
+                            <select class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300"
+                                    id="exam" disabled>
+                                <option value="">Select Exam</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="class" class="block text-sm font-medium text-neutral-700 mb-2">Class *</label>
+                            <select class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300"
+                                    id="class" onchange="loadSections()">
+                                <option value="">Select Class</option>
+                                @foreach (var cls in Model.Classes)
+                                {
+                                    <option value="@cls.Id">@cls.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="section" class="block text-sm font-medium text-neutral-700 mb-2">Section *</label>
+                            <select class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300"
+                                    id="section" disabled>
+                                <option value="">Select Section</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="subject" class="block text-sm font-medium text-neutral-700 mb-2">Subject *</label>
+                            <select class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300"
+                                    id="subject">
+                                <option value="">Select Subject</option>
+                                @foreach (var subject in Model.Subjects)
+                                {
+                                    <option value="@subject.Id">@subject.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <button type="button" class="w-full bg-gradient-primary hover:bg-primary-700 text-white px-6 py-3 rounded-lg transition-all duration-300 flex items-center justify-center"
+                                onclick="loadStudents()">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m3-6a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Load Students
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Students Marks Entry -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-2xl shadow-sms-lg" id="studentsContainer" style="display: none;">
+                    <div class="px-6 py-4 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-t-2xl">
+                        <h2 class="text-xl font-semibold flex items-center">
+                            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                            </svg>
+                            Students Marks Entry
+                        </h2>
+                        <p class="text-green-100 mt-1">Enter marks for enrolled students</p>
+                    </div>
+
+                    <div class="p-6">
+                        <!-- Exam Info Banner -->
+                        <div id="examInfoBanner" class="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200" style="display: none;">
+                            <div class="flex flex-wrap gap-4 items-center justify-between">
+                                <div class="flex gap-6">
+                                    <div class="text-center">
+                                        <div class="text-xs text-neutral-600 mb-1">Total Marks</div>
+                                        <div id="displayTotalMarks" class="text-2xl font-bold text-primary-600">-</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-xs text-neutral-600 mb-1">Passing Marks</div>
+                                        <div id="displayPassingMarks" class="text-2xl font-bold text-success">-</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-xs text-neutral-600 mb-1">Exam Date</div>
+                                        <div id="displayExamDate" class="text-sm font-semibold text-neutral-700">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
+                            <div class="flex flex-wrap gap-2 sm:gap-4">
+                                <div class="bg-success-light text-success px-3 py-1 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium">
+                                    <span id="enrolledCount">0</span> Enrolled
+                                </div>
+                                <div class="bg-warning-light text-yellow-800 px-3 py-1 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-medium">
+                                    <span id="notEnrolledCount">0</span> Not Enrolled
+                                </div>
+                            </div>
+                            <button type="button" class="w-full sm:w-auto bg-success hover:bg-green-700 text-white px-4 py-2 sm:px-6 rounded-lg transition-all duration-300 flex items-center justify-center"
+                                    onclick="saveMarks()">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                Save Marks
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-auto -mx-6 px-6">
+                            <table class="w-full min-w-full">
+                                <thead class="bg-neutral-50">
+                                    <tr>
+                                        <th class="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-neutral-700 uppercase tracking-wider">Student</th>
+                                        <th class="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-neutral-700 uppercase tracking-wider hidden md:table-cell">Father Name</th>
+                                        <th class="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-neutral-700 uppercase tracking-wider hidden sm:table-cell">Status</th>
+                                        <th class="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-neutral-700 uppercase tracking-wider">Marks</th>
+                                        <th class="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-neutral-700 uppercase tracking-wider hidden lg:table-cell">Grade</th>
+                                        <th class="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-neutral-700 uppercase tracking-wider hidden lg:table-cell">%</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentsTable" class="divide-y divide-primary-100">
+                                    <!-- Students will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="loadingState" class="bg-white rounded-2xl shadow-sms-lg p-12 text-center">
+                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                    <h3 class="text-lg font-medium text-neutral-700 mb-2">Ready to Load Students</h3>
+                    <p class="text-neutral-500">Select exam details and click "Load Students" to begin marks entry</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="~/lib/sweetalert2/sweetalert2.min.css" asp-append-version="true" />
+    <script src="~/lib/sweetalert2/sweetalert2.min.js" asp-append-version="true"></script>
+    
+    <script>
+        let studentsData = [];
+
+        function loadClasses() {
+            const campusId = document.getElementById('campuses').value;
+            const classSelect = document.getElementById('class');
+
+            classSelect.disabled = true;
+            classSelect.innerHTML = '<option value="">Loading...</option>';
+
+            if (!campusId) {
+                classSelect.innerHTML = '<option value="">Select Class</option>';
+                classSelect.disabled = false;
+                return;
+            }
+
+            fetch(`/ExamMarks/GetClassesByCategory?campusId=${campusId}`)
+                .then(response => response.json())
+                .then(data => {
+                    classSelect.innerHTML = '<option value="">Select Class</option>';
+                    data.forEach(cls => {
+                        classSelect.innerHTML += `<option value="${cls.id}">${cls.name}</option>`;
+                    });
+                    classSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    classSelect.innerHTML = '<option value="">Error loading classes</option>';
+                    classSelect.disabled = false;
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to load classes',
+                        confirmButtonColor: '#FFD700'
+                    });
+                });
+        }
+
+        function loadExams() {
+            const categoryId = document.getElementById('examCategory').value;
+            const examSelect = document.getElementById('exam');
+
+            examSelect.disabled = true;
+            examSelect.innerHTML = '<option value="">Loading...</option>';
+
+            if (!categoryId) {
+                examSelect.innerHTML = '<option value="">Select Exam</option>';
+                return;
+            }
+
+            fetch(`/ExamMarks/GetExamsByCategory?categoryId=${categoryId}`)
+                .then(response => response.json())
+                .then(data => {
+                    examSelect.innerHTML = '<option value="">Select Exam</option>';
+                    data.forEach(exam => {
+                        examSelect.innerHTML += `<option value="${exam.id}">${exam.name}</option>`;
+                    });
+                    examSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    examSelect.innerHTML = '<option value="">Error loading exams</option>';
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to load exams',
+                        confirmButtonColor: '#FFD700'
+                    });
+                });
+        }
+
+        function loadSections() {
+            const classId = document.getElementById('class').value;
+            const sectionSelect = document.getElementById('section');
+
+            sectionSelect.disabled = true;
+            sectionSelect.innerHTML = '<option value="">Loading...</option>';
+
+            if (!classId) {
+                sectionSelect.innerHTML = '<option value="">Select Section</option>';
+                return;
+            }
+
+            fetch(`/ExamMarks/GetSectionsByClass?classId=${classId}`)
+                .then(response => response.json())
+                .then(data => {
+                    sectionSelect.innerHTML = '<option value="">Select Section</option>';
+                    data.forEach(section => {
+                        sectionSelect.innerHTML += `<option value="${section.id}">${section.name}</option>`;
+                    });
+                    sectionSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    sectionSelect.innerHTML = '<option value="">Error loading sections</option>';
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to load sections',
+                        confirmButtonColor: '#FFD700'
+                    });
+                });
+        }
+
+        function loadStudents() {
+            const campusId = document.getElementById('campuses').value;
+            const examId = document.getElementById('exam').value;
+            const classId = document.getElementById('class').value;
+            const sectionId = document.getElementById('section').value;
+            const subjectId = document.getElementById('subject').value;
+
+            if (!examId || !classId || !sectionId || !subjectId) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Information',
+                    text: 'Please select all required fields',
+                    confirmButtonColor: '#FFD700'
+                });
+                return;
+            }
+
+            // Show loading
+            Swal.fire({
+                title: 'Loading Students...',
+                text: 'Please wait while we fetch the student list',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            document.getElementById('loadingState').style.display = 'block';
+            document.getElementById('studentsContainer').style.display = 'none';
+
+            fetch(`/ExamMarks/GetStudentsForMarksEntry?campusId=${campusId}&examId=${examId}&classId=${classId}&sectionId=${sectionId}&subjectId=${subjectId}`)
+                .then(response => response.json())
+                .then(data => {
+                    Swal.close();
+                    
+                    // ✅ Check if exam is not in date sheet
+                    if (!data.success && data.requiresDateSheet) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: '📅 Date Sheet Required',
+                            html: `
+                                <div class="text-left space-y-4">
+                                    <p class="text-neutral-700">${data.message}</p>
+                                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                                        <p class="text-sm text-yellow-800">
+                                            <strong>📌 Important:</strong> Please define this exam in the Date Sheet with:
+                                        </p>
+                                        <ul class="list-disc list-inside text-sm text-yellow-700 mt-2 space-y-1">
+                                            <li>Total Marks</li>
+                                            <li>Passing Marks</li>
+                                            <li>Exam Date</li>
+                                            <li>Class & Section mapping</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            `,
+                            showCancelButton: true,
+                            confirmButtonText: '<i class="fas fa-calendar-alt mr-2"></i>Go to Date Sheet',
+                            cancelButtonText: 'Cancel',
+                            confirmButtonColor: '#FFD700',
+                            cancelButtonColor: '#6b7280',
+                            customClass: {
+                                popup: 'swal-wide'
+                            }
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = '/ExamDateSheet/Index';
+                            }
+                        });
+                        return;
+                    }
+                    
+                    if (data.success) {
+                        studentsData = data.students;
+                        
+                        // Check if no students found
+                        if (data.students.length === 0) {
+                            document.getElementById('loadingState').innerHTML = `
+                                <div class="bg-white rounded-2xl shadow-sms-lg p-12 text-center">
+                                    <svg class="w-16 h-16 text-yellow-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                    <h3 class="text-lg font-medium text-neutral-700 mb-2">No Students Found</h3>
+                                    <p class="text-neutral-500">There are no students in the selected class and section.</p>
+                                </div>
+                            `;
+                            document.getElementById('loadingState').style.display = 'block';
+                            document.getElementById('studentsContainer').style.display = 'none';
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'No Students',
+                                text: 'There are no students in the selected class and section',
+                                confirmButtonColor: '#FFD700'
+                            });
+                            return;
+                        }
+                        
+                        // Store exam configuration
+                        window.examConfig = {
+                            totalMarks: data.totalMarks || 100,
+                            passingMarks: data.passingMarks || 40,
+                            examDate: data.examDate || '@DateTime.Now.ToString("yyyy-MM-dd")'
+                        };
+                        
+                        // Display exam info banner
+                        document.getElementById('displayTotalMarks').textContent = window.examConfig.totalMarks;
+                        document.getElementById('displayPassingMarks').textContent = window.examConfig.passingMarks;
+                        document.getElementById('displayExamDate').textContent = new Date(window.examConfig.examDate).toLocaleDateString('en-US', { 
+                            year: 'numeric', month: 'short', day: 'numeric' 
+                        });
+                        document.getElementById('examInfoBanner').style.display = 'block';
+                        
+                        displayStudents(data.students);
+                        updateCounts(data.students);
+                        document.getElementById('loadingState').style.display = 'none';
+                        document.getElementById('studentsContainer').style.display = 'block';
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Students Loaded!',
+                            text: `${data.students.length} student(s) loaded successfully`,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: data.message || 'Failed to load students',
+                            confirmButtonColor: '#FFD700'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.close();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'An error occurred while loading students',
+                        confirmButtonColor: '#FFD700'
+                    });
+                });
+        }
+
+        function displayStudents(students) {
+            const tbody = document.getElementById('studentsTable');
+            tbody.innerHTML = '';
+
+            students.forEach((student, index) => {
+                const row = document.createElement('tr');
+                row.className = `transition-all duration-300 hover:bg-neutral-50 ${!student.isEnrolledInSubject ? 'bg-warning-light' : ''}`;
+
+                row.innerHTML = `
+                    <td class="px-2 sm:px-4 py-4">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-primary-100 rounded-full flex items-center justify-center mr-2 sm:mr-3">
+                                <span class="text-primary-600 font-semibold text-xs sm:text-sm">${student.studentName.charAt(0).toUpperCase()}</span>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="text-xs sm:text-sm font-medium text-primary-800 truncate">${student.studentName}</div>
+                                <div class="md:hidden text-xs text-neutral-500 truncate">${student.fatherName}</div>
+                                <div class="sm:hidden text-xs ${student.isEnrolledInSubject ? 'text-success' : 'text-accent-600'}">${student.isEnrolledInSubject ? 'Enrolled' : 'Not Enrolled'}</div>
+                                ${!student.isEnrolledInSubject ? '<div class="text-xs text-accent-600 font-medium">Not Enrolled</div>' : ''}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-2 sm:px-4 py-4 text-xs sm:text-sm text-neutral-500 hidden md:table-cell">${student.fatherName}</td>
+                    <td class="px-2 sm:px-4 py-4 hidden sm:table-cell">
+                        <div class="space-y-1">
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                student.isEnrolledInSubject
+                                    ? 'bg-success-light text-success'
+                                    : 'bg-warning-light text-yellow-800'
+                            }">
+                                ${student.isEnrolledInSubject ? 'Enrolled' : 'Not Enrolled'}
+                            </span>
+                            ${student.isEnrolledInSubject ? `<div id="result_status_${index}" class="text-xs text-center"></div>` : ''}
+                        </div>
+                    </td>
+                    <td class="px-2 sm:px-4 py-4">
+                        <div class="space-y-1">
+                            ${student.isEnrolledInSubject
+                                ? `<input type="number" class="w-16 sm:w-20 px-2 py-1 sm:px-3 sm:py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300 text-center text-sm"
+                                     min="0" max="999" value="${student.obtainedMarks}" onchange="calculateGrade(${index}, this.value)">`
+                                : '<span class="text-neutral-400 text-sm">N/A</span>'
+                            }
+                            <div class="lg:hidden flex space-x-1 text-xs">
+                                <span class="px-1 py-0.5 text-xs font-semibold rounded ${getGradeBadgeClass(student.grade)}">${student.grade || '-'}</span>
+                                <span class="font-semibold text-primary-600">${student.percentage || '0'}%</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-2 sm:px-4 py-4 hidden lg:table-cell">
+                        <span id="grade_${index}" class="px-2 py-1 text-xs font-semibold rounded ${getGradeBadgeClass(student.grade)}">${student.grade || '-'}</span>
+                    </td>
+                    <td class="px-2 sm:px-4 py-4 hidden lg:table-cell">
+                        <span id="percentage_${index}" class="font-semibold text-sm">${student.percentage || '0'}%</span>
+                    </td>
+                `;
+
+                tbody.appendChild(row);
+            });
+        }
+
+        function getGradeBadgeClass(grade) {
+            switch(grade) {
+                case 'A+': case 'A': return 'bg-success-light text-success';
+                case 'B+': case 'B': return 'bg-primary-100 text-primary-800';
+                case 'C': return 'bg-warning-light text-yellow-800';
+                case 'D': return 'bg-orange-100 text-orange-800';
+                case 'F': return 'bg-error-light text-error';
+                default: return 'bg-neutral-100 text-primary-800';
+            }
+        }
+
+        function updateCounts(students) {
+            const enrolled = students.filter(s => s.isEnrolledInSubject).length;
+            const notEnrolled = students.length - enrolled;
+
+            document.getElementById('enrolledCount').textContent = enrolled;
+            document.getElementById('notEnrolledCount').textContent = notEnrolled;
+        }
+
+        function calculateGrade(index, obtainedMarks) {
+            const totalMarks = window.examConfig?.totalMarks || 100;
+            const passingMarks = window.examConfig?.passingMarks || 40;
+            const obtained = parseFloat(obtainedMarks) || 0;
+
+            studentsData[index].obtainedMarks = obtained;
+
+            const percentage = totalMarks > 0 ? Math.round((obtained / totalMarks) * 100) : 0;
+            studentsData[index].percentage = percentage;
+
+            let grade = '-';
+            let status = 'Fail';
+
+            if (obtained >= passingMarks) {
+                if (percentage >= 90) { grade = 'A+'; status = '1st Division'; }
+                else if (percentage >= 80) { grade = 'A'; status = '1st Division'; }
+                else if (percentage >= 75) { grade = 'B+'; status = '2nd Division'; }
+                else if (percentage >= 70) { grade = 'B'; status = '2nd Division'; }
+                else if (percentage >= 50) { grade = 'C'; status = '3rd Division'; }
+                else { grade = 'D'; status = 'Pass'; }
+            } else {
+                grade = 'F';
+                status = 'Fail';
+            }
+
+            studentsData[index].grade = grade;
+            studentsData[index].status = status;
+
+            document.getElementById(`grade_${index}`).textContent = grade;
+            document.getElementById(`grade_${index}`).className = `px-2 py-1 text-xs font-semibold rounded ${getGradeBadgeClass(grade)}`;
+            document.getElementById(`percentage_${index}`).textContent = `${percentage}%`;
+            
+            const resultStatusElement = document.getElementById(`result_status_${index}`);
+            if (resultStatusElement) {
+                const statusClass = status === 'Fail' ? 'text-error font-semibold' : 'text-success font-semibold';
+                resultStatusElement.innerHTML = `<span class="${statusClass}">${status}</span>`;
+            }
+        }
+
+        function saveMarks() {
+            const campusId = document.getElementById('campuses').value;
+            const examId = document.getElementById('exam').value;
+            const classId = document.getElementById('class').value;
+            const sectionId = document.getElementById('section').value;
+            const subjectId = document.getElementById('subject').value;
+            const totalMarks = window.examConfig?.totalMarks || 100;
+            const passingMarks = window.examConfig?.passingMarks || 40;
+            const examDate = window.examConfig?.examDate || '@DateTime.Now.ToString("yyyy-MM-dd")';
+
+            if (!examId || !classId || !sectionId || !subjectId) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Information',
+                    text: 'Please select all required fields',
+                    confirmButtonColor: '#FFD700'
+                });
+                return;
+            }
+
+            const requestData = {
+                campusId: parseInt(campusId),
+                examId: parseInt(examId),
+                classId: parseInt(classId),
+                sectionId: parseInt(sectionId),
+                subjectId: parseInt(subjectId),
+                totalMarks: totalMarks,
+                passingMarks: passingMarks,
+                examDate: examDate,
+                studentMarks: studentsData
+            };
+
+            // Show loading
+            Swal.fire({
+                title: 'Saving Marks...',
+                text: 'Please wait while we save the exam marks',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            fetch('/ExamMarks/SaveExamMarks', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                Swal.close();
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: data.message,
+                        confirmButtonColor: '#FFD700'
+                    }).then(() => {
+                        loadStudents(); // Reload to show updated marks
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message || 'Failed to save marks',
+                        confirmButtonColor: '#FFD700'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.close();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'An error occurred while saving marks',
+                    confirmButtonColor: '#FFD700'
+                });
+            });
+        }
+    </script>
+    
+    <style>
+        .swal-wide {
+            width: 600px !important;
+            max-width: 90% !important;
+        }
+    </style>
+}

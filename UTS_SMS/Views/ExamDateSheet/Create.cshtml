@@ -1,0 +1,421 @@
+@model SMS.Models.ExamDateSheetViewModel
+
+@{
+    ViewData["Title"] = "Create Exam Date Sheet";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-primary-800">📅 Create Exam Date Sheet</h1>
+            <p class="text-neutral-600 mt-2">Schedule an exam for a specific date</p>
+        </div>
+
+        <!-- Form -->
+        <div class="bg-white rounded-2xl shadow-sms-xl p-6">
+            <form asp-action="Create" id="examDateSheetForm" class="space-y-6">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="bg-error-light border-l-4 border-error text-error p-4 rounded-lg"></div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Exam Date -->
+                    <div class="md:col-span-2">
+                        <label asp-for="ExamDate" class="block text-sm font-medium text-neutral-700 mb-2">Exam Date *</label>
+                        <input asp-for="ExamDate" type="date" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400" required />
+                        <span asp-validation-for="ExamDate" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Campus -->
+                    <div class="md:col-span-2">
+                        <label asp-for="CampusId" class="block text-sm font-medium text-neutral-700 mb-2">Campus *</label>
+                        @if (Model.IsUserCampusLocked)
+                        {
+                            <input type="hidden" asp-for="CampusId" />
+                            <input type="text" class="w-full px-4 py-3 border border-primary-200 rounded-lg bg-neutral-100" 
+                                   value="@Model.Campuses.FirstOrDefault()?.Name" disabled />
+                        }
+                        else
+                        {
+                            <select asp-for="CampusId" id="campusSelect" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400" required>
+                                <option value="">-- Select Campus --</option>
+                                @foreach (var campus in Model.Campuses)
+                                {
+                                    <option value="@campus.Id" selected="@(Model.CampusId == campus.Id)">@campus.Name</option>
+                                }
+                            </select>
+                        }
+                        <span asp-validation-for="CampusId" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Exam Category -->
+                    <div>
+                        <label asp-for="ExamCategoryId" class="block text-sm font-medium text-neutral-700 mb-2">Exam Category *</label>
+                        <select asp-for="ExamCategoryId" id="examCategorySelect" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400" required>
+                            <option value="">-- Select Exam Category --</option>
+                            @foreach (var category in Model.ExamCategories)
+                            {
+                                <option value="@category.Id" selected="@(Model.ExamCategoryId == category.Id)">
+                                    @category.Name @(category.CampusId == null ? "🌐" : "")
+                                </option>
+                            }
+                        </select>
+                        <span asp-validation-for="ExamCategoryId" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Exam Name -->
+                    <div>
+                        <label asp-for="ExamId" class="block text-sm font-medium text-neutral-700 mb-2">Exam Name *</label>
+                        <select asp-for="ExamId" id="examSelect" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400" required>
+                            <option value="">-- Select Exam --</option>
+                            @foreach (var exam in Model.Exams)
+                            {
+                                <option value="@exam.Id" selected="@(Model.ExamId == exam.Id)">@exam.Name</option>
+                            }
+                        </select>
+                        <span asp-validation-for="ExamId" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Subject -->
+                    <div>
+                        <label asp-for="SubjectId" class="block text-sm font-medium text-neutral-700 mb-2">Subject *</label>
+                        <select asp-for="SubjectId" id="subjectSelect" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400" required>
+                            <option value="">-- Select Subject --</option>
+                            @foreach (var subject in Model.Subjects)
+                            {
+                                <option value="@subject.Id" selected="@(Model.SubjectId == subject.Id)">@subject.Name</option>
+                            }
+                        </select>
+                        <span asp-validation-for="SubjectId" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Total Marks -->
+                    <div>
+                        <label asp-for="TotalMarks" class="block text-sm font-medium text-neutral-700 mb-2">Total Marks *</label>
+                        <input asp-for="TotalMarks" type="number" min="1" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400" required />
+                        <span asp-validation-for="TotalMarks" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Passing Marks -->
+                    <div>
+                        <label asp-for="PassingMarks" class="block text-sm font-medium text-neutral-700 mb-2">Passing Marks *</label>
+                        <input asp-for="PassingMarks" type="number" min="1" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400" required />
+                        <span asp-validation-for="PassingMarks" class="text-error text-sm"></span>
+                    </div>
+                </div>
+
+                <!-- Class and Section Rows -->
+                <div class="border-t border-primary-100 pt-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-primary-800">Classes & Sections</h3>
+                        <button type="button" onclick="addClassSectionRow()" class="bg-info hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Add Row
+                        </button>
+                    </div>
+                    
+                    <div id="classSectionRows" class="space-y-3">
+                        @if (Model.ClassSectionRows != null && Model.ClassSectionRows.Any())
+                        {
+                            @for (var i = 0; i < Model.ClassSectionRows.Count; i++)
+                            {
+                                var rowIndex = i;
+                                var currentRow = Model.ClassSectionRows[i];
+                                var classFieldName = $"ClassSectionRows[{rowIndex}].ClassId";
+                                var sectionFieldName = $"ClassSectionRows[{rowIndex}].Sec" + "tionId";
+                                var currentSectionValue = currentRow.SectionId;
+                                <div class="class-section-row flex gap-4 items-center">
+                                    <div class="flex-1">
+                                        <select name="@classFieldName" class="class-select w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400" onchange="loadSectionsForRow(this)">
+                                            <option value="">-- Select Class --</option>
+                                            @foreach (var cls in Model.Classes)
+                                            {
+                                                <option value="@cls.Id" selected="@(currentRow.ClassId == cls.Id)">@cls.Name</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="flex-1">
+                                        <select name="@sectionFieldName" class="section-select w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400">
+                                            <option value="">-- Select Section --</option>
+                                            @foreach (var sec in Model.Sections.Where(s => s.ClassId == currentRow.ClassId))
+                                            {
+                                                var isSelected = currentSectionValue == sec.Id;
+                                                <option value="@sec.Id" selected="@isSelected">@sec.Name</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <button type="button" onclick="removeRow(this)" class="p-2 text-error hover:bg-error-light rounded-lg transition-all duration-300">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="class-section-row flex gap-4 items-center">
+                                <div class="flex-1">
+                                    <select name="ClassSectionRows[0].ClassId" class="class-select w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400" onchange="loadSectionsForRow(this)">
+                                        <option value="">-- Select Class --</option>
+                                        @foreach (var cls in Model.Classes)
+                                        {
+                                            <option value="@cls.Id">@cls.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="flex-1">
+                                    <select name="ClassSectionRows[0].SectionId" class="section-select w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400">
+                                        <option value="">-- Select Section --</option>
+                                    </select>
+                                </div>
+                                <button type="button" onclick="removeRow(this)" class="p-2 text-error hover:bg-error-light rounded-lg transition-all duration-300">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                    <p class="text-sm text-neutral-500 mt-2">Add class and section combinations for this exam</p>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex space-x-4 pt-6">
+                    <button type="submit" class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium py-3 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-sms-lg flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Create Exam Date Sheet
+                    </button>
+                    <a asp-action="Index" class="bg-neutral-100 hover:bg-primary-100 text-primary-800 font-medium py-3 px-8 rounded-xl transition-all duration-300 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    
+    <script>
+        let rowIndex = @(Model.ClassSectionRows?.Count ?? 1);
+
+        // Load exam categories when campus changes
+        document.getElementById('campusSelect')?.addEventListener('change', function() {
+            const campusId = this.value;
+            
+            // Load exam categories
+            loadExamCategories(campusId);
+            
+            // Load subjects
+            loadSubjects(campusId);
+            
+            // Load classes
+            loadClasses(campusId);
+        });
+
+        // Load exams when category changes
+        document.getElementById('examCategorySelect')?.addEventListener('change', function() {
+            const categoryId = this.value;
+            loadExams(categoryId);
+        });
+
+        function loadExamCategories(campusId) {
+            const select = document.getElementById('examCategorySelect');
+            select.innerHTML = '<option value="">Loading...</option>';
+            
+            fetch(`/ExamDateSheet/GetExamCategoriesByCampus?campusId=${campusId}`)
+                .then(response => response.json())
+                .then(data => {
+                    select.innerHTML = '<option value="">-- Select Exam Category --</option>';
+                    data.forEach(item => {
+                        select.innerHTML += `<option value="${item.id}">${item.name} ${item.isAllCampuses ? '🌐' : ''}</option>`;
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    select.innerHTML = '<option value="">Error loading categories</option>';
+                });
+        }
+
+        function loadExams(categoryId) {
+            const select = document.getElementById('examSelect');
+            select.innerHTML = '<option value="">Loading...</option>';
+            
+            if (!categoryId) {
+                select.innerHTML = '<option value="">-- Select Exam --</option>';
+                return;
+            }
+            
+            fetch(`/ExamDateSheet/GetExamsByCategory?categoryId=${categoryId}`)
+                .then(response => response.json())
+                .then(data => {
+                    select.innerHTML = '<option value="">-- Select Exam --</option>';
+                    data.forEach(item => {
+                        select.innerHTML += `<option value="${item.id}">${item.name}</option>`;
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    select.innerHTML = '<option value="">Error loading exams</option>';
+                });
+        }
+
+        function loadSubjects(campusId) {
+            const select = document.getElementById('subjectSelect');
+            select.innerHTML = '<option value="">Loading...</option>';
+            
+            fetch(`/ExamDateSheet/GetSubjectsByCampus?campusId=${campusId}`)
+                .then(response => response.json())
+                .then(data => {
+                    select.innerHTML = '<option value="">-- Select Subject --</option>';
+                    data.forEach(item => {
+                        select.innerHTML += `<option value="${item.id}">${item.name}</option>`;
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    select.innerHTML = '<option value="">Error loading subjects</option>';
+                });
+        }
+
+        function loadClasses(campusId) {
+            fetch(`/ExamDateSheet/GetClassesByCampus?campusId=${campusId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Update all class selects
+                    document.querySelectorAll('.class-select').forEach(select => {
+                        select.innerHTML = '<option value="">-- Select Class --</option>';
+                        data.forEach(item => {
+                            select.innerHTML += `<option value="${item.id}">${item.name}</option>`;
+                        });
+                    });
+                    // Store for new rows
+                    window.classOptions = data;
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function loadSectionsForRow(classSelect) {
+            const classId = classSelect.value;
+            const sectionSelect = classSelect.closest('.class-section-row').querySelector('.section-select');
+            
+            sectionSelect.innerHTML = '<option value="">Loading...</option>';
+            
+            if (!classId) {
+                sectionSelect.innerHTML = '<option value="">-- Select Section --</option>';
+                return;
+            }
+            
+            fetch(`/ExamDateSheet/GetSectionsByClass?classId=${classId}`)
+                .then(response => response.json())
+                .then(data => {
+                    sectionSelect.innerHTML = '<option value="">-- Select Section --</option>';
+                    data.forEach(item => {
+                        sectionSelect.innerHTML += `<option value="${item.id}">${item.name}</option>`;
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    sectionSelect.innerHTML = '<option value="">Error loading sections</option>';
+                });
+        }
+
+        function addClassSectionRow() {
+            const container = document.getElementById('classSectionRows');
+            const classOptions = window.classOptions || [];
+            
+            const row = document.createElement('div');
+            row.className = 'class-section-row flex gap-4 items-center';
+            row.innerHTML = `
+                <div class="flex-1">
+                    <select name="ClassSectionRows[${rowIndex}].ClassId" class="class-select w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400" onchange="loadSectionsForRow(this)">
+                        <option value="">-- Select Class --</option>
+                        ${classOptions.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="flex-1">
+                    <select name="ClassSectionRows[${rowIndex}].SectionId" class="section-select w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400">
+                        <option value="">-- Select Section --</option>
+                    </select>
+                </div>
+                <button type="button" onclick="removeRow(this)" class="p-2 text-error hover:bg-error-light rounded-lg transition-all duration-300">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                </button>
+            `;
+            container.appendChild(row);
+            rowIndex++;
+            reindexRows();
+        }
+
+        function removeRow(button) {
+            const row = button.closest('.class-section-row');
+            const container = document.getElementById('classSectionRows');
+            
+            if (container.children.length > 1) {
+                row.remove();
+                reindexRows();
+            }
+        }
+
+        function reindexRows() {
+            const rows = document.querySelectorAll('.class-section-row');
+            rows.forEach((row, index) => {
+                const classSelect = row.querySelector('.class-select');
+                const sectionSelect = row.querySelector('.section-select');
+                classSelect.name = `ClassSectionRows[${index}].ClassId`;
+                sectionSelect.name = `ClassSectionRows[${index}].SectionId`;
+            });
+            rowIndex = rows.length;
+        }
+        
+        // Validate unique class-section combinations
+        function validateUniqueClassSections() {
+            const rows = document.querySelectorAll('.class-section-row');
+            const combinations = new Set();
+            
+            for (let row of rows) {
+                const classId = row.querySelector('.class-select').value;
+                const sectionId = row.querySelector('.section-select').value;
+                
+                // Skip empty selections
+                if (!classId || !sectionId) continue;
+                
+                const combination = `${classId}-${sectionId}`;
+                if (combinations.has(combination)) {
+                    alert('Error: Duplicate class-section combination detected. Each class-section pair must be unique.');
+                    return false;
+                }
+                combinations.add(combination);
+            }
+            return true;
+        }
+        
+        // Add validation on form submit
+        document.getElementById('examDateSheetForm').addEventListener('submit', function(e) {
+            if (!validateUniqueClassSections()) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        // Initialize class options on page load
+        @if (Model.CampusId.HasValue)
+        {
+            @:window.classOptions = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Classes.Select(c => new { id = c.Id, name = c.Name })));
+        }
+    </script>
+}

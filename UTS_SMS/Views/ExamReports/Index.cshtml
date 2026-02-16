@@ -1,0 +1,264 @@
+﻿@model SMS.ViewModels.ExamReportsIndexViewModel
+@{
+    ViewData["Title"] = "Exam Reports";
+}
+
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-sms-lg p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    @if (!string.IsNullOrEmpty(Model.Campus?.Logo))
+                    {
+                        <img src="@Url.Content($"~/{Model.Campus.Logo}")"
+                             alt="@Model.Campus.Name Logo"
+                             class="h-12 w-12 rounded-full object-cover" />
+                    }
+                    <div>
+                        <h1 class="text-3xl font-bold text-primary-800">Exam Reports</h1>
+                        <p class="text-neutral-600">@Model.Campus?.Name</p>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <a href="@Url.Action("ClassWiseReports")"
+                       class="bg-success hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                        <i class="fas fa-users"></i>
+                        <span>Class Reports</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Search Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Student Search -->
+            <div class="lg:col-span-2 bg-white rounded-lg shadow-sms-lg p-6">
+                <h2 class="text-xl font-semibold text-primary-800 mb-4 flex items-center">
+                    <i class="fas fa-search mr-2 text-primary-600"></i>
+                    Student Search
+                </h2>
+                <div class="space-y-4">
+                    <div class="relative">
+                        <input type="text"
+                               id="studentSearch"
+                               placeholder="Search by Student Name, Father Name, or CNIC..."
+                               class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent">
+                        <button onclick="searchStudent()"
+                                class="absolute right-2 top-2 bg-gradient-primary hover:bg-primary-700 text-white px-4 py-2 rounded-lg">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+
+                    <!-- Search Results -->
+                    <div id="searchResults" class="hidden">
+                        <div class="bg-neutral-50 rounded-lg p-4">
+                            <h3 class="text-lg font-medium text-primary-800 mb-3">Search Results</h3>
+                            <div id="studentList" class="space-y-2 max-h-60 overflow-y-auto">
+                                <!-- Results will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="bg-white rounded-lg shadow-sms-lg p-6">
+                <h2 class="text-xl font-semibold text-primary-800 mb-4 flex items-center">
+                    <i class="fas fa-chart-bar mr-2 text-success"></i>
+                    Quick Stats
+                </h2>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-neutral-600">Exam Categories</span>
+                        <span class="text-xl font-bold text-primary-600">@Model.ExamCategories.Count</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-neutral-600">Classes</span>
+                        <span class="text-xl font-bold text-success">@Model.Classes.Count</span>
+                    </div>
+                    <div class="border-t pt-3">
+                        <p class="text-sm text-neutral-500">Select a student to view detailed exam reports</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Report Section (Initially Hidden) -->
+        <div id="studentReportSection" class="hidden bg-white rounded-lg shadow-sms-lg p-6 mb-6">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-xl font-semibold text-primary-800">Student Exam Reports</h2>
+                    <p id="selectedStudentInfo" class="text-neutral-600"></p>
+                </div>
+                <button onclick="printReport()"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                    <i class="fas fa-print"></i>
+                    <span>Print Report</span>
+                </button>
+            </div>
+
+            <!-- Exam Category Selection -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-neutral-700 mb-2">Select Exam Category</label>
+                <select id="examCategorySelect"
+                        class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+                        onchange="loadStudentReport()">
+                    <option value="">Select Exam Category...</option>
+                    @foreach (var category in Model.ExamCategories)
+                    {
+                        <option value="@category.Id">@category.Name</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Student Report Content -->
+            <div id="studentReportContent">
+                <div class="text-center py-8">
+                    <i class="fas fa-clipboard-list text-neutral-400 text-6xl mb-4"></i>
+                    <p class="text-neutral-500">Select an exam category to view reports</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- No Results Message -->
+        <div id="noResultsMessage" class="bg-white rounded-lg shadow-sms-lg p-8 text-center">
+            <i class="fas fa-search text-neutral-400 text-6xl mb-4"></i>
+            <h3 class="text-xl font-semibold text-neutral-600 mb-2">Search for Students</h3>
+            <p class="text-neutral-500">Use the search bar above to find students and view their exam reports</p>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="~/lib/chartjs/chart.min.js" asp-append-version="true"></script>
+<script src="https://kit.fontawesome.com/your-fontawesome-kit.js"></script>
+
+<script>
+    let selectedStudentId = null;
+
+    function searchStudent() {
+        const searchTerm = document.getElementById('studentSearch').value.trim();
+
+        if (!searchTerm) {
+            alert('Please enter a search term');
+            return;
+        }
+
+        fetch('@Url.Action("SearchStudent")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+            },
+            body: `searchTerm=${encodeURIComponent(searchTerm)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displaySearchResults(data.students);
+            } else {
+                alert(data.message || 'Search failed');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while searching');
+        });
+    }
+
+    function displaySearchResults(students) {
+        const searchResults = document.getElementById('searchResults');
+        const studentList = document.getElementById('studentList');
+        const noResultsMessage = document.getElementById('noResultsMessage');
+
+        if (students.length === 0) {
+            studentList.innerHTML = '<p class="text-neutral-500 text-center py-4">No students found</p>';
+            searchResults.classList.remove('hidden');
+            noResultsMessage.classList.add('hidden');
+            return;
+        }
+
+        let html = '';
+        students.forEach(student => {
+            html += `
+                <div class="bg-white p-4 rounded-lg border border-primary-100 hover:border-blue-300 cursor-pointer transition-colors"
+                     onclick="selectStudent(${student.id}, '${student.studentName}', '${student.fatherName}', '${student.className}', '${student.sectionName}')">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-semibold text-primary-800">${student.studentName}</h4>
+                            <p class="text-sm text-neutral-600">Father: ${student.fatherName}</p>
+                            <p class="text-sm text-neutral-600">Class: ${student.className} - ${student.sectionName}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-neutral-500">CNIC: ${student.studentCNIC}</p>
+                            <button class="bg-primary-100 hover:bg-blue-200 text-primary-600 px-3 py-1 rounded text-xs mt-1">
+                                View Reports
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+        });
+
+        studentList.innerHTML = html;
+        searchResults.classList.remove('hidden');
+        noResultsMessage.classList.add('hidden');
+    }
+
+    function selectStudent(studentId, studentName, fatherName, className, sectionName) {
+        selectedStudentId = studentId;
+
+        // Update student info
+        document.getElementById('selectedStudentInfo').textContent =
+            `${studentName} (S/O ${fatherName}) - Class: ${className} ${sectionName}`;
+
+        // Show student report section
+        document.getElementById('studentReportSection').classList.remove('hidden');
+        document.getElementById('noResultsMessage').classList.add('hidden');
+
+        // Reset exam category selection
+        document.getElementById('examCategorySelect').value = '';
+        document.getElementById('studentReportContent').innerHTML = `
+            <div class="text-center py-8">
+                <i class="fas fa-clipboard-list text-neutral-400 text-6xl mb-4"></i>
+                <p class="text-neutral-500">Select an exam category to view reports</p>
+            </div>`;
+    }
+
+    function loadStudentReport() {
+        const examCategoryId = document.getElementById('examCategorySelect').value;
+
+        if (!examCategoryId || !selectedStudentId) {
+            return;
+        }
+
+        // Show loading
+        document.getElementById('studentReportContent').innerHTML = `
+            <div class="text-center py-8">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p class="text-neutral-500">Loading exam reports...</p>
+            </div>`;
+
+        // Load student report
+        window.location.href = `@Url.Action("StudentExamReport")?studentId=${selectedStudentId}&examCategoryId=${examCategoryId}`;
+    }
+
+    function printReport() {
+        if (selectedStudentId) {
+            const examCategoryId = document.getElementById('examCategorySelect').value;
+            if (examCategoryId) {
+                const printUrl = `@Url.Action("StudentExamReport")?studentId=${selectedStudentId}&examCategoryId=${examCategoryId}&print=true`;
+                window.open(printUrl, '_blank');
+            } else {
+                alert('Please select an exam category first');
+            }
+        }
+    }
+
+    // Allow enter key to trigger search
+    document.getElementById('studentSearch').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchStudent();
+        }
+    });
+</script>

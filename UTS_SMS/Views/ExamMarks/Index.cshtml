@@ -1,0 +1,358 @@
+﻿@model SMS.Models.ExamMarksAnalysisViewModel
+
+@{
+    ViewData["Title"] = "Exam Marks Management";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-primary-800">📊 Exam Marks Management</h1>
+                <p class="text-neutral-600 mt-2">Manage student exam marks and view performance analytics</p>
+            </div>
+            <div class="flex space-x-3 mt-4 md:mt-0">
+                <a asp-action="Entry"
+                   class="bg-success hover:bg-green-700 text-white px-4 py-2 rounded-xl transition-all duration-300 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Enter Marks
+                </a>
+                <a asp-action="Analysis"
+                   class="bg-gradient-primary hover:bg-primary-700 text-white px-4 py-2 rounded-xl transition-all duration-300 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    View Analysis
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-2xl shadow-sms-lg p-6 transform hover:scale-105 transition-all duration-300">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-neutral-600">Total Exams</h3>
+                        <p class="text-2xl font-bold text-primary-800" id="totalExams">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sms-lg p-6 transform hover:scale-105 transition-all duration-300">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-success-light rounded-xl flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-neutral-600">Students Evaluated</h3>
+                        <p class="text-2xl font-bold text-primary-800" id="totalStudents">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sms-lg p-6 transform hover:scale-105 transition-all duration-300">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-neutral-600">Average Score</h3>
+                        <p class="text-2xl font-bold text-primary-800" id="averageScore">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sms-lg p-6 transform hover:scale-105 transition-all duration-300">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-warning-light rounded-xl flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-neutral-600">Pass Rate</h3>
+                        <p class="text-2xl font-bold text-primary-800" id="passRate">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-2xl shadow-sms-lg p-6 hover:shadow-sms-xl transition-all duration-300">
+                <div class="flex items-center mb-4">
+                    <div class="w-10 h-10 bg-success-light rounded-lg flex items-center justify-center mr-3">
+                        <svg class="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-primary-800">Enter New Marks</h3>
+                </div>
+                <p class="text-neutral-600 mb-4">Add marks for a new exam or update existing ones</p>
+                <a asp-action="Entry" class="inline-flex items-center text-success hover:text-success font-medium">
+                    Start Entry
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </a>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sms-lg p-6 hover:shadow-sms-xl transition-all duration-300">
+                <div class="flex items-center mb-4">
+                    <div class="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center mr-3">
+                        <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-primary-800">View Analytics</h3>
+                </div>
+                <p class="text-neutral-600 mb-4">Analyze performance trends and generate reports</p>
+                <a asp-action="Analysis" class="inline-flex items-center text-primary-600 hover:text-blue-700 font-medium">
+                    View Reports
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </a>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sms-lg p-6 hover:shadow-sms-xl transition-all duration-300">
+                <div class="flex items-center mb-4">
+                    <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                        <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-primary-800">Edit Marks</h3>
+                </div>
+                <p class="text-neutral-600 mb-4">Modify existing marks and update grades</p>
+                <a href="#" onclick="showEditModal()" class="inline-flex items-center text-primary-600 hover:text-purple-700 font-medium">
+                    Edit Marks
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="bg-white rounded-2xl shadow-sms-lg mb-8">
+            <div class="px-6 py-4 bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-t-2xl">
+                <h2 class="text-xl font-semibold flex items-center">
+                    <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Recent Exam Activities
+                </h2>
+                <p class="text-gray-300 mt-1">Latest exam marks entries and updates</p>
+            </div>
+            <div class="p-6">
+                <div id="recentActivity" class="space-y-4">
+                    <div class="flex items-center p-4 bg-neutral-50 rounded-xl">
+                        <div class="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mr-4">
+                            <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-medium text-primary-800">Loading recent activities...</h4>
+                            <p class="text-sm text-neutral-500">Please wait while we fetch the latest data</p>
+                        </div>
+                        <div class="text-right text-sm text-neutral-400">
+                            <div>Just now</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Overview Chart -->
+        <div class="bg-white rounded-2xl shadow-sms-lg">
+            <div class="px-6 py-4 bg-gradient-to-r from-primary-600 to-purple-600 text-white rounded-t-2xl">
+                <h2 class="text-xl font-semibold flex items-center">
+                    <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    Performance Overview
+                </h2>
+                <p class="text-blue-100 mt-1">Grade distribution across all recent exams</p>
+            </div>
+            <div class="p-6">
+                <div class="h-64">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-sms-xl max-w-md w-full mx-4 transform transition-all duration-300 scale-95">
+        <div class="px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-t-2xl">
+            <h3 class="text-lg font-semibold">Quick Edit Access</h3>
+        </div>
+        <div class="p-6">
+            <p class="text-neutral-600 mb-4">To edit specific marks, please use the Analysis page where you can filter and select individual records for editing.</p>
+            <div class="flex space-x-3">
+                <button onclick="hideEditModal()" class="flex-1 px-4 py-2 bg-gray-300 text-neutral-700 rounded-lg hover:bg-gray-400 transition-colors">
+                    Cancel
+                </button>
+                <a asp-action="Analysis" class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-center">
+                    Go to Analysis
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/chartjs/chart.min.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+            initializePerformanceChart();
+        });
+
+        function loadDashboardData() {
+            // Simulate loading dashboard stats
+            setTimeout(() => {
+                document.getElementById('totalExams').textContent = '25';
+                document.getElementById('totalStudents').textContent = '1,250';
+                document.getElementById('averageScore').textContent = '78.5%';
+                document.getElementById('passRate').textContent = '85.2%';
+
+                loadRecentActivity();
+            }, 500);
+        }
+
+        function loadRecentActivity() {
+            const activities = [
+                {
+                    title: 'Mathematics Mid-term marks entered',
+                    description: 'Class 10-A • 35 students evaluated',
+                    time: '2 hours ago',
+                    type: 'success'
+                },
+                {
+                    title: 'Physics Quiz results updated',
+                    description: 'Class 9-B • 28 students evaluated',
+                    time: '5 hours ago',
+                    type: 'info'
+                },
+                {
+                    title: 'English Final exam completed',
+                    description: 'Class 8-C • 42 students evaluated',
+                    time: '1 day ago',
+                    type: 'success'
+                }
+            ];
+
+            const container = document.getElementById('recentActivity');
+            container.innerHTML = '';
+
+            activities.forEach(activity => {
+                const activityElement = document.createElement('div');
+                activityElement.className = 'flex items-center p-4 bg-neutral-50 rounded-xl hover:bg-neutral-100 transition-colors duration-300';
+
+                const iconColor = activity.type === 'success' ? 'text-success bg-success-light' : 'text-primary-600 bg-primary-100';
+
+                activityElement.innerHTML = `
+                    <div class="w-12 h-12 ${iconColor} rounded-full flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-medium text-primary-800">${activity.title}</h4>
+                        <p class="text-sm text-neutral-500">${activity.description}</p>
+                    </div>
+                    <div class="text-right text-sm text-neutral-400">
+                        <div>${activity.time}</div>
+                    </div>
+                `;
+
+                container.appendChild(activityElement);
+            });
+        }
+
+        function initializePerformanceChart() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['A+', 'A', 'B+', 'B', 'C', 'D', 'F'],
+                    datasets: [{
+                        data: [15, 25, 20, 18, 12, 7, 3],
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.9)',
+                            'rgba(34, 197, 94, 0.9)',
+                            'rgba(59, 130, 246, 0.9)',
+                            'rgba(99, 102, 241, 0.9)',
+                            'rgba(245, 158, 11, 0.9)',
+                            'rgba(249, 115, 22, 0.9)',
+                            'rgba(239, 68, 68, 0.9)'
+                        ],
+                        borderWidth: 3,
+                        borderColor: '#ffffff',
+                        hoverOffset: 20
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                usePointStyle: true,
+                                font: {
+                                    size: 14,
+                                    weight: '500'
+                                },
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const percentage = ((context.parsed / context.dataset.data.reduce((a, b) => a + b, 0)) * 100).toFixed(1);
+                                    return `${context.label}: ${context.parsed} students (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true,
+                        duration: 2000,
+                        easing: 'easeOutQuart'
+                    },
+                    cutout: '50%'
+                }
+            });
+        }
+
+        function showEditModal() {
+            document.getElementById('editModal').classList.remove('hidden');
+            document.getElementById('editModal').classList.add('flex');
+        }
+
+        function hideEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+            document.getElementById('editModal').classList.remove('flex');
+        }
+    </script>
+}

@@ -1,0 +1,539 @@
+﻿@model SMS.ViewModels.StudentExamReportViewModel
+
+@{
+    ViewData["Title"] = "Student Exam Report";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <script src="~/lib/fontawesome/js/all.min.js" asp-append-version="true"></script>
+    <script src="~/lib/chartjs/chart.min.js" asp-append-version="true"></script>
+    <style>
+        /* Prevent horizontal scroll */
+        body, html {
+            overflow-x: hidden;
+            max-width: 100%;
+        }
+
+        /* Chart container with fixed height */
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+
+        /* Comprehensive table styling */
+        .comprehensive-table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            width: 100%;
+        }
+
+        .comprehensive-table {
+            min-width: 600px;
+            width: 100%;
+        }
+
+        .sticky-column {
+            position: sticky;
+            left: 0;
+            background: white;
+            z-index: 10;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+
+        .sticky-header {
+            position: sticky;
+            left: 0;
+            background: #f9fafb;
+            z-index: 11;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+
+        .sticky-footer {
+            position: sticky;
+            left: 0;
+            background: #f3f4f6;
+            z-index: 11;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+
+        @@media screen and (max-width: 768px) {
+            .mobile-stack {
+                flex-direction: column;
+            }
+
+            .mobile-full {
+                width: 100%;
+            }
+
+            .mobile-padding {
+                padding: 1rem;
+            }
+
+            .mobile-text-center {
+                text-align: center;
+            }
+            /* Chart sizing for mobile */
+            .chart-container {
+                height: 200px;
+            }
+            /* Show graph on mobile */
+            .mobile-hidden {
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-neutral-50">
+    <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div class="max-w-6xl mx-auto">
+            <!-- Navigation -->
+            <div class="mb-4">
+                <a href="@Url.Action("Index")" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg inline-flex items-center text-sm">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to Search
+                </a>
+            </div>
+
+            <!-- Header -->
+            <div class="bg-white rounded-lg shadow-sms-lg p-4 mb-4 mobile-padding">
+                <div class="flex mobile-stack items-center justify-between mb-3">
+                    <div class="flex items-center space-x-3 mb-3 md:mb-0">
+                        @if (!string.IsNullOrEmpty(Model.Campus?.Logo))
+                        {
+                            <img src="@Url.Content($"~/{Model.Campus.Logo}")"
+                                 alt="@Model.Campus.Name Logo"
+                                 class="h-12 w-12 md:h-16 md:w-16 rounded-full object-cover" />
+                        }
+                        <div>
+                            <h1 class="text-xl md:text-2xl font-bold text-primary-800">@Model.Campus?.Name</h1>
+                            <p class="text-neutral-600 text-sm">Student Exam Report</p>
+                        </div>
+                    </div>
+                    <button onclick="printReport()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg flex items-center space-x-2 text-sm">
+                        <i class="fas fa-print"></i>
+                        <span>Print Report</span>
+                    </button>
+                </div>
+
+                <!-- Student Information -->
+                <div class="border-t pt-3">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="mobile-text-center md:text-left">
+                            <label class="block text-xs md:text-sm font-medium text-neutral-500">Student Name</label>
+                            <p class="text-base md:text-lg font-semibold text-primary-800">@Model.Student.StudentName</p>
+                        </div>
+                        <div class="mobile-text-center md:text-left">
+                            <label class="block text-xs md:text-sm font-medium text-neutral-500">Father Name</label>
+                            <p class="text-base md:text-lg font-semibold text-primary-800">@Model.Student.FatherName</p>
+                        </div>
+                        <div class="mobile-text-center md:text-left">
+                            <label class="block text-xs md:text-sm font-medium text-neutral-500">Class & Section</label>
+                            <p class="text-base md:text-lg font-semibold text-primary-800">@Model.Student.ClassObj?.Name - @Model.Student.SectionObj?.Name</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exam Category Selection -->
+            <div class="bg-white rounded-lg shadow-sms-lg p-4 mb-4 mobile-padding">
+                <label class="block text-sm font-medium text-neutral-700 mb-2">Select Exam Category</label>
+                <select id="examCategorySelect"
+                        class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 text-sm"
+                        onchange="loadExamCategory()">
+                    <option value="">Select Exam Category...</option>
+                    @foreach (var category in Model.ExamCategories)
+                    {
+                        <option value="@category.Id" selected="@(category.Id == Model.SelectedExamCategoryId)">
+                            @category.Name
+                        </option>
+                    }
+                </select>
+            </div>
+
+            @if (Model.ExamReports?.Any() == true)
+            {
+                var selectedCategory = Model.ExamCategories.FirstOrDefault(ec => ec.Id == Model.SelectedExamCategoryId);
+
+                <!-- Exam Category Title -->
+                <div class="bg-white rounded-lg shadow-sms-lg p-3 mb-4 mobile-padding">
+                    <h2 class="text-lg md:text-xl font-bold text-center text-primary-800">
+                        @selectedCategory?.Name - Examination Results
+                    </h2>
+                    <p class="text-center text-neutral-600 mt-1 text-sm">
+                        Academic Session @DateTime.Now.Year
+                    </p>
+                </div>
+
+                <!-- Summary Statistics -->
+                <div class="bg-white rounded-lg shadow-sms-lg p-4 mb-4 mobile-padding">
+                    <h3 class="text-base md:text-lg font-semibold text-primary-800 mb-3">Performance Summary</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div class="text-center p-3 bg-primary-50 rounded-lg">
+                            <p class="text-xl md:text-2xl font-bold text-primary-600">@Model.ExamReports.Count</p>
+                            <p class="text-xs text-neutral-600">Total Exams</p>
+                        </div>
+                        <div class="text-center p-3 bg-success-light rounded-lg">
+                            <p class="text-xl md:text-2xl font-bold text-success">@Model.ExamReports.Count(er => er.OverallStatus == "Pass")</p>
+                            <p class="text-xs text-neutral-600">Passed</p>
+                        </div>
+                        <div class="text-center p-3 bg-error-light rounded-lg">
+                            <p class="text-xl md:text-2xl font-bold text-error">@Model.ExamReports.Count(er => er.OverallStatus == "Fail")</p>
+                            <p class="text-xs text-neutral-600">Failed</p>
+                        </div>
+                        <div class="text-center p-3 bg-warning-light rounded-lg">
+                            <p class="text-xl md:text-2xl font-bold text-accent-600">@(Model.ExamReports.Any() ? Math.Round(Model.ExamReports.Average(er => er.Percentage), 1) : 0)%</p>
+                            <p class="text-xs text-neutral-600">Average</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Chart - Fixed height container -->
+                <div class="bg-white rounded-lg shadow-sms-lg p-4 mb-4 mobile-padding">
+                    <h3 class="text-base md:text-lg font-semibold text-primary-800 mb-3">Performance Trend</h3>
+                    <div class="chart-container">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Comprehensive Subject Performance Table -->
+                <div class="bg-white rounded-lg shadow-sms-lg p-4 mb-4 mobile-padding">
+                    <h3 class="text-base md:text-lg font-semibold text-primary-800 mb-3">Subject Performance Summary</h3>
+                    <div class="comprehensive-table-container">
+                        <table class="comprehensive-table w-full text-xs md:text-sm">
+                            <thead class="bg-neutral-50">
+                                <tr>
+                                    <th class="sticky-header px-2 py-2 text-left font-semibold text-neutral-700">Subject</th>
+                                    @foreach (var exam in Model.ExamReports)
+                                    {
+                                        <th class="px-2 py-2 text-center font-semibold text-neutral-700 min-w-[80px]">@exam.ExamName</th>
+                                    }
+                                    <th class="px-2 py-2 text-center font-semibold text-neutral-700 bg-primary-50">Average</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    // Get all unique subjects across all exams
+                                    var allSubjects = Model.ExamReports
+                                    .SelectMany(er => er.SubjectMarks)
+                                    .Select(sm => sm.SubjectName)
+                                    .Distinct()
+                                    .OrderBy(s => s)
+                                    .ToList();
+                                }
+
+                                @foreach (var subject in allSubjects)
+                                {
+                                    <tr class="border-b border-primary-100 hover:bg-neutral-50">
+                                        <td class="sticky-column px-2 py-2 font-medium text-primary-800 bg-white">@subject</td>
+
+                                        @foreach (var exam in Model.ExamReports)
+                                        {
+                                            var subjectMark = exam.SubjectMarks.FirstOrDefault(sm => sm.SubjectName == subject);
+                                            var percentage = subjectMark != null && subjectMark.TotalMarks > 0
+                                            ? Math.Round((subjectMark.ObtainedMarks / subjectMark.TotalMarks) * 100, 1)
+                                            : 0;
+
+                                            <td class="px-2 py-2 text-center">
+                                                @if (subjectMark != null && subjectMark.HasEntry)
+                                                {
+                                                    <div class="flex flex-col items-center">
+                                                        <span class="font-semibold @(percentage >= 33 ? "text-success" : "text-error")">
+                                                            @percentage%
+                                                        </span>
+                                                        <span class="text-xs text-neutral-500">
+                                                            @subjectMark.ObtainedMarks/@subjectMark.TotalMarks
+                                                        </span>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-red-500 text-xs">N/A</span>
+                                                }
+                                            </td>
+                                        }
+
+                                        @{
+                                            // Calculate average for this subject across all exams
+                                            var subjectAverages = new List<double>();
+                                            foreach (var exam in Model.ExamReports)
+                                            {
+                                                var subjectMark = exam.SubjectMarks.FirstOrDefault(sm => sm.SubjectName == subject);
+                                                if (subjectMark != null && subjectMark.HasEntry && subjectMark.TotalMarks > 0)
+                                                {
+                                                    var percentage = (subjectMark.ObtainedMarks / subjectMark.TotalMarks) * 100;
+                                                    subjectAverages.Add(Convert.ToDouble(percentage));
+                                                }
+                                            }
+
+                                            var subjectAverage = subjectAverages.Any() ? Math.Round(subjectAverages.Average(), 1) : 0;
+                                        }
+
+                                        <td class="px-2 py-2 text-center font-bold bg-primary-50">
+                                            <span class="@(subjectAverage >= 33 ? "text-success" : "text-error")">
+                                                @subjectAverage%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="bg-neutral-100">
+                                <tr>
+                                    <td class="sticky-footer px-2 py-2 font-bold text-primary-800 bg-neutral-100">Exam Average</td>
+
+                                    @foreach (var exam in Model.ExamReports)
+                                    {
+                                        <td class="px-2 py-2 text-center font-bold">
+                                            <span class="@(exam.Percentage >= 33 ? "text-success" : "text-error")">
+                                                @exam.Percentage%
+                                            </span>
+                                        </td>
+                                    }
+
+                                    @{
+                                        var overallAverage = Model.ExamReports.Any()
+                                        ? Math.Round(Model.ExamReports.Average(er => er.Percentage), 1)
+                                        : 0;
+                                    }
+
+                                    <td class="px-2 py-2 text-center font-bold bg-primary-100">
+                                        <span class="@(overallAverage >= 33 ? "text-success" : "text-error")">
+                                            @overallAverage%
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <!-- Exam Reports -->
+                <div class="space-y-4">
+                    @foreach (var examReport in Model.ExamReports)
+                    {
+                        <div class="bg-white rounded-lg shadow-sms-lg overflow-hidden">
+                            <!-- Exam Header -->
+                            <div class="bg-gradient-to-r from-primary-600 to-indigo-600 text-white p-3">
+                                <div class="flex mobile-stack justify-between items-center">
+                                    <div class="mb-2 md:mb-0">
+                                        <h3 class="text-base md:text-lg font-semibold">@examReport.ExamName</h3>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-xs md:text-sm opacity-90">Overall: @examReport.Percentage% (@examReport.OverallGrade)</p>
+                                        <p class="text-xs opacity-75">@examReport.OverallStatus</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Subject Marks -->
+                            <div class="p-3">
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-xs md:text-sm">
+                                        <thead class="bg-neutral-50 hidden md:table-header-group">
+                                            <tr>
+                                                <th class="px-2 py-2 text-left font-semibold text-neutral-700">Subject</th>
+                                                <th class="px-2 py-2 text-center font-semibold text-neutral-700">Total</th>
+                                                <th class="px-2 py-2 text-center font-semibold text-neutral-700">Obtained</th>
+                                                <th class="px-2 py-2 text-center font-semibold text-neutral-700">%</th>
+                                                <th class="px-2 py-2 text-center font-semibold text-neutral-700">Grade</th>
+                                                <th class="px-2 py-2 text-center font-semibold text-neutral-700">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var subject in examReport.SubjectMarks)
+                                            {
+                                                var percentage = subject.TotalMarks > 0 ? Math.Round((subject.ObtainedMarks / subject.TotalMarks) * 100, 1) : 0;
+                                                <tr class="border-b border-primary-100 @(!subject.HasEntry ? "bg-error-light" : "")">
+                                                    <!-- Mobile view -->
+                                                    <td class="px-2 py-2 font-medium text-primary-800 md:hidden">
+                                                        <div class="font-semibold">@subject.SubjectName</div>
+                                                        @if (!subject.HasEntry)
+                                                        {
+                                                            <div class="text-xs text-error">(No Entry)</div>
+                                                        }
+                                                        <div class="grid grid-cols-2 gap-1 mt-1 text-xs">
+                                                            <div>Total: @subject.TotalMarks</div>
+                                                            <div>Obtained: <span class="@(subject.ObtainedMarks > 0 ? "text-success" : "text-error") font-semibold">@subject.ObtainedMarks</span></div>
+                                                            <div>%: @percentage%</div>
+                                                            <div>
+                                                                <span class="px-1 py-0.5 rounded text-xs font-semibold @GetGradeColorClass(subject.Grade)">
+                                                                    @subject.Grade
+                                                                </span>
+                                                                <span class="px-1 py-0.5 rounded text-xs font-semibold @GetStatusColorClass(subject.Status)">
+                                                                    @subject.Status
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+
+                                                    <!-- Desktop view -->
+                                                    <td class="px-2 py-2 font-medium text-primary-800 hidden md:table-cell">
+                                                        @subject.SubjectName
+                                                        @if (!subject.HasEntry)
+                                                        {
+                                                            <span class="text-xs text-error ml-1">(No Entry)</span>
+                                                        }
+                                                    </td>
+                                                    <td class="px-2 py-2 text-center hidden md:table-cell">@subject.TotalMarks</td>
+                                                    <td class="px-2 py-2 text-center font-semibold hidden md:table-cell @(subject.ObtainedMarks > 0 ? "text-success" : "text-error")">
+                                                        @subject.ObtainedMarks
+                                                    </td>
+                                                    <td class="px-2 py-2 text-center hidden md:table-cell">@percentage%</td>
+                                                    <td class="px-2 py-2 text-center hidden md:table-cell">
+                                                        <span class="px-1 py-0.5 rounded text-xs font-semibold @GetGradeColorClass(subject.Grade)">
+                                                            @subject.Grade
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-2 py-2 text-center hidden md:table-cell">
+                                                        <span class="px-1 py-0.5 rounded text-xs font-semibold @GetStatusColorClass(subject.Status)">
+                                                            @subject.Status
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                        <tfoot class="bg-neutral-100">
+                                            <tr>
+                                                <td class="px-2 py-2 font-bold text-primary-800 mobile-full" colspan="6">
+                                                    <div class="flex justify-between items-center">
+                                                        <span>Total</span>
+                                                        <span class="flex space-x-4">
+                                                            <span>@examReport.TotalMarks</span>
+                                                            <span class="text-primary-600">@examReport.TotalObtained</span>
+                                                            <span>@examReport.Percentage%</span>
+                                                            <span class="px-2 py-1 rounded text-xs font-semibold @GetGradeColorClass(examReport.OverallGrade)">
+                                                                @examReport.OverallGrade
+                                                            </span>
+                                                            <span class="px-2 py-1 rounded text-xs font-semibold @GetStatusColorClass(examReport.OverallStatus)">
+                                                                @examReport.OverallStatus
+                                                            </span>
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+
+                                <!-- Individual Test Report Button -->
+                                <div class="mt-3 text-right">
+                                    <a href="@Url.Action("TestReportCard", new { studentId = Model.Student.Id, examId = examReport.ExamId })"
+                                       class="bg-gradient-primary hover:bg-primary-700 text-white px-3 py-1.5 rounded-lg inline-flex items-center space-x-1 text-xs">
+                                        <i class="fas fa-file-alt"></i>
+                                        <span>Detailed Report</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else if (Model.SelectedExamCategoryId.HasValue)
+            {
+                <!-- No Reports Message -->
+                <div class="bg-white rounded-lg shadow-sms-lg p-6 text-center mobile-padding">
+                    <i class="fas fa-clipboard-list text-neutral-400 text-4xl md:text-6xl mb-3"></i>
+                    <h3 class="text-lg md:text-xl font-semibold text-neutral-600 mb-2">No Exam Reports Found</h3>
+                    <p class="text-neutral-500 text-sm">No exam reports are available for this student in the selected category.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <script>
+        function loadExamCategory() {
+            const examCategoryId = document.getElementById('examCategorySelect').value;
+            if (examCategoryId) {
+                const url = new URL(window.location);
+                url.searchParams.set('examCategoryId', examCategoryId);
+                window.location.href = url.toString();
+            }
+        }
+
+        function printReport() {
+            const url = new URL(window.location);
+            url.searchParams.set('studentId', '@Model.Student.Id');
+            url.searchParams.set('examCategoryId', '@Model.SelectedExamCategoryId');
+            const printUrl = '@Url.Action("PrintReport")' + '?' + url.searchParams.toString();
+            window.open(printUrl, '_blank');
+        }
+
+        // Performance Chart
+        @if (Model.ExamReports?.Any() == true)
+        {
+                <text>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const ctx = document.getElementById('performanceChart').getContext('2d');
+                    const chart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: [@Html.Raw(string.Join(",", Model.ExamReports.Select(er => $"'{er.ExamName}'")))],
+                            datasets: [{
+                                label: 'Percentage',
+                                data: [@Html.Raw(string.Join(",", Model.ExamReports.Select(er => er.Percentage)))],
+                                borderColor: 'rgb(59, 130, 246)',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                tension: 0.1,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value + '%';
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+                </text>
+        }
+    </script>
+</body>
+</html>
+
+@functions {
+    public string GetGradeColorClass(string grade)
+    {
+        return grade switch
+        {
+            "A+" => "bg-success-light text-success",
+            "A" => "bg-success-light text-success",
+            "B+" => "bg-primary-100 text-primary-800",
+            "B" => "bg-primary-100 text-blue-700",
+            "C" => "bg-warning-light text-yellow-800",
+            "D" => "bg-orange-100 text-orange-800",
+            "F" => "bg-error-light text-error",
+            _ => "bg-neutral-100 text-primary-800"
+        };
+    }
+
+    public string GetStatusColorClass(string status)
+    {
+        return status switch
+        {
+            "Pass" => "bg-success-light text-success",
+            "Fail" => "bg-error-light text-error",
+            "Absent" => "bg-neutral-100 text-primary-800",
+            _ => "bg-neutral-100 text-primary-800"
+        };
+    }
+}

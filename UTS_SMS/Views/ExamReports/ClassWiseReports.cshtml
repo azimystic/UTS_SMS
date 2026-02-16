@@ -1,0 +1,453 @@
+﻿@model SMS.ViewModels.ClassWiseReportsViewModel
+@removeTagHelper "Microsoft.AspNetCore.Mvc.TagHelpers.OptionTagHelper, Microsoft.AspNetCore.Mvc.TagHelpers"
+
+@{
+    ViewData["Title"] = "Class-wise Exam Reports";
+}
+
+<div class="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Navigation -->
+        <div class="mb-6">
+            <a href="@Url.Action("Index")" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg inline-flex items-center">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Back to Main
+            </a>
+        </div>
+
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-sms-lg p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    @if (!string.IsNullOrEmpty(Model.Campus?.Logo))
+                    {
+                        <img src="@Url.Content($"~/{Model.Campus.Logo}")" 
+                             alt="@Model.Campus.Name Logo" 
+                             class="h-16 w-16 rounded-full object-cover" />
+                    }
+                    <div>
+                        <h1 class="text-3xl font-bold text-primary-800">@(Model.Campus?.Name ?? "School Management System")</h1>
+                        <p class="text-neutral-600">Class-wise Exam Reports</p>
+                    </div>
+                </div>
+                @if (Model.StudentReports?.Any() == true)
+                {
+                    <a href="@Url.Action("PrintClassReport", new { classId = Model.SelectedClassId, sectionId = Model.SelectedSectionId, examCategoryId = Model.SelectedExamCategoryId, examId = Model.SelectedExamId })" 
+                       target="_blank"
+                       class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                        <i class="fas fa-print"></i>
+                        <span>Print Report</span>
+                    </a>
+                }
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white rounded-lg shadow-sms-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold text-primary-800 mb-4">Select Class & Exam</h2>
+            <form method="get" action="@Url.Action("ClassWiseReports")" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Class Selection -->
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Class</label>
+                    <select name="classId" 
+                            class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-purple-500"
+                            onchange="this.form.submit()">
+                        <option value="">Select Class...</option>
+                        @if (Model.Classes != null)
+                        {
+                            @foreach (var cls in Model.Classes)
+                            {
+                                <option value="@cls.Id" @(cls.Id == Model.SelectedClassId ? "selected" : "")>
+                                    @cls.Name
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <!-- Section Selection -->
+<div>
+    <label class="block text-sm font-medium text-neutral-700 mb-2">Section</label>
+   <select name="sectionId" 
+        class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-purple-500"
+        onchange="this.form.submit()">
+    <option value="">Select Section...</option>
+    @if (Model.Sections != null)
+    {
+        foreach (var sectionn in Model.Sections)
+        {
+            <option value="@sectionn.Id" @(sectionn.Id == Model.SelectedSectionId ? "selected" : "")>
+                @sectionn.Name
+            </option>
+        }
+    }
+</select>
+
+</div>
+
+
+                <!-- Exam Category -->
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Exam Category</label>
+                    <select name="examCategoryId" 
+                            class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-purple-500"
+                            onchange="this.form.submit()">
+                        <option value="">Select Category...</option>
+                        @if (Model.ExamCategories != null)
+                        {
+                            @foreach (var category in Model.ExamCategories)
+                            {
+                                <option value="@category.Id" @(category.Id == Model.SelectedExamCategoryId ? "selected" : "")>
+                                    @category.Name
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <!-- Exam -->
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Exam</label>
+                    <select name="examId" 
+                            class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-purple-500"
+                            onchange="this.form.submit()">
+                        <option value="">Select Exam...</option>
+                        @if (Model.Exams != null)
+                        {
+                            @foreach (var exam in Model.Exams)
+                            {
+                                <option value="@exam.Id" @(exam.Id == Model.SelectedExamId ? "selected" : "")>
+                                    @exam.Name
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+            </form>
+        </div>
+
+        @if (Model.StudentReports?.Any() == true)
+        {
+            <!-- Report Title -->
+            <div class="bg-white rounded-lg shadow-sms-lg p-4 mb-6">
+                <h2 class="text-xl font-bold text-center text-primary-800">
+                    Class @Model.SelectedClass?.Name - Section @Model.SelectedSection?.Name
+                </h2>
+                <p class="text-center text-neutral-600 mt-1">
+                    @Model.SelectedExam?.ExamCategory?.Name - @Model.SelectedExam?.Name
+                </p>
+                <p class="text-center text-sm text-neutral-500">
+                    Academic Session @DateTime.Now.Year
+                </p>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                <div class="bg-white rounded-lg shadow p-4 text-center">
+                    <p class="text-2xl font-bold text-primary-600">@Model.TotalStudents</p>
+                    <p class="text-sm text-neutral-600">Total Students</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 text-center">
+                    <p class="text-2xl font-bold text-success">@Model.PassedStudents</p>
+                    <p class="text-sm text-neutral-600">Passed</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 text-center">
+                    <p class="text-2xl font-bold text-error">@Model.FailedStudents</p>
+                    <p class="text-sm text-neutral-600">Failed</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 text-center">
+                    <p class="text-2xl font-bold text-primary-600">@Math.Round(Model.ClassAverage, 1)%</p>
+                    <p class="text-sm text-neutral-600">Class Average</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4 text-center">
+                    <p class="text-2xl font-bold text-info">@Math.Round(Model.PassPercentage, 1)%</p>
+                    <p class="text-sm text-neutral-600">Pass Rate</p>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- Performance Distribution -->
+                <div class="bg-white rounded-lg shadow-sms-lg p-6">
+                    <h3 class="text-lg font-semibold text-primary-800 mb-4">Grade Distribution</h3>
+                    <div class="h-64 relative">
+                        <canvas id="gradeChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Pass/Fail Chart -->
+                <div class="bg-white rounded-lg shadow-sms-lg p-6">
+                    <h3 class="text-lg font-semibold text-primary-800 mb-4">Pass/Fail Analysis</h3>
+                    <div class="h-64 relative">
+                        <canvas id="passFailChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Table -->
+            <div class="bg-white rounded-lg shadow-sms-lg overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-neutral-100">
+                            <tr>
+                                <th rowspan="2" class="border px-3 py-3 text-left font-semibold text-neutral-700">Pos.</th>
+                                <th rowspan="2" class="border px-3 py-3 text-left font-semibold text-neutral-700">Student Name</th>
+                                <th rowspan="2" class="border px-3 py-3 text-left font-semibold text-neutral-700">Father Name</th>
+                                @if (Model.AllSubjects != null)
+                                {
+                                    @foreach (var subject in Model.AllSubjects)
+                                    {
+                                        <th class="border px-2 py-1 text-center font-semibold text-neutral-700 text-xs">@subject.Name</th>
+                                    }
+                                }
+                                <th rowspan="2" class="border px-3 py-3 text-center font-semibold text-neutral-700">Total</th>
+                                <th rowspan="2" class="border px-3 py-3 text-center font-semibold text-neutral-700">Obtained</th>
+                                <th rowspan="2" class="border px-3 py-3 text-center font-semibold text-neutral-700">%</th>
+                                <th rowspan="2" class="border px-3 py-3 text-center font-semibold text-neutral-700">Grade</th>
+                                <th rowspan="2" class="border px-3 py-3 text-center font-semibold text-neutral-700">Status</th>
+                            </tr>
+                            <tr class="bg-neutral-50">
+                                @if (Model.AllSubjects != null)
+                                {
+                                    @foreach (var subject in Model.AllSubjects)
+                                    {
+                                        <th class="border px-2 py-1 text-center font-semibold text-neutral-600 text-xs">Marks</th>
+                                    }
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int position = 1;
+                            }
+                            @foreach (var student in Model.StudentReports.OrderBy(s => s.Position ?? int.MaxValue))
+                            {
+                                <tr class="@(position % 2 == 0 ? "bg-neutral-50" : "bg-white") hover:bg-primary-50">
+                                    <td class="border px-3 py-3 text-center font-bold">
+                                        @if (student.Position.HasValue)
+                                        {
+                                            @if (student.Position == 1)
+                                            {
+                                                <span class="text-accent-600">🥇 @student.Position</span>
+                                            }
+                                            else if (student.Position == 2)
+                                            {
+                                                <span class="text-neutral-400">🥈 @student.Position</span>
+                                            }
+                                            else if (student.Position == 3)
+                                            {
+                                                <span class="text-warning">🥉 @student.Position</span>
+                                            }
+                                            else
+                                            {
+                                                <span>@student.Position</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-neutral-400">-</span>
+                                        }
+                                    </td>
+                                    <td class="border px-3 py-3 font-medium text-primary-800">@student.StudentName</td>
+                                    <td class="border px-3 py-3 text-neutral-700">@student.FatherName</td>
+                                    @if (Model.AllSubjects != null)
+                                    {
+                                        @foreach (var subject in Model.AllSubjects)
+                                        {
+                                            var subjectMark = student.SubjectMarks?.FirstOrDefault(sm => sm.SubjectName == subject.Name);
+                                            <td class="border px-2 py-3 text-center text-xs">
+                                                @if (subjectMark != null)
+                                                {
+                                                    @if (!subjectMark.IsEnrolled)
+                                                    {
+                                                        <span class="text-neutral-500 font-semibold">NE</span>
+                                                    }
+                                                    else if (subjectMark.HasEntry)
+                                                    {
+                                                        <span class="@(subjectMark.ObtainedMarks >= (subjectMark.TotalMarks * 0.33m) ? "text-success" : "text-error") font-semibold">
+                                                            @subjectMark.ObtainedMarks
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-error font-semibold">0</span>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-neutral-400">-</span>
+                                                }
+                                            </td>
+                                        }
+                                    }
+                                    <td class="border px-3 py-3 text-center font-semibold">@student.TotalMarks</td>
+                                    <td class="border px-3 py-3 text-center font-semibold text-primary-600">@student.TotalObtained</td>
+                                    <td class="border px-3 py-3 text-center font-bold @(student.Percentage >= 33 ? "text-success" : "text-error")">
+                                        @student.Percentage%
+                                    </td>
+                                    <td class="border px-3 py-3 text-center">
+                                        <span class="px-2 py-1 rounded text-xs font-semibold @GetGradeColorClass(student.Grade)">
+                                            @student.Grade
+                                        </span>
+                                    </td>
+                                    <td class="border px-3 py-3 text-center">
+                                        <span class="px-2 py-1 rounded text-xs font-semibold @GetStatusColorClass(student.Status)">
+                                            @student.Status
+                                        </span>
+                                    </td>
+                                </tr>
+                                position++;
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Class Statistics Summary -->
+                <div class="p-6 bg-neutral-50 border-t">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
+                        <div>
+                            <p class="text-sm text-neutral-600">Highest Percentage</p>
+                            <p class="text-xl font-bold text-success">@Math.Round(Model.HighestPercentage, 1)%</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-neutral-600">Lowest Percentage</p>
+                            <p class="text-xl font-bold text-error">@Math.Round(Model.LowestPercentage, 1)%</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-neutral-600">Class Average</p>
+                            <p class="text-xl font-bold text-primary-600">@Math.Round(Model.ClassAverage, 1)%</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-neutral-600">Pass Percentage</p>
+                            <p class="text-xl font-bold text-primary-600">@Math.Round(Model.PassPercentage, 1)%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else if (Model.SelectedClassId.HasValue && Model.SelectedSectionId.HasValue && Model.SelectedExamId.HasValue)
+        {
+            <!-- No Results Message -->
+            <div class="bg-white rounded-lg shadow-sms-lg p-8 text-center">
+                <i class="fas fa-chart-line text-neutral-400 text-6xl mb-4"></i>
+                <h3 class="text-xl font-semibold text-neutral-600 mb-2">No Exam Data Found</h3>
+                <p class="text-neutral-500">No exam records found for the selected class, section, and exam.</p>
+            </div>
+        }
+        else
+        {
+            <!-- Selection Message -->
+            <div class="bg-white rounded-lg shadow-sms-lg p-8 text-center">
+                <i class="fas fa-users text-neutral-400 text-6xl mb-4"></i>
+                <h3 class="text-xl font-semibold text-neutral-600 mb-2">Select Class & Exam</h3>
+                <p class="text-neutral-500">Please select a class, section, exam category, and exam to view the class-wise report.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="~/lib/chartjs/chart.min.js" asp-append-version="true"></script>
+<script>
+    // Initialize charts if data is available
+    @if (Model.StudentReports?.Any() == true)
+    {
+        <text>
+        // Grade Distribution Chart
+        const gradeCtx = document.getElementById('gradeChart').getContext('2d');
+        const gradeData = {
+            'A+': @Model.StudentReports.Count(s => s.Grade == "A+"),
+            'A': @Model.StudentReports.Count(s => s.Grade == "A"),
+            'B': @Model.StudentReports.Count(s => s.Grade == "B"),
+            'C': @Model.StudentReports.Count(s => s.Grade == "C"),
+            'D': @Model.StudentReports.Count(s => s.Grade == "D"),
+            'E': @Model.StudentReports.Count(s => s.Grade == "E"),
+            'F': @Model.StudentReports.Count(s => s.Grade == "F")
+        };
+
+        new Chart(gradeCtx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(gradeData),
+                datasets: [{
+                    data: Object.values(gradeData),
+                    backgroundColor: [
+                        '#10B981', // A+ - Green
+                        '#34D399', // A - Light Green
+                        '#3B82F6', // B - Blue
+                        '#F59E0B', // C - Yellow
+                        '#F97316', // D - Orange
+                        '#8B5CF6', // E - Purple
+                        '#EF4444'  // F - Red
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 1,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Pass/Fail Chart
+        const passFailCtx = document.getElementById('passFailChart').getContext('2d');
+        new Chart(passFailCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Pass', 'Fail'],
+                datasets: [{
+                    data: [@Model.PassedStudents, @Model.FailedStudents],
+                    backgroundColor: ['#10B981', '#EF4444'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 1,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        </text>
+    }
+</script>
+
+@functions {
+    public string GetGradeColorClass(string grade)
+    {
+        return grade switch
+        {
+            "A+" => "bg-success-light text-success",
+            "A" => "bg-success-light text-success",
+            "B+" => "bg-primary-100 text-primary-800",
+            "B" => "bg-primary-100 text-blue-700",
+            "C" => "bg-warning-light text-yellow-800",
+            "D" => "bg-orange-100 text-orange-800",
+            "E" => "bg-purple-100 text-purple-800",
+            "F" => "bg-error-light text-error",
+            _ => "bg-neutral-100 text-primary-800"
+        };
+    }
+
+    public string GetStatusColorClass(string status)
+    {
+        return status switch
+        {
+            "Pass" => "bg-success-light text-success",
+            "Fail" => "bg-error-light text-error",
+            _ => "bg-neutral-100 text-primary-800"
+        };
+    }
+}

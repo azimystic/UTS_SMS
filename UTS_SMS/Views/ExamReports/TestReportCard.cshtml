@@ -1,0 +1,304 @@
+﻿@model SMS.ViewModels.TestReportCardViewModel
+@{
+    Layout = null;
+    var isPrintView = Context.Request.Query["print"].ToString() == "true";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Report Card - @Model.Student.StudentName</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" /> 
+    <script src="~/lib/fontawesome/js/all.min.js" asp-append-version="true"></script>
+    <style>
+        @@media print {
+            body {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                height: 100%;
+                font-size: 12px;
+                line-height: 1.2;
+            }
+
+            .print-container {
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 5mm !important;
+                transform: scale(0.95);
+                transform-origin: top center;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .report-card {
+                box-shadow: none !important;
+                border: 1px solid #ccc;
+                margin: 0 !important;
+            }
+
+            @@page {
+                margin: 5mm;
+                size: portrait;
+            }
+
+            .performance-card {
+                page-break-inside: avoid;
+            }
+
+            table {
+                page-break-inside: avoid;
+            }
+
+            h1, h2, h3, h4 {
+                page-break-after: avoid;
+            }
+        }
+
+        /* Compact styles for printing */
+        .print-compact {
+            margin: 0;
+            padding: 0.3rem;
+        }
+
+        .print-text-sm {
+            font-size: 11px;
+        }
+
+        .print-text-xs {
+            font-size: 10px;
+        }
+
+        .print-py-1 {
+            padding-top: 0.15rem;
+            padding-bottom: 0.15rem;
+        }
+
+        .print-px-2 {
+            padding-left: 0.4rem;
+            padding-right: 0.4rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="print-container w-full max-w-4xl mx-auto p-0">
+        <!-- Report Card -->
+        <div class="report-card bg-white">
+            <!-- Compact Header -->
+            <div class="bg-gradient-to-r from-primary-600 to-purple-600 text-white p-4 print-compact">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        @if (!string.IsNullOrEmpty(Model.Campus?.Logo))
+                        {
+                            <img src="@Url.Content($"~/{Model.Campus.Logo}")"
+                                 alt="@Model.Campus.Name Logo"
+                                 class="h-12 w-12 rounded-full object-cover border-2 border-white" />
+                        }
+                        <div>
+                            <h1 class="text-lg font-bold print-text-sm">@Model.Campus?.Name</h1>
+                            <p class="opacity-90 print-text-xs">@Model.Exam.ExamCategory.Name - @Model.Exam.Name</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Student Information - Compact -->
+            <div class="p-3 print-compact bg-primary-50">
+                <div class="grid grid-cols-2 gap-2 print-text-xs">
+                    <div><span class="font-semibold">Student:</span> @Model.Student.StudentName</div>
+                    <div><span class="font-semibold">Father:</span> @Model.Student.FatherName</div>
+                    <div><span class="font-semibold">Class:</span> @Model.Student.ClassObj?.Name</div>
+                    <div><span class="font-semibold">Section:</span> @Model.Student.SectionObj?.Name</div>
+                </div>
+            </div>
+
+            <!-- Marks Table - Compact -->
+            <div class="p-2 print-compact">
+                <table class="w-full border-collapse print-text-xs">
+                    <thead>
+                        <tr class="bg-neutral-100">
+                            <th class="border border-primary-200 p-1 text-left font-semibold">Subject</th>
+                            <th class="border border-primary-200 p-1 text-center font-semibold">Total</th>
+                            <th class="border border-primary-200 p-1 text-center font-semibold">Obtained</th>
+                            <th class="border border-primary-200 p-1 text-center font-semibold">%</th>
+                            <th class="border border-primary-200 p-1 text-center font-semibold">Grade</th>
+                            <th class="border border-primary-200 p-1 text-center font-semibold">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var subject in Model.SubjectMarks)
+                        {
+                            <tr class="border-b border-primary-100">
+                                <td class="border border-primary-200 p-1 font-medium">
+                                    @subject.SubjectName
+                                    @if (!subject.HasEntry)
+                                    {
+                                        <span class="text-error print-text-xs">(A)</span>
+                                    }
+                                </td>
+                                <td class="border border-primary-200 p-1 text-center">@subject.TotalMarks</td>
+                                <td class="border border-primary-200 p-1 text-center font-semibold @(subject.ObtainedMarks > 0 ? "text-success" : "text-error")">
+                                    @subject.ObtainedMarks
+                                </td>
+                                <td class="border border-primary-200 p-1 text-center">
+                                    @(subject.TotalMarks > 0 ? Math.Round((subject.ObtainedMarks / subject.TotalMarks) * 100, 1) : 0)%
+                                </td>
+                                <td class="border border-primary-200 p-1 text-center">
+                                    <span class="grade-badge @GetGradeColorClass(subject.Grade) print-py-1 print-px-2">
+                                        @subject.Grade
+                                    </span>
+                                </td>
+                                <td class="border border-primary-200 p-1 text-center">
+                                    <span class="grade-badge @GetStatusColorClass(subject.Status) print-py-1 print-px-2">
+                                        @subject.Status
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr class="bg-primary-50 font-bold">
+                            <td class="border border-primary-200 p-1 text-right font-bold">TOTAL</td>
+                            <td class="border border-primary-200 p-1 text-center font-bold">@Model.TotalMarks</td>
+                            <td class="border border-primary-200 p-1 text-center font-bold">@Model.TotalObtained</td>
+                            <td class="border border-primary-200 p-1 text-center font-bold">@Model.Percentage%</td>
+                            <td class="border border-primary-200 p-1 text-center">
+                                <span class="grade-badge @GetGradeColorClass(Model.OverallGrade) print-py-1 print-px-2">
+                                    @Model.OverallGrade
+                                </span>
+                            </td>
+                            <td class="border border-primary-200 p-1 text-center">
+                                <span class="grade-badge @GetStatusColorClass(Model.OverallStatus) print-py-1 print-px-2">
+                                    @Model.OverallStatus
+                                </span>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Performance Summary - Compact -->
+            <div class="p-2 print-compact bg-neutral-50">
+                <div class="grid grid-cols-4 gap-1 mb-2">
+                    <div class="text-center p-1 bg-white rounded border">
+                        <p class="font-bold text-primary-600 print-text-sm">@Model.TotalMarks</p>
+                        <p class="print-text-xs">Total</p>
+                    </div>
+                    <div class="text-center p-1 bg-white rounded border">
+                        <p class="font-bold text-success print-text-sm">@Model.TotalObtained</p>
+                        <p class="print-text-xs">Obtained</p>
+                    </div>
+                    <div class="text-center p-1 bg-white rounded border">
+                        <p class="font-bold text-primary-600 print-text-sm">@Model.Percentage%</p>
+                        <p class="print-text-xs">Percentage</p>
+                    </div>
+                    <div class="text-center p-1 bg-white rounded border">
+                        <p class="font-bold @(Model.OverallStatus == "Pass" ? "text-success" : "text-error") print-text-sm">@Model.OverallGrade</p>
+                        <p class="print-text-xs">Grade</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comments Section - Compact -->
+            <div class="p-2 print-compact bg-white border-t">
+                <h4 class="font-semibold print-text-xs mb-1">Teacher's Comments:</h4>
+                <div class="bg-neutral-50 p-2 rounded border print-text-xs min-h-8">
+                    @if (Model.Percentage >= 80)
+                    {
+                        <span>Excellent performance! Keep up the good work.</span>
+                    }
+                    else if (Model.Percentage >= 60)
+                    {
+                        <span>Good performance. Room for improvement.</span>
+                    }
+                    else if (Model.Percentage >= 33)
+                    {
+                        <span>Satisfactory. More focus needed.</span>
+                    }
+                    else
+                    {
+                        <span>Need to work harder. Meet teacher for guidance.</span>
+                    }
+                </div>
+            </div>
+
+            <!-- Signatures - Compact -->
+            <div class="p-2 print-compact bg-neutral-50 border-t">
+                <div class="grid grid-cols-3 gap-1 text-center print-text-xs">
+                    <div>
+                        <div class="border-t border-gray-400 mb-1 mx-auto w-16"></div>
+                        <p>Class Teacher</p>
+                    </div>
+                    <div>
+                        <div class="border-t border-gray-400 mb-1 mx-auto w-16"></div>
+                        <p>Principal</p>
+                    </div>
+                    <div>
+                        <div class="border-t border-gray-400 mb-1 mx-auto w-16"></div>
+                        <p>Parent/Guardian</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer - Compact -->
+            <div class="p-2 print-compact bg-gradient-primary text-white text-center print-text-xs">
+                <p>Generated on @DateTime.Now.ToString("dd MMM yyyy")</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        @if (isPrintView)
+        {
+                <text>
+                window.onload = function() {
+                    setTimeout(() => {
+                        window.print();
+                        setTimeout(() => { window.close(); }, 100);
+                    }, 500);
+                };
+                </text>
+        }
+
+        function printReport() {
+            const url = new URL(window.location);
+            url.searchParams.set('print', 'true');
+            window.open(url.toString(), '_blank');
+        }
+    </script>
+</body>
+</html>
+
+@functions {
+    public string GetGradeColorClass(string grade)
+    {
+        return grade switch
+        {
+            "A+" => "bg-success-light text-success",
+            "A" => "bg-success-light text-success",
+            "B+" => "bg-primary-100 text-primary-800",
+            "B" => "bg-primary-100 text-blue-700",
+            "C" => "bg-warning-light text-yellow-800",
+            "D" => "bg-orange-100 text-orange-800",
+            "E" => "bg-purple-100 text-purple-800",
+            "F" => "bg-error-light text-error",
+            _ => "bg-neutral-100 text-primary-800"
+        };
+    }
+
+    public string GetStatusColorClass(string status)
+    {
+        return status switch
+        {
+            "Pass" => "bg-success-light text-success",
+            "Fail" => "bg-error-light text-error",
+            "Absent" => "bg-neutral-100 text-primary-800",
+            _ => "bg-neutral-100 text-primary-800"
+        };
+    }
+}

@@ -1,0 +1,2230 @@
+@model SMS.Models.ExamMarksAnalysisViewModel
+
+@{
+    ViewData["Title"] = "Exam Analysis Dashboard";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SMS</title>
+
+    <!-- Fonts - Offline -->
+    <link rel="stylesheet" href="~/fonts/inter-all.css" asp-append-version="true" />
+
+    <!-- Tailwind CSS - Offline -->
+    <link rel="stylesheet" href="~/lib/tailwindcss/tailwind.min.css" asp-append-version="true" />
+
+    <!-- Apache ECharts - Offline -->
+    <script src="~/lib/echarts/echarts.min.js" asp-append-version="true"></script>
+
+    <!-- Font Awesome - Offline -->
+    <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" asp-append-version="true" />
+
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(180deg, #F5F1E8 0%, #E8E4D9 50%, #FFFEF9 100%);
+            min-height: 100vh;
+        }
+
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .hover-lift {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15);
+        }
+
+        .animated-counter {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <!-- Exam Analysis Dashboard with Gradient Background -->
+    <div class="">
+        <div class="max-w-[1600px] mx-auto p-3 sm:p-4">
+
+            <!-- Header Section -->
+            <div class="glassmorphism rounded-3xl shadow-lg p-4 sm:p-6 mb-4 hover-lift">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                    <div>
+                        <h1 class="text-2xl sm:text-4xl font-bold text-[#2D2D2D] mb-1"> Exam Analysis Dashboard</h1>
+                        <p class="text-sm text-gray-600">Comprehensive exam performance analytics and insights</p>
+                    </div>
+                    <div class="flex space-x-3 mt-3 md:mt-0">
+                        <a asp-action="Entry"
+                           class="bg-[#4CAF50] hover:bg-green-700 text-white px-4 py-2 rounded-xl transition-all duration-300 flex items-center font-medium text-sm">
+                            <i class="fas fa-plus mr-2"></i>
+                            Enter Marks
+                        </a>
+                        <button onclick="exportReport()" class="bg-[#FFD700] hover:bg-yellow-500 text-[#2D2D2D] px-4 py-2 rounded-xl transition-all duration-300 flex items-center font-medium text-sm">
+                            <i class="fas fa-download mr-2"></i>
+                            Export Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="glassmorphism rounded-3xl shadow-lg p-4 mb-4 hover-lift">
+                <h2 class="text-lg font-bold text-[#2D2D2D] mb-3 flex items-center">
+                    <i class="fas fa-filter text-[#FFD700] mr-2"></i>
+                    Filter Results
+                </h2>
+                
+                <!-- Filter Mode Toggle Buttons -->
+                <div class="flex gap-4 mb-4">
+                    <button type="button" 
+                            onclick="setFilterMode('classwise')" 
+                            id="classwiseBtn"
+                            class="filter-mode-btn flex-1 px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 bg-[#FFD700] text-[#2D2D2D] shadow-md">
+                        <i class="fas fa-school"></i>
+                        Class-Wise Analysis
+                    </button>
+                    <button type="button" 
+                            onclick="setFilterMode('testwise')" 
+                            id="testwiseBtn"
+                            class="filter-mode-btn flex-1 px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 bg-white text-gray-600 border-2 border-gray-200 hover:border-[#FFD700]">
+                        <i class="fas fa-clipboard-list"></i>
+                        Test-Wise Analysis
+                    </button>
+                    <button type="button" 
+                            onclick="setFilterMode('studentwise')" 
+                            id="studentwiseBtn"
+                            class="filter-mode-btn flex-1 px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 bg-white text-gray-600 border-2 border-gray-200 hover:border-[#FFD700]">
+                        <i class="fas fa-user-graduate"></i>
+                        Student-Wise Analysis
+                    </button>
+                </div>
+                
+                <form asp-action="Analysis" method="get" id="filterForm">
+                    <input type="hidden" name="filterMode" id="filterModeInput" value="@(Model.FilterMode ?? "classwise")" />
+                    
+                    <!-- Class-Wise Filters -->
+                    <div id="classwiseFilters" style="display: none;">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            
+                            @if (Model.IsOwner)
+                            {
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Campus</label>
+                                    <select name="campusId" 
+                                            asp-for="CampusId"
+                                            asp-items="@(new SelectList(Model.Campuses, "Id", "Name", Model.CampusId))"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-[#FFD700] transition-all"
+                                            onchange="loadClassesForAnalysis(this.value)">
+                                        <option value="">All Campuses</option>
+                                    </select>
+                                </div>
+                            }
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Exam Category <span class="text-red-500">*</span></label>
+                                <select name="examCategoryId"
+                                        asp-for="ExamCategoryId"
+                                        asp-items="@(new SelectList(Model.ExamCategories, "Id", "Name", Model.ExamCategoryId))"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-[#FFD700] transition-all"
+                                        onchange="loadExamsForAnalysis(this.value)"
+                                        id="classwiseExamCategory">
+                                    <option value="">Select Category</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Academic Year</label>
+                                <select name="academicYear"
+                                        asp-for="AcademicYear"
+                                        asp-items="@(new SelectList(Model.AcademicYears, "Year", "Year", Model.AcademicYear))"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-[#FFD700] transition-all">
+                                    <option value="">All Years</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Class <span class="text-red-500">*</span></label>
+                                <select name="classId"
+                                        asp-for="ClassId"
+                                        asp-items="@(new SelectList(Model.Classes, "Id", "Name", Model.ClassId))"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-[#FFD700] transition-all"
+                                        onchange="loadSectionsForAnalysis(this.value); loadAcademicYearForClass(this.value);"
+                                        id="classwiseClass">
+                                    <option value="">Select Class</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Test-Wise Filters -->
+                    <div id="testwiseFilters" style="display: none;">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            
+                            @if (Model.IsOwner)
+                            {
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Campus</label>
+                                    <select name="campusId" 
+                                            asp-for="CampusId"
+                                            asp-items="@(new SelectList(Model.Campuses, "Id", "Name", Model.CampusId))"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-[#FFD700] transition-all"
+                                            onchange="loadClassesForAnalysis(this.value, 'testwise')">
+                                        <option value="">All Campuses</option>
+                                    </select>
+                                </div>
+                            }
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Exam Category <span class="text-red-500">*</span></label>
+                                <select name="examCategoryId"
+                                        asp-for="ExamCategoryId"
+                                        asp-items="@(new SelectList(Model.ExamCategories, "Id", "Name", Model.ExamCategoryId))"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-[#FFD700] transition-all"
+                                        onchange="loadExamsForAnalysis(this.value, 'testwise')"
+                                        id="testwiseExamCategory">
+                                    <option value="">Select Category</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Academic Year</label>
+                                <select name="academicYear"
+                                        asp-for="AcademicYear"
+                                        asp-items="@(new SelectList(Model.AcademicYears, "Year", "Year", Model.AcademicYear))"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-[#FFD700] transition-all">
+                                    <option value="">All Years</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Exam Name <span class="text-red-500">*</span></label>
+                                <select name="examId"
+                                        asp-for="ExamId"
+                                        asp-items="@(new SelectList(Model.Exams, "Id", "Name", Model.ExamId))"
+                                        id="testwiseExam"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-[#FFD700] transition-all">
+                                    <option value="">Select Exam</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Student-Wise Filters -->
+                    <div id="studentwiseFilters" style="display: none;">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Search Student <span class="text-red-500">*</span></label>
+                                <input type="text" 
+                                       name="studentName" 
+                                       id="studentSearchInput"
+                                       placeholder="Type student name..."
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-[#FFD700] transition-all"
+                                       autocomplete="off"
+                                       oninput="searchStudents(this.value)" />
+                                <input type="hidden" name="studentId" id="studentIdInput" value="@(Model.StudentId ?? 0)" />
+                                <div id="studentSearchResults" class="mt-2 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto" style="display: none;"></div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Exam Category <span class="text-red-500">*</span></label>
+                                <select name="examCategoryId"
+                                        asp-for="ExamCategoryId"
+                                        asp-items="@(new SelectList(Model.ExamCategories, "Id", "Name", Model.ExamCategoryId))"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] focus:border-[#FFD700] transition-all"
+                                        id="studentwiseExamCategory">
+                                    <option value="">Select Category</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3 flex justify-end">
+                        <button type="submit" class="bg-[#FFD700] hover:bg-yellow-500 text-[#2D2D2D] px-6 py-2 rounded-lg transition-all duration-300 flex items-center font-bold text-sm">
+                            <i class="fas fa-search mr-2"></i>
+                            Apply Filters
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            @if (Model.ExamCategoryId.HasValue && Model.ExamMarksList.Any())
+            {
+                <!-- Statistics Cards -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-4">
+                    <div class="glassmorphism rounded-3xl shadow-lg p-4 hover-lift">
+                        <div class="flex items-center gap-2">
+                            <div class="w-10 h-10 rounded-xl bg-[#FFD700]/20 flex items-center justify-center">
+                                <i class="fas fa-user-graduate text-lg text-[#2D2D2D]"></i>
+                            </div>
+                            <div>
+                                <div class="text-xl sm:text-2xl font-bold text-[#2D2D2D] animated-counter">@Model.TotalStudents</div>
+                                <div class="text-xs text-gray-600 font-medium">Total Students</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glassmorphism rounded-3xl shadow-lg p-4 hover-lift">
+                        <div class="flex items-center gap-2">
+                            <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+                                <i class="fas fa-check-circle text-lg text-green-600"></i>
+                            </div>
+                            <div>
+                                <div class="text-xl sm:text-2xl font-bold text-green-600 animated-counter">@Model.PassedStudents</div>
+                                <div class="text-xs text-gray-600 font-medium">Passed</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glassmorphism rounded-3xl shadow-lg p-4 hover-lift">
+                        <div class="flex items-center gap-2">
+                            <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+                                <i class="fas fa-times-circle text-lg text-red-600"></i>
+                            </div>
+                            <div>
+                                <div class="text-xl sm:text-2xl font-bold text-red-600 animated-counter">@Model.FailedStudents</div>
+                                <div class="text-xs text-gray-600 font-medium">Failed</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glassmorphism rounded-3xl shadow-lg p-4 hover-lift">
+                        <div class="flex items-center gap-2">
+                            <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                                <i class="fas fa-percentage text-lg text-blue-600"></i>
+                            </div>
+                            <div>
+                                <div class="text-xl sm:text-2xl font-bold text-blue-600 animated-counter">@Model.PassPercentage%</div>
+                                <div class="text-xs text-gray-600 font-medium">Pass Rate</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Average Marks Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div class="glassmorphism rounded-3xl shadow-lg p-4 hover-lift text-center">
+                        <div class="text-2xl font-bold text-[#FFD700] mb-1">@Model.AverageMarks</div>
+                        <div class="text-sm text-gray-600">Average Marks</div>
+                    </div>
+                    <div class="glassmorphism rounded-3xl shadow-lg p-4 hover-lift text-center">
+                        <div class="text-2xl font-bold text-green-600 mb-1">@Model.HighestMarks</div>
+                        <div class="text-sm text-gray-600">Highest Marks</div>
+                    </div>
+                    <div class="glassmorphism rounded-3xl shadow-lg p-4 hover-lift text-center">
+                        <div class="text-2xl font-bold text-red-600 mb-1">@Model.LowestMarks</div>
+                        <div class="text-sm text-gray-600">Lowest Marks</div>
+                    </div>
+                </div>
+
+                <!-- Charts Section - Hidden in studentwise mode -->
+                @if (Model.FilterMode != "studentwise")
+                {
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                        <!-- Pass/Fail Chart -->
+                        <div class="glassmorphism rounded-3xl shadow-lg p-4 hover-lift">
+                            <h3 class="text-lg font-bold text-[#2D2D2D] mb-3 flex items-center">
+                                <i class="fas fa-chart-pie text-[#FFD700] mr-2"></i>
+                                Pass/Fail Distribution
+                            </h3>
+                            <div id="passFailChart" style="width: 100%; height: 250px;"></div>
+                        </div>
+
+                        <!-- Marks Range Chart -->
+                        <div class="glassmorphism rounded-3xl shadow-lg p-4 hover-lift">
+                            <h3 class="text-lg font-bold text-[#2D2D2D] mb-3 flex items-center">
+                                <i class="fas fa-chart-bar text-[#4CAF50] mr-2"></i>
+                                Marks Range Distribution (Percentage)
+                            </h3>
+                            <div id="marksRangeChart" style="width: 100%; height: 250px;"></div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Mode-Specific Performance Charts -->
+                @if (Model.FilterMode == "classwise")
+                {
+                    <!-- Class-Wise Mode Charts -->
+                    <div class="grid grid-cols-1 gap-4 mb-4">
+                        @if (!Model.SubjectId.HasValue)
+                        {
+                            <div class="glassmorphism rounded-3xl shadow-lg p-4 hover-lift">
+                                <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-3 gap-2">
+                                    <h3 class="text-lg font-bold text-[#2D2D2D] flex items-center">
+                                        <i class="fas fa-book text-blue-600 mr-2"></i>
+                                        Subject-wise Performance with Section Breakdown
+                                    </h3>
+                                    <div class="flex flex-wrap items-center gap-2 text-sm">
+                                        <div class="flex items-center">
+                                            <label class="font-medium text-gray-700 mr-1">Exam:</label>
+                                            <select id="subjectWiseExamFilter" onchange="changeSubjectWiseFilter('exam', this.value)" 
+                                                    class="px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] bg-white text-sm">
+                                                <option value="">All Exams</option>
+                                                @foreach (var exam in Model.Exams)
+                                                {
+                                                    if (Model.ExamId == exam.Id)
+                                                    {
+                                                        <option value="@exam.Id" selected>@exam.Name</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@exam.Id">@exam.Name</option>
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <label class="font-medium text-gray-700 mr-1">Section:</label>
+                                            <select id="subjectWiseSectionFilter" onchange="changeSubjectWiseFilter('section', this.value)" 
+                                                    class="px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] bg-white text-sm">
+                                                <option value="">All Sections</option>
+                                                @foreach (var sec in Model.Sections)
+                                                {
+                                                    if (Model.SectionId == sec.Id)
+                                                    {
+                                                        <option value="@sec.Id" selected>@sec.Name</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@sec.Id">@sec.Name</option>
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="subjectWiseChart" style="width: 100%; height: 350px;"></div>
+                            </div>
+                        }
+
+                        @if (!Model.SectionId.HasValue)
+                        {
+                            <div class="glassmorphism rounded-3xl shadow-lg p-4 hover-lift">
+                                <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-3 gap-2">
+                                    <h3 class="text-lg font-bold text-[#2D2D2D] flex items-center">
+                                        <i class="fas fa-users text-purple-600 mr-2"></i>
+                                        Section-wise Performance (All Tests Average)
+                                    </h3>
+                                    <div class="flex flex-wrap items-center gap-2 text-sm">
+                                        <div class="flex items-center">
+                                            <label class="font-medium text-gray-700 mr-1">Exam:</label>
+                                            <select id="sectionWiseExamFilter" onchange="changeSectionWiseFilter('exam', this.value)" 
+                                                    class="px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] bg-white text-sm">
+                                                <option value="">All Exams</option>
+                                                @foreach (var exam in Model.Exams)
+                                                {
+                                                    if (Model.ExamId == exam.Id)
+                                                    {
+                                                        <option value="@exam.Id" selected>@exam.Name</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@exam.Id">@exam.Name</option>
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <label class="font-medium text-gray-700 mr-1">Subject:</label>
+                                            <select id="sectionWiseSubjectFilter" onchange="changeSectionWiseFilter('subject', this.value)" 
+                                                    class="px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] bg-white text-sm">
+                                                <option value="">All Subjects</option>
+                                                @foreach (var subj in Model.Subjects)
+                                                {
+                                                    if (Model.SubjectId == subj.Id)
+                                                    {
+                                                        <option value="@subj.Id" selected>@subj.Name</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@subj.Id">@subj.Name</option>
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="sectionWiseChart" style="width: 100%; height: 350px;"></div>
+                            </div>
+                        }
+                    </div>
+                }
+                else if (Model.FilterMode == "testwise")
+                {
+                    <!-- Test-Wise Mode Charts -->
+                    <div class="grid grid-cols-1 gap-4 mb-4">
+                        @if (!Model.ClassId.HasValue || !Model.SectionId.HasValue)
+                        {
+                            <div class="glassmorphism rounded-3xl shadow-lg p-4 hover-lift">
+                                <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-3 gap-2">
+                                    <h3 class="text-lg font-bold text-[#2D2D2D] flex items-center">
+                                        <i class="fas fa-school text-purple-600 mr-2"></i>
+                                        Class/Section-wise Performance (Average Percentage)
+                                    </h3>
+                                    <div class="flex items-center text-sm">
+                                        <label class="font-medium text-gray-700 mr-1">Subject:</label>
+                                        <select onchange="changeCardFilter('subject', this.value)" 
+                                                class="px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FFD700] bg-white text-sm">
+                                            <option value="">All Subjects</option>
+                                            @foreach (var subj in Model.Subjects)
+                                            {
+                                                if (Model.SubjectId == subj.Id)
+                                                {
+                                                    <option value="@subj.Id" selected>@subj.Name</option>
+                                                }
+                                                else
+                                                {
+                                                    <option value="@subj.Id">@subj.Name</option>
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                                <div id="classSectionWiseChart" style="width: 100%; height: 350px;"></div>
+                            </div>
+                        }
+                    </div>
+                }
+                else if (Model.FilterMode == "studentwise")
+                {
+                    <!-- Student-Wise Mode -->
+                    <div class="grid grid-cols-1 gap-4 mb-4">
+                        <!-- Student Info Card -->
+                        <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                            <div class="flex items-center gap-4 mb-4">
+                                <div class="w-16 h-16 rounded-full bg-[#FFD700]/20 flex items-center justify-center">
+                                    <i class="fas fa-user-graduate text-2xl text-[#2D2D2D]"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-[#2D2D2D]" id="studentDisplayName">@Model.StudentName</h3>
+                                    <p class="text-sm text-gray-600">Student Performance Analysis</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Performance Growth Graph - Moved to Top -->
+                        <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                            <h3 class="text-lg font-bold text-[#2D2D2D] mb-4 flex items-center">
+                                <i class="fas fa-chart-line text-purple-600 mr-3"></i>
+                                Performance Growth
+                            </h3>
+                            <div id="studentGrowthChart" style="width: 100%; height: 400px;"></div>
+                        </div>
+                        
+                        <!-- Latest Exam Results -->
+                        <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                            <h3 class="text-lg font-bold text-[#2D2D2D] mb-4 flex items-center">
+                                <i class="fas fa-clipboard-check text-green-600 mr-3"></i>
+                                Latest Exam Results
+                            </h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead>
+                                        <tr class="border-b-2 border-gray-300">
+                                            <th class="text-left py-3 px-4 font-semibold text-gray-700">Subject</th>
+                                            <th class="text-center py-3 px-4 font-semibold text-gray-700">Total Marks</th>
+                                            <th class="text-center py-3 px-4 font-semibold text-gray-700">Obtained Marks</th>
+                                            <th class="text-center py-3 px-4 font-semibold text-gray-700">Percentage</th>
+                                            <th class="text-center py-3 px-4 font-semibold text-gray-700">Grade</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="latestExamTableBody">
+                                        <tr>
+                                            <td colspan="5" class="text-center py-8 text-gray-500">
+                                                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                                <p>Loading exam results...</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot id="latestExamTableFooter" style="display: none;">
+                                        <tr class="border-t-2 border-gray-300 font-bold bg-gray-50">
+                                            <td class="py-3 px-4">Total</td>
+                                            <td class="text-center py-3 px-4" id="latestTotalMarks">-</td>
+                                            <td class="text-center py-3 px-4" id="latestObtainedMarks">-</td>
+                                            <td class="text-center py-3 px-4" id="latestPercentage">-</td>
+                                            <td class="text-center py-3 px-4" id="latestGrade">-</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- History Section -->
+                        <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                            <h3 class="text-lg font-bold text-[#2D2D2D] mb-4 flex items-center">
+                                <i class="fas fa-history text-blue-600 mr-3"></i>
+                                Exam History
+                            </h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="border-b-2 border-gray-300">
+                                            <th class="text-left py-3 px-2 font-semibold text-gray-700 sticky left-0 bg-white">Subject</th>
+                                            <th colspan="2" class="text-center py-3 px-2 font-semibold text-gray-700" id="historyExamsHeader">
+                                                Loading...
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="historyTableBody">
+                                        <tr>
+                                            <td colspan="20" class="text-center py-8 text-gray-500">
+                                                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                                <p>Loading history...</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <!-- Default/Legacy Charts -->
+                    <div class="grid grid-cols-1 gap-6 mb-6">
+                        @if (!Model.SubjectId.HasValue)
+                        {
+                            <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                                <h3 class="text-lg font-bold text-[#2D2D2D] mb-4 flex items-center">
+                                    <i class="fas fa-book text-blue-600 mr-3"></i>
+                                    Subject-wise Performance
+                                </h3>
+                                <div id="subjectWiseChart" style="width: 100%; height: 350px;"></div>
+                            </div>
+                        }
+
+                        @if (!Model.ClassId.HasValue)
+                        {
+                            <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                                <h3 class="text-lg font-bold text-[#2D2D2D] mb-4 flex items-center">
+                                    <i class="fas fa-school text-purple-600 mr-3"></i>
+                                    Class-wise Performance
+                                </h3>
+                                <div id="classWiseChart" style="width: 100%; height: 350px;"></div>
+                            </div>
+                        }
+
+                        @if (Model.IsOwner && !Model.CampusId.HasValue)
+                        {
+                            <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                                <h3 class="text-lg font-bold text-[#2D2D2D] mb-4 flex items-center">
+                                    <i class="fas fa-building text-orange-600 mr-3"></i>
+                                    Campus-wise Comparison
+                                </h3>
+                                <div id="campusWiseChart" style="width: 100%; height: 350px;"></div>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+            else if (Model.ExamCategoryId.HasValue && !Model.ExamMarksList.Any())
+            {
+                <!-- No Data Message -->
+                <div class="glassmorphism rounded-3xl shadow-lg p-12 text-center">
+                    <i class="fas fa-chart-line text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-bold text-gray-700 mb-2">No Exam Data Found</h3>
+                    <p class="text-gray-500 mb-4">No exam marks match your current filter criteria.</p>
+                    <a asp-action="Entry" class="inline-flex items-center px-6 py-3 bg-[#FFD700] text-[#2D2D2D] rounded-lg hover:bg-yellow-500 transition-all font-medium">
+                        <i class="fas fa-plus mr-2"></i>
+                        Enter New Marks
+                    </a>
+                </div>
+            }
+            else
+            {
+                <!-- Please Select Category Message -->
+                <div class="glassmorphism rounded-3xl shadow-lg p-12 text-center">
+                    <i class="fas fa-info-circle text-6xl text-[#FFD700] mb-4"></i>
+                    <h3 class="text-xl font-bold text-gray-700 mb-2">Please Select an Exam Category</h3>
+                    <p class="text-gray-500">Select an exam category from the filters above to view the analysis dashboard.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <script>
+        // Current filter mode
+        let currentFilterMode = '@(Model.FilterMode ?? "classwise")';
+        
+        // Independent filter states for each chart
+        let subjectWiseFilters = {
+            examId: @(Model.ExamId ?? 0),
+            sectionId: @(Model.SectionId ?? 0)
+        };
+        
+        let sectionWiseFilters = {
+            examId: @(Model.ExamId ?? 0),
+            subjectId: @(Model.SubjectId ?? 0)
+        };
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize filter mode on page load
+            setFilterMode(currentFilterMode, false);
+            
+            @if (Model.ExamCategoryId.HasValue && Model.ExamMarksList.Any())
+            {
+                <text>
+                initializeCharts();
+                </text>
+            }
+        });
+
+        function setFilterMode(mode, shouldSubmit = false) {
+            currentFilterMode = mode;
+            document.getElementById('filterModeInput').value = mode;
+            
+            // Update button styles
+            const classwiseBtn = document.getElementById('classwiseBtn');
+            const testwiseBtn = document.getElementById('testwiseBtn');
+            const studentwiseBtn = document.getElementById('studentwiseBtn');
+            
+            // Reset all buttons to inactive state
+            const inactiveClass = 'filter-mode-btn flex-1 px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 bg-white text-gray-600 border-2 border-gray-200 hover:border-[#FFD700]';
+            const activeClass = 'filter-mode-btn flex-1 px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 bg-[#FFD700] text-[#2D2D2D] shadow-md';
+            
+            classwiseBtn.className = inactiveClass;
+            testwiseBtn.className = inactiveClass;
+            studentwiseBtn.className = inactiveClass;
+            
+            // Hide all filter sections
+            document.getElementById('classwiseFilters').style.display = 'none';
+            document.getElementById('testwiseFilters').style.display = 'none';
+            document.getElementById('studentwiseFilters').style.display = 'none';
+            
+            if (mode === 'classwise') {
+                classwiseBtn.className = activeClass;
+                document.getElementById('classwiseFilters').style.display = 'block';
+                
+                // Update required fields
+                const classwiseCategory = document.getElementById('classwiseExamCategory');
+                const classwiseClass = document.getElementById('classwiseClass');
+                if (classwiseCategory) classwiseCategory.required = true;
+                if (classwiseClass) classwiseClass.required = true;
+                
+                const testwiseCategory = document.getElementById('testwiseExamCategory');
+                const testwiseExam = document.getElementById('testwiseExam');
+                if (testwiseCategory) testwiseCategory.required = false;
+                if (testwiseExam) testwiseExam.required = false;
+                
+                const studentwiseCategory = document.getElementById('studentwiseExamCategory');
+                const studentIdInput = document.getElementById('studentIdInput');
+                if (studentwiseCategory) studentwiseCategory.required = false;
+                if (studentIdInput) studentIdInput.required = false;
+            } else if (mode === 'testwise') {
+                testwiseBtn.className = activeClass;
+                document.getElementById('testwiseFilters').style.display = 'block';
+                
+                // Update required fields
+                const classwiseCategory = document.getElementById('classwiseExamCategory');
+                const classwiseClass = document.getElementById('classwiseClass');
+                if (classwiseCategory) classwiseCategory.required = false;
+                if (classwiseClass) classwiseClass.required = false;
+                
+                const testwiseCategory = document.getElementById('testwiseExamCategory');
+                const testwiseExam = document.getElementById('testwiseExam');
+                if (testwiseCategory) testwiseCategory.required = true;
+                if (testwiseExam) testwiseExam.required = true;
+                
+                const studentwiseCategory = document.getElementById('studentwiseExamCategory');
+                const studentIdInput = document.getElementById('studentIdInput');
+                if (studentwiseCategory) studentwiseCategory.required = false;
+                if (studentIdInput) studentIdInput.required = false;
+            } else if (mode === 'studentwise') {
+                studentwiseBtn.className = activeClass;
+                document.getElementById('studentwiseFilters').style.display = 'block';
+                
+                // Update required fields
+                const classwiseCategory = document.getElementById('classwiseExamCategory');
+                const classwiseClass = document.getElementById('classwiseClass');
+                if (classwiseCategory) classwiseCategory.required = false;
+                if (classwiseClass) classwiseClass.required = false;
+                
+                const testwiseCategory = document.getElementById('testwiseExamCategory');
+                const testwiseExam = document.getElementById('testwiseExam');
+                if (testwiseCategory) testwiseCategory.required = false;
+                if (testwiseExam) testwiseExam.required = false;
+                
+                const studentwiseCategory = document.getElementById('studentwiseExamCategory');
+                const studentIdInput = document.getElementById('studentIdInput');
+                if (studentwiseCategory) studentwiseCategory.required = true;
+                if (studentIdInput) studentIdInput.required = true;
+            }
+            
+            if (shouldSubmit) {
+                document.getElementById('filterForm').submit();
+            }
+        }
+
+        function changeExamFilter(examId) {
+            const form = document.getElementById('filterForm');
+            const currentUrl = new URL(form.action, window.location.origin);
+            const formData = new FormData(form);
+            
+            // Update exam ID
+            if (examId) {
+                currentUrl.searchParams.set('examId', examId);
+            } else {
+                currentUrl.searchParams.delete('examId');
+            }
+            
+            // Keep other parameters
+            for (let [key, value] of formData.entries()) {
+                if (key !== 'examId' && value) {
+                    currentUrl.searchParams.set(key, value);
+                }
+            }
+            
+            window.location.href = currentUrl.toString();
+        }
+
+        function changeSubjectFilter(subjectId) {
+            const form = document.getElementById('filterForm');
+            const currentUrl = new URL(form.action, window.location.origin);
+            const formData = new FormData(form);
+            
+            // Update subject ID
+            if (subjectId) {
+                currentUrl.searchParams.set('subjectId', subjectId);
+            } else {
+                currentUrl.searchParams.delete('subjectId');
+            }
+            
+            // Keep other parameters
+            for (let [key, value] of formData.entries()) {
+                if (key !== 'subjectId' && value) {
+                    currentUrl.searchParams.set(key, value);
+                }
+            }
+            
+            window.location.href = currentUrl.toString();
+        }
+
+        function changeSubjectWiseFilter(filterType, filterId) {
+            // Update the subject-wise filters independently
+            if (filterType === 'exam') {
+                subjectWiseFilters.examId = filterId || 0;
+            } else if (filterType === 'section') {
+                subjectWiseFilters.sectionId = filterId || 0;
+            }
+            
+            // Get current filter values from the form
+            const examCategoryId = @(Model.ExamCategoryId ?? 0);
+            const campusId = @(Model.CampusId ?? 0);
+            const classId = @(Model.ClassId ?? 0);
+            const filterMode = '@(Model.FilterMode ?? "classwise")';
+            
+            // Prepare parameters for AJAX call - only for subject-wise chart
+            let params = {
+                examCategoryId: examCategoryId,
+                campusId: campusId,
+                classId: classId,
+                filterMode: filterMode,
+                academicYear: @(Model.AcademicYear ?? 0),
+                examId: subjectWiseFilters.examId,
+                sectionId: subjectWiseFilters.sectionId,
+                subjectId: 0  // Subject-wise chart doesn't filter by subject
+            };
+            
+            // Show loading indicator for subject-wise chart only
+            const subjectChartElement = document.getElementById('subjectWiseChart');
+            if (subjectChartElement) {
+                // Dispose of existing chart instance before showing loader
+                if (chartInstances.subjectWiseChart && !chartInstances.subjectWiseChart.isDisposed()) {
+                    chartInstances.subjectWiseChart.dispose();
+                    delete chartInstances.subjectWiseChart;
+                }
+                subjectChartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 350px;"><i class="fas fa-spinner fa-spin text-[#FFD700] text-4xl"></i></div>';
+            }
+            
+            // Fetch updated chart data
+            const queryString = new URLSearchParams(params).toString();
+            fetch(`/ExamMarks/GetAnalysisChartsData?${queryString}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Update only Subject-wise Performance chart
+                        if (subjectChartElement) {
+                            if (data.subjectWiseSectionData && data.subjectWiseSectionData.length > 0) {
+                                updateSubjectWiseChart(data.subjectWiseSectionData);
+                            } else {
+                                subjectChartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 350px; color: #9CA3AF;"><i class="fas fa-info-circle mr-2"></i>No data available for this filter combination</div>';
+                            }
+                        }
+                    } else {
+                        console.error('Failed to load chart data:', data.message);
+                        if (subjectChartElement) {
+                            subjectChartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 350px; color: #ef4444;"><i class="fas fa-exclamation-triangle mr-2"></i>Failed to load data: ' + (data.message || 'Unknown error') + '</div>';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading chart data:', error);
+                    if (subjectChartElement) {
+                        subjectChartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 350px; color: #ef4444;"><i class="fas fa-exclamation-triangle mr-2"></i>Error loading chart data</div>';
+                    }
+                });
+        }
+
+        function changeSectionWiseFilter(filterType, filterId) {
+            // Update the section-wise filters independently
+            if (filterType === 'exam') {
+                sectionWiseFilters.examId = filterId || 0;
+            } else if (filterType === 'subject') {
+                sectionWiseFilters.subjectId = filterId || 0;
+            }
+            
+            // Get current filter values from the form
+            const examCategoryId = @(Model.ExamCategoryId ?? 0);
+            const campusId = @(Model.CampusId ?? 0);
+            const classId = @(Model.ClassId ?? 0);
+            const filterMode = '@(Model.FilterMode ?? "classwise")';
+            
+            // Prepare parameters for AJAX call - only for section-wise chart
+            let params = {
+                examCategoryId: examCategoryId,
+                campusId: campusId,
+                classId: classId,
+                filterMode: filterMode,
+                academicYear: @(Model.AcademicYear ?? 0),
+                examId: sectionWiseFilters.examId,
+                sectionId: 0,  // Section-wise chart doesn't filter by section
+                subjectId: sectionWiseFilters.subjectId
+            };
+            
+            // Show loading indicator for section-wise chart only
+            const sectionChartElement = document.getElementById('sectionWiseChart');
+            if (sectionChartElement) {
+                // Dispose of existing chart instance before showing loader
+                if (chartInstances.sectionWiseChart && !chartInstances.sectionWiseChart.isDisposed()) {
+                    chartInstances.sectionWiseChart.dispose();
+                    delete chartInstances.sectionWiseChart;
+                }
+                sectionChartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 350px;"><i class="fas fa-spinner fa-spin text-[#FFD700] text-4xl"></i></div>';
+            }
+            
+            // Fetch updated chart data
+            const queryString = new URLSearchParams(params).toString();
+            fetch(`/ExamMarks/GetAnalysisChartsData?${queryString}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Update only Section-wise Performance chart
+                        if (sectionChartElement) {
+                            if (data.sectionWiseData && data.sectionWiseData.length > 0) {
+                                updateSectionWiseChart(data.sectionWiseData);
+                            } else {
+                                sectionChartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 350px; color: #9CA3AF;"><i class="fas fa-info-circle mr-2"></i>No data available for this filter combination</div>';
+                            }
+                        }
+                    } else {
+                        console.error('Failed to load chart data:', data.message);
+                        if (sectionChartElement) {
+                            sectionChartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 350px; color: #ef4444;"><i class="fas fa-exclamation-triangle mr-2"></i>Failed to load data: ' + (data.message || 'Unknown error') + '</div>';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading chart data:', error);
+                    if (sectionChartElement) {
+                        sectionChartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 350px; color: #ef4444;"><i class="fas fa-exclamation-triangle mr-2"></i>Error loading chart data</div>';
+                    }
+                });
+        }
+
+        function changeCardFilter(filterType, filterId) {
+            // Get current filter values from the form
+            const examCategoryId = @(Model.ExamCategoryId ?? 0);
+            const campusId = @(Model.CampusId ?? 0);
+            const classId = @(Model.ClassId ?? 0);
+            const filterMode = '@(Model.FilterMode ?? "classwise")';
+            
+            // Prepare parameters for AJAX call
+            let params = {
+                examCategoryId: examCategoryId,
+                campusId: campusId,
+                classId: classId,
+                filterMode: filterMode,
+                academicYear: @(Model.AcademicYear ?? 0)
+            };
+            
+            // Add the specific filter being changed
+            if (filterType === 'exam') {
+                params.examId = filterId || 0;
+                params.sectionId = @(Model.SectionId ?? 0);
+                params.subjectId = @(Model.SubjectId ?? 0);
+            } else if (filterType === 'subject') {
+                params.examId = @(Model.ExamId ?? 0);
+                params.sectionId = @(Model.SectionId ?? 0);
+                params.subjectId = filterId || 0;
+            } else if (filterType === 'section') {
+                params.examId = @(Model.ExamId ?? 0);
+                params.sectionId = filterId || 0;
+                params.subjectId = @(Model.SubjectId ?? 0);
+            }
+            
+            // Show loading indicator for existing chart elements
+            const chartIds = ['subjectWiseChart', 'sectionWiseChart', 'classSectionWiseChart'];
+            const existingChartElements = [];
+            
+            chartIds.forEach(chartId => {
+                const chartElement = document.getElementById(chartId);
+                if (chartElement) {
+                    existingChartElements.push(chartId);
+                    // Dispose of existing chart instance before showing loader
+                    if (chartInstances[chartId] && !chartInstances[chartId].isDisposed()) {
+                        chartInstances[chartId].dispose();
+                        delete chartInstances[chartId];
+                    }
+                    chartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 350px;"><i class="fas fa-spinner fa-spin text-[#FFD700] text-4xl"></i></div>';
+                }
+            });
+            
+            // Fetch updated chart data
+            const queryString = new URLSearchParams(params).toString();
+            fetch(`/ExamMarks/GetAnalysisChartsData?${queryString}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Update the relevant charts based on filter mode
+                        if (filterMode === 'classwise') {
+                            // Update Subject-wise Performance with Section Breakdown
+                            const subjectChartElement = document.getElementById('subjectWiseChart');
+                            if (subjectChartElement) {
+                                if (data.subjectWiseSectionData && data.subjectWiseSectionData.length > 0) {
+                                    updateSubjectWiseChart(data.subjectWiseSectionData);
+                                } else {
+                                    subjectChartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 350px; color: #9CA3AF;"><i class="fas fa-info-circle mr-2"></i>No data available for this filter combination</div>';
+                                }
+                            }
+                            
+                            // Update Section-wise Performance
+                            const sectionChartElement = document.getElementById('sectionWiseChart');
+                            if (sectionChartElement) {
+                                if (data.sectionWiseData && data.sectionWiseData.length > 0) {
+                                    updateSectionWiseChart(data.sectionWiseData);
+                                } else {
+                                    sectionChartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 350px; color: #9CA3AF;"><i class="fas fa-info-circle mr-2"></i>No data available for this filter combination</div>';
+                                }
+                            }
+                        } else if (filterMode === 'testwise') {
+                            // Update Class/Section-wise Performance
+                            const classSectionChartElement = document.getElementById('classSectionWiseChart');
+                            if (classSectionChartElement) {
+                                if (data.classSectionWiseData && data.classSectionWiseData.length > 0) {
+                                    updateClassSectionWiseChart(data.classSectionWiseData);
+                                } else {
+                                    classSectionChartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 350px; color: #9CA3AF;"><i class="fas fa-info-circle mr-2"></i>No data available for this filter combination</div>';
+                                }
+                            }
+                        }
+                    } else {
+                        console.error('Failed to load chart data:', data.message);
+                        // Show error message in all chart containers
+                        existingChartElements.forEach(chartId => {
+                            const chartElement = document.getElementById(chartId);
+                            if (chartElement) {
+                                chartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 350px; color: #ef4444;"><i class="fas fa-exclamation-triangle mr-2"></i>Failed to load data: ' + (data.message || 'Unknown error') + '</div>';
+                            }
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading chart data:', error);
+                    // Clear loading state and show error for all existing chart elements
+                    existingChartElements.forEach(chartId => {
+                        const chartElement = document.getElementById(chartId);
+                        if (chartElement) {
+                            chartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 350px; color: #ef4444;"><i class="fas fa-exclamation-triangle mr-2"></i>Error loading chart data</div>';
+                        }
+                    });
+                });
+        }
+        
+        function updateSubjectWiseChart(data) {
+            const chartElement = document.getElementById('subjectWiseChart');
+            if (!chartElement) {
+                console.error('subjectWiseChart element not found');
+                return;
+            }
+            
+            // Validate data
+            if (!data || data.length === 0) {
+                chartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 350px; color: #9CA3AF;"><i class="fas fa-info-circle mr-2"></i>No data available</div>';
+                return;
+            }
+            
+            try {
+                // Dispose old chart instance if exists
+                if (chartInstances.subjectWiseChart && !chartInstances.subjectWiseChart.isDisposed()) {
+                    chartInstances.subjectWiseChart.dispose();
+                }
+                
+                const subjectWiseChart = echarts.init(chartElement);
+                chartInstances.subjectWiseChart = subjectWiseChart;
+                
+                const subjects = [...new Set(data.map(d => d.Subject || d.subject))];
+                const sections = [...new Set(data.map(d => d.Section || d.section))];
+                
+                const seriesData = sections.map(section => ({
+                    name: section,
+                    type: 'bar',
+                    data: subjects.map(subject => {
+                        const item = data.find(d => 
+                            (d.Subject || d.subject) === subject && (d.Section || d.section) === section
+                        );
+                        return item ? (item.AveragePercentage || item.averagePercentage || 0) : 0;
+                    }),
+                    itemStyle: { borderRadius: [8, 8, 0, 0] }
+                }));
+                
+                subjectWiseChart.setOption({
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: { type: 'shadow' },
+                        formatter: function(params) {
+                            let result = params[0].name + '<br/>';
+                            params.forEach(param => {
+                                result += param.marker + ' ' + param.seriesName + ': ' + param.value + '%<br/>';
+                            });
+                            return result;
+                        }
+                    },
+                    legend: {
+                        data: sections,
+                        top: 'top'
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: subjects,
+                        axisLabel: { 
+                            rotate: 45,
+                            fontSize: 11
+                        }
+                    },
+                    yAxis: { 
+                        type: 'value',
+                        name: 'Average Percentage (%)',
+                        max: 100
+                    },
+                    series: seriesData
+                });
+            } catch (error) {
+                console.error('Error updating subjectWiseChart:', error);
+                chartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 350px; color: #ef4444;"><i class="fas fa-exclamation-triangle mr-2"></i>Error rendering chart</div>';
+            }
+        }
+        
+        function updateSectionWiseChart(data) {
+            const chartElement = document.getElementById('sectionWiseChart');
+            if (!chartElement) {
+                console.error('sectionWiseChart element not found');
+                return;
+            }
+            
+            // Validate data
+            if (!data || data.length === 0) {
+                chartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 350px; color: #9CA3AF;"><i class="fas fa-info-circle mr-2"></i>No data available</div>';
+                return;
+            }
+            
+            try {
+                // Dispose old chart instance if exists
+                if (chartInstances.sectionWiseChart && !chartInstances.sectionWiseChart.isDisposed()) {
+                    chartInstances.sectionWiseChart.dispose();
+                }
+                
+                const sectionWiseChart = echarts.init(chartElement);
+                chartInstances.sectionWiseChart = sectionWiseChart;
+                
+                sectionWiseChart.setOption({
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: { type: 'shadow' },
+                        formatter: function(params) {
+                            let result = params[0].name + '<br/>';
+                            params.forEach(param => {
+                                result += param.marker + ' ' + param.seriesName + ': ' + param.value + '%<br/>';
+                            });
+                            return result;
+                        }
+                    },
+                    legend: {
+                        data: ['Average Percentage', 'Pass Rate'],
+                        top: 'top'
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: data.map(s => s.Section || s.section),
+                        axisLabel: { fontSize: 11 }
+                    },
+                    yAxis: { 
+                        type: 'value',
+                        name: 'Percentage (%)',
+                        max: 100
+                    },
+                    series: [
+                        {
+                            name: 'Average Percentage',
+                            type: 'bar',
+                            data: data.map(s => s.AveragePercentage || s.averagePercentage || 0),
+                            itemStyle: { color: '#9C27B0', borderRadius: [8, 8, 0, 0] }
+                        },
+                        {
+                            name: 'Pass Rate',
+                            type: 'line',
+                            data: data.map(s => s.PassRate || s.passRate || 0),
+                            itemStyle: { color: '#FFD700' },
+                            lineStyle: { width: 3 }
+                        }
+                    ]
+                });
+            } catch (error) {
+                console.error('Error updating sectionWiseChart:', error);
+                chartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 350px; color: #ef4444;"><i class="fas fa-exclamation-triangle mr-2"></i>Error rendering chart</div>';
+            }
+        }
+        
+        function updateClassSectionWiseChart(data) {
+            const chartElement = document.getElementById('classSectionWiseChart');
+            if (!chartElement) {
+                console.error('classSectionWiseChart element not found');
+                return;
+            }
+            
+            // Validate data
+            if (!data || data.length === 0) {
+                chartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 350px; color: #9CA3AF;"><i class="fas fa-info-circle mr-2"></i>No data available</div>';
+                return;
+            }
+            
+            try {
+                // Dispose old chart instance if exists
+                if (chartInstances.classSectionWiseChart && !chartInstances.classSectionWiseChart.isDisposed()) {
+                    chartInstances.classSectionWiseChart.dispose();
+                }
+                
+                const classSectionChart = echarts.init(chartElement);
+                chartInstances.classSectionWiseChart = classSectionChart;
+                
+                classSectionChart.setOption({
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: { type: 'shadow' },
+                        formatter: function(params) {
+                            let result = params[0].name + '<br/>';
+                            params.forEach(param => {
+                                result += param.marker + ' ' + param.seriesName + ': ' + param.value + '%<br/>';
+                            });
+                            return result;
+                        }
+                    },
+                    legend: {
+                        data: ['Average Percentage', 'Pass Rate'],
+                        top: 'top'
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: data.map(cs => cs.ClassSection || cs.classSection),
+                        axisLabel: { 
+                            rotate: 45,
+                            fontSize: 11
+                        }
+                    },
+                    yAxis: { 
+                        type: 'value',
+                        name: 'Percentage (%)',
+                        max: 100
+                    },
+                    series: [
+                        {
+                            name: 'Average Percentage',
+                            type: 'bar',
+                            data: data.map(cs => cs.AveragePercentage || cs.averagePercentage || 0),
+                            itemStyle: { color: '#9C27B0', borderRadius: [8, 8, 0, 0] }
+                        },
+                        {
+                            name: 'Pass Rate',
+                            type: 'line',
+                            data: data.map(cs => cs.PassRate || cs.passRate || 0),
+                            itemStyle: { color: '#FFD700' },
+                            lineStyle: { width: 3 }
+                        }
+                    ]
+                });
+            } catch (error) {
+                console.error('Error updating classSectionWiseChart:', error);
+                chartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 350px; color: #ef4444;"><i class="fas fa-exclamation-triangle mr-2"></i>Error rendering chart</div>';
+            }
+        }
+
+        function loadClassesForAnalysis(campusId, mode = null) {
+            const filterMode = mode || currentFilterMode;
+            const classSelect = filterMode === 'testwise' 
+                ? document.getElementById('testwiseClass')
+                : document.querySelector('[name="classId"]');
+            
+            if (!classSelect) {
+                console.error('Class select element not found for mode:', filterMode);
+                return;
+            }
+            
+            classSelect.disabled = true;
+            classSelect.innerHTML = '<option value="">Loading...</option>';
+
+            if (!campusId) {
+                classSelect.innerHTML = '<option value="">All Classes</option>';
+                classSelect.disabled = false;
+                return;
+            }
+
+            fetch(`/ExamMarks/GetClassesByCategory?campusId=${campusId}`)
+                .then(response => response.json())
+                .then(data => {
+                    classSelect.innerHTML = '<option value="">All Classes</option>';
+                    data.forEach(cls => {
+                        classSelect.innerHTML += `<option value="${cls.id}">${cls.name}</option>`;
+                    });
+                    classSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    classSelect.innerHTML = '<option value="">Error loading classes</option>';
+                });
+        }
+
+        function loadExamsForAnalysis(categoryId, mode = null) {
+            const filterMode = mode || currentFilterMode;
+            const examSelect = filterMode === 'testwise'
+                ? document.getElementById('testwiseExam')
+                : document.getElementById('examFilter');
+            
+            if (!examSelect) {
+                console.error('Exam select element not found for mode:', filterMode);
+                return;
+            }
+            
+            examSelect.disabled = true;
+            examSelect.innerHTML = '<option value="">Loading...</option>';
+            
+            if (!categoryId) {
+                const defaultText = filterMode === 'testwise' ? 'Select Category First' : 'All Exams';
+                examSelect.innerHTML = `<option value="">${defaultText}</option>`;
+                examSelect.disabled = false;
+                return;
+            }
+            
+            fetch(`/ExamMarks/GetExamsByCategory?categoryId=${categoryId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const defaultText = filterMode === 'testwise' ? 'Select Exam' : 'All Exams';
+                    examSelect.innerHTML = `<option value="">${defaultText}</option>`;
+                    data.forEach(exam => {
+                        examSelect.innerHTML += `<option value="${exam.id}">${exam.name}</option>`;
+                    });
+                    examSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    examSelect.innerHTML = '<option value="">Error loading exams</option>';
+                });
+        }
+
+        function loadSectionsForAnalysis(classId, mode = null) {
+            const filterMode = mode || currentFilterMode;
+            const sectionSelect = filterMode === 'testwise'
+                ? document.getElementById('testwiseSectionFilter')
+                : document.getElementById('sectionFilter');
+            
+            if (!sectionSelect) {
+                console.error('Section select element not found for mode:', filterMode);
+                return;
+            }
+            
+            sectionSelect.disabled = true;
+            sectionSelect.innerHTML = '<option value="">Loading...</option>';
+
+            if (!classId) {
+                sectionSelect.innerHTML = '<option value="">All Sections</option>';
+                sectionSelect.disabled = false;
+                return;
+            }
+
+            fetch(`/ExamMarks/GetSectionsByClass?classId=${classId}`)
+                .then(response => response.json())
+                .then(data => {
+                    sectionSelect.innerHTML = '<option value="">All Sections</option>';
+                    data.forEach(section => {
+                        sectionSelect.innerHTML += `<option value="${section.id}">${section.name}</option>`;
+                    });
+                    sectionSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    sectionSelect.innerHTML = '<option value="">Error loading sections</option>';
+                });
+        }
+
+        function loadAcademicYearForClass(classId) {
+            if (!classId) {
+                return;
+            }
+
+            fetch(`/ExamMarks/GetAcademicYearByClass?classId=${classId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success && data.academicYear) {
+                        // Get the academic year dropdown in classwise filters
+                        const academicYearSelect = document.querySelector('#classwiseFilters select[name="academicYear"]');
+                        if (academicYearSelect) {
+                            academicYearSelect.value = data.academicYear;
+                        }
+                    } else if (data.message) {
+                        console.warn('Failed to load academic year:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading academic year:', error);
+                });
+        }
+
+        // Store chart instances for better performance
+        let chartInstances = {};
+
+        function initializeCharts() {
+            const examCategoryId = @(Model.ExamCategoryId ?? 0);
+            const examId = @(Model.ExamId ?? 0);
+            const campusId = @(Model.CampusId ?? 0);
+            const classId = @(Model.ClassId ?? 0);
+            const sectionId = @(Model.SectionId ?? 0);
+            const subjectId = @(Model.SubjectId ?? 0);
+            const academicYear = @(Model.AcademicYear ?? 0);
+            const filterMode = '@(Model.FilterMode ?? "classwise")';
+
+            fetch(`/ExamMarks/GetAnalysisChartsData?examCategoryId=${examCategoryId}&examId=${examId}&campusId=${campusId}&classId=${classId}&sectionId=${sectionId}&subjectId=${subjectId}&academicYear=${academicYear}&filterMode=${filterMode}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Chart data received:', data);
+                    console.log('Filter mode:', filterMode);
+                    
+                    if (data.success) {
+                        // Validate that we have the basic required data
+                        if (!data.passFailData || !data.marksRanges) {
+                            console.error('Missing required chart data:', data);
+                            return;
+                        }
+                        
+                        // Pass/Fail Chart
+                        const passFailChart = echarts.init(document.getElementById('passFailChart'));
+                        chartInstances.passFailChart = passFailChart;
+                        passFailChart.setOption({
+                            tooltip: {
+                                trigger: 'item',
+                                formatter: '{b}: {c} ({d}%)'
+                            },
+                            legend: {
+                                bottom: '5%',
+                                left: 'center'
+                            },
+                            series: [{
+                                type: 'pie',
+                                radius: ['40%', '70%'],
+                                avoidLabelOverlap: false,
+                                itemStyle: {
+                                    borderRadius: 10,
+                                    borderColor: '#fff',
+                                    borderWidth: 2
+                                },
+                                label: {
+                                    show: true,
+                                    fontSize: 14,
+                                    fontWeight: 'bold'
+                                },
+                                data: [
+                                    { value: data.passFailData.Passed || data.passFailData.passed || 0, name: 'Passed', itemStyle: { color: '#4CAF50' } },
+                                    { value: data.passFailData.Failed || data.passFailData.failed || 0, name: 'Failed', itemStyle: { color: '#ef4444' } }
+                                ]
+                            }]
+                        });
+
+                        // Marks Range Chart
+                        const marksRangeChart = echarts.init(document.getElementById('marksRangeChart'));
+                        chartInstances.marksRangeChart = marksRangeChart;
+                        marksRangeChart.setOption({
+                            tooltip: {
+                                trigger: 'axis',
+                                axisPointer: { type: 'shadow' },
+                                formatter: function(params) {
+                                    return params[0].name + '%<br/>' + 
+                                           params[0].marker + ' Students: ' + params[0].value;
+                                }
+                            },
+                            xAxis: {
+                                type: 'category',
+                                data: data.marksRanges.map(r => (r.Range || r.range) + '%'),
+                                axisLabel: { 
+                                    fontSize: 11,
+                                    rotate: 0
+                                }
+                            },
+                            yAxis: {
+                                type: 'value',
+                                name: 'Number of Students'
+                            },
+                            series: [{
+                                type: 'bar',
+                                data: data.marksRanges.map(r => r.Count || r.count),
+                                itemStyle: {
+                                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                        { offset: 0, color: '#FFD700' },
+                                        { offset: 1, color: '#FFA500' }
+                                    ]),
+                                    borderRadius: [8, 8, 0, 0]
+                                },
+                                label: {
+                                    show: true,
+                                    position: 'top',
+                                    fontWeight: 'bold'
+                                }
+                            }]
+                        });
+
+                        // Class-Wise Mode Charts
+                        if (filterMode === 'classwise') {
+                            // Subject-wise Performance with Section Breakdown
+                            const subjectChartElement = document.getElementById('subjectWiseChart');
+                            if (subjectChartElement) {
+                                if (data.subjectWiseSectionData && data.subjectWiseSectionData.length > 0) {
+                                    // Dispose old instance if exists
+                                    if (chartInstances.subjectWiseChart && !chartInstances.subjectWiseChart.isDisposed()) {
+                                        chartInstances.subjectWiseChart.dispose();
+                                    }
+                                    
+                                    const subjectWiseChart = echarts.init(subjectChartElement);
+                                    chartInstances.subjectWiseChart = subjectWiseChart;
+                                    
+                                    const subjects = [...new Set(data.subjectWiseSectionData.map(d => d.Subject || d.subject))];
+                                    const sections = [...new Set(data.subjectWiseSectionData.map(d => d.Section || d.section))];
+                                    
+                                    const seriesData = sections.map(section => ({
+                                        name: section,
+                                        type: 'bar',
+                                        data: subjects.map(subject => {
+                                            const item = data.subjectWiseSectionData.find(d => 
+                                                (d.Subject || d.subject) === subject && (d.Section || d.section) === section
+                                            );
+                                            return item ? (item.AveragePercentage || item.averagePercentage || 0) : 0;
+                                        }),
+                                        itemStyle: { borderRadius: [8, 8, 0, 0] }
+                                    }));
+                                    
+                                    subjectWiseChart.setOption({
+                                        tooltip: {
+                                            trigger: 'axis',
+                                            axisPointer: { type: 'shadow' },
+                                            formatter: function(params) {
+                                                let result = params[0].name + '<br/>';
+                                                params.forEach(param => {
+                                                    result += param.marker + ' ' + param.seriesName + ': ' + param.value + '%<br/>';
+                                                });
+                                                return result;
+                                            }
+                                        },
+                                        legend: {
+                                            data: sections,
+                                            top: 'top'
+                                        },
+                                        xAxis: {
+                                            type: 'category',
+                                            data: subjects,
+                                            axisLabel: { 
+                                                rotate: 45,
+                                                fontSize: 11
+                                            }
+                                        },
+                                        yAxis: { 
+                                            type: 'value',
+                                            name: 'Average Percentage (%)',
+                                            max: 100
+                                        },
+                                        series: seriesData
+                                    });
+                                }
+                            }
+                            
+                            // Update Section-wise Performance
+                            const sectionChartElement = document.getElementById('sectionWiseChart');
+                            if (sectionChartElement) {
+                                if (data.sectionWiseData && data.sectionWiseData.length > 0) {
+                                    // Dispose old instance if exists
+                                    if (chartInstances.sectionWiseChart && !chartInstances.sectionWiseChart.isDisposed()) {
+                                        chartInstances.sectionWiseChart.dispose();
+                                    }
+                                    
+                                    const sectionWiseChart = echarts.init(sectionChartElement);
+                                    chartInstances.sectionWiseChart = sectionWiseChart;
+                                    sectionWiseChart.setOption({
+                                        tooltip: {
+                                            trigger: 'axis',
+                                            axisPointer: { type: 'shadow' },
+                                            formatter: function(params) {
+                                                let result = params[0].name + '<br/>';
+                                                params.forEach(param => {
+                                                    result += param.marker + ' ' + param.seriesName + ': ' + param.value + '%<br/>';
+                                                });
+                                                return result;
+                                            }
+                                        },
+                                        legend: {
+                                            data: ['Average Percentage', 'Pass Rate'],
+                                            top: 'top'
+                                        },
+                                        xAxis: {
+                                            type: 'category',
+                                            data: data.sectionWiseData.map(s => s.Section || s.section),
+                                            axisLabel: { fontSize: 11 }
+                                        },
+                                        yAxis: { 
+                                            type: 'value',
+                                            name: 'Percentage (%)',
+                                            max: 100
+                                        },
+                                        series: [
+                                            {
+                                                name: 'Average Percentage',
+                                                type: 'bar',
+                                                data: data.sectionWiseData.map(s => s.AveragePercentage || s.averagePercentage || 0),
+                                                itemStyle: { color: '#9C27B0', borderRadius: [8, 8, 0, 0] }
+                                            },
+                                            {
+                                                name: 'Pass Rate',
+                                                type: 'line',
+                                                data: data.sectionWiseData.map(s => s.PassRate || s.passRate || 0),
+                                                itemStyle: { color: '#FFD700' },
+                                                lineStyle: { width: 3 }
+                                            }
+                                        ]
+                                    });
+                                }
+                            }
+                        }
+                        // Test-Wise Mode Charts
+                        else if (filterMode === 'testwise') {
+                            // Class/Section-wise Performance (Individual Sections)
+                            const classSectionChartElement = document.getElementById('classSectionWiseChart');
+                            if (classSectionChartElement) {
+                                if (data.classSectionWiseData && data.classSectionWiseData.length > 0) {
+                                    // Dispose old instance if exists
+                                    if (chartInstances.classSectionWiseChart && !chartInstances.classSectionWiseChart.isDisposed()) {
+                                        chartInstances.classSectionWiseChart.dispose();
+                                    }
+                                    
+                                    const classSectionChart = echarts.init(classSectionChartElement);
+                                    chartInstances.classSectionWiseChart = classSectionChart;
+                                    classSectionChart.setOption({
+                                        tooltip: {
+                                            trigger: 'axis',
+                                            axisPointer: { type: 'shadow' },
+                                            formatter: function(params) {
+                                                let result = params[0].name + '<br/>';
+                                                params.forEach(param => {
+                                                    result += param.marker + ' ' + param.seriesName + ': ' + param.value + '%<br/>';
+                                                });
+                                                return result;
+                                            }
+                                        },
+                                        legend: {
+                                            data: ['Average Percentage', 'Pass Rate'],
+                                            top: 'top'
+                                        },
+                                        xAxis: {
+                                            type: 'category',
+                                            data: data.classSectionWiseData.map(cs => cs.ClassSection || cs.classSection),
+                                            axisLabel: { 
+                                                rotate: 45,
+                                                fontSize: 11
+                                            }
+                                        },
+                                        yAxis: { 
+                                            type: 'value',
+                                            name: 'Percentage (%)',
+                                            max: 100
+                                        },
+                                        series: [
+                                            {
+                                                name: 'Average Percentage',
+                                                type: 'bar',
+                                                data: data.classSectionWiseData.map(cs => cs.AveragePercentage || cs.averagePercentage || 0),
+                                                itemStyle: { color: '#9C27B0', borderRadius: [8, 8, 0, 0] }
+                                            },
+                                            {
+                                                name: 'Pass Rate',
+                                                type: 'line',
+                                                data: data.classSectionWiseData.map(cs => cs.PassRate || cs.passRate || 0),
+                                                itemStyle: { color: '#FFD700' },
+                                                lineStyle: { width: 3 }
+                                            }
+                                        ]
+                                    });
+                                }
+                            }
+                        }
+                        // Default/Legacy Mode Charts
+                        else {
+                            // Subject-wise Performance
+                            if (data.subjectWiseData && data.subjectWiseData.length > 0) {
+                                const subjectWiseChart = echarts.init(document.getElementById('subjectWiseChart'));
+                                chartInstances.subjectWiseChart = subjectWiseChart;
+                                subjectWiseChart.setOption({
+                                    tooltip: {
+                                        trigger: 'axis',
+                                        axisPointer: { type: 'shadow' },
+                                        formatter: function(params) {
+                                            let result = params[0].name + '<br/>';
+                                            params.forEach(param => {
+                                                result += param.marker + ' ' + param.seriesName + ': ' + param.value + '%<br/>';
+                                            });
+                                            return result;
+                                        }
+                                    },
+                                    legend: {
+                                        data: ['Average Percentage', 'Pass Rate'],
+                                        top: 'top'
+                                    },
+                                    xAxis: {
+                                        type: 'category',
+                                        data: data.subjectWiseData.map(s => s.Subject || s.subject),
+                                        axisLabel: { 
+                                            rotate: 45,
+                                            fontSize: 11
+                                        }
+                                    },
+                                    yAxis: { 
+                                        type: 'value',
+                                        name: 'Percentage (%)',
+                                        max: 100
+                                    },
+                                    series: [
+                                        {
+                                            name: 'Average Percentage',
+                                            type: 'bar',
+                                            data: data.subjectWiseData.map(s => s.AveragePercentage || s.averagePercentage || 0),
+                                            itemStyle: { color: '#4CAF50', borderRadius: [8, 8, 0, 0] }
+                                        },
+                                        {
+                                            name: 'Pass Rate',
+                                            type: 'line',
+                                            data: data.subjectWiseData.map(s => s.PassRate || s.passRate || 0),
+                                            itemStyle: { color: '#FFD700' },
+                                            lineStyle: { width: 3 }
+                                        }
+                                    ]
+                                });
+                            }
+
+                            // Class-wise Performance
+                            if (data.classWiseData && data.classWiseData.length > 0) {
+                                const classWiseChart = echarts.init(document.getElementById('classWiseChart'));
+                                chartInstances.classWiseChart = classWiseChart;
+                                classWiseChart.setOption({
+                                    tooltip: {
+                                        trigger: 'axis',
+                                        axisPointer: { type: 'shadow' },
+                                        formatter: function(params) {
+                                            let result = params[0].name + '<br/>';
+                                            params.forEach(param => {
+                                                result += param.marker + ' ' + param.seriesName + ': ' + param.value + '%<br/>';
+                                            });
+                                            return result;
+                                        }
+                                    },
+                                    legend: {
+                                        data: ['Average Percentage', 'Pass Rate'],
+                                        top: 'top'
+                                    },
+                                    xAxis: {
+                                        type: 'category',
+                                        data: data.classWiseData.map(c => c.Class || c.class),
+                                        axisLabel: { fontSize: 11 }
+                                    },
+                                    yAxis: { 
+                                        type: 'value',
+                                        name: 'Percentage (%)',
+                                        max: 100
+                                    },
+                                    series: [
+                                        {
+                                            name: 'Average Percentage',
+                                            type: 'bar',
+                                            data: data.classWiseData.map(c => c.AveragePercentage || c.averagePercentage || 0),
+                                            itemStyle: { color: '#9C27B0', borderRadius: [8, 8, 0, 0] }
+                                        },
+                                        {
+                                            name: 'Pass Rate',
+                                            type: 'line',
+                                            data: data.classWiseData.map(c => c.PassRate || c.passRate || 0),
+                                            itemStyle: { color: '#FFD700' },
+                                            lineStyle: { width: 3 }
+                                        }
+                                    ]
+                                });
+                            }
+
+                            // Campus-wise Comparison (Owner only)
+                            if (data.campusWiseData && data.campusWiseData.length > 0) {
+                                const campusWiseChart = echarts.init(document.getElementById('campusWiseChart'));
+                                chartInstances.campusWiseChart = campusWiseChart;
+                                campusWiseChart.setOption({
+                                    tooltip: {
+                                        trigger: 'axis',
+                                        axisPointer: { type: 'shadow' },
+                                        formatter: function(params) {
+                                            let result = params[0].name + '<br/>';
+                                            params.forEach(param => {
+                                                if (param.seriesName === 'Total Students') {
+                                                    result += param.marker + ' ' + param.seriesName + ': ' + param.value + '<br/>';
+                                                } else {
+                                                    result += param.marker + ' ' + param.seriesName + ': ' + param.value + '%<br/>';
+                                                }
+                                            });
+                                            return result;
+                                        }
+                                    },
+                                    legend: {
+                                        data: ['Average Percentage', 'Pass Rate', 'Total Students'],
+                                        top: 'top'
+                                    },
+                                    xAxis: {
+                                        type: 'category',
+                                        data: data.campusWiseData.map(c => c.Campus || c.campus),
+                                        axisLabel: { fontSize: 11 }
+                                    },
+                                    yAxis: { 
+                                        type: 'value',
+                                        name: 'Percentage (%) / Count',
+                                        max: 100
+                                    },
+                                    series: [
+                                        {
+                                            name: 'Average Percentage',
+                                            type: 'bar',
+                                            data: data.campusWiseData.map(c => c.AveragePercentage || c.averagePercentage || 0),
+                                            itemStyle: { color: '#FF9800', borderRadius: [8, 8, 0, 0] }
+                                        },
+                                        {
+                                            name: 'Pass Rate',
+                                            type: 'line',
+                                            data: data.campusWiseData.map(c => c.PassRate || c.passRate || 0),
+                                            itemStyle: { color: '#4CAF50' },
+                                            lineStyle: { width: 3 }
+                                        },
+                                        {
+                                            name: 'Total Students',
+                                            type: 'line',
+                                            yAxisIndex: 0,
+                                            data: data.campusWiseData.map(c => c.TotalStudents || c.totalStudents || 0),
+                                            itemStyle: { color: '#2196F3' },
+                                            lineStyle: { width: 3, type: 'dashed' }
+                                        }
+                                    ]
+                                });
+                            }
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading chart data:', error);
+                    // Show error message to user
+                    const chartContainers = ['passFailChart', 'marksRangeChart'];
+                    chartContainers.forEach(containerId => {
+                        const container = document.getElementById(containerId);
+                        if (container) {
+                            container.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #ef4444;"><i class="fas fa-exclamation-triangle mr-2"></i>Error loading chart data</div>';
+                        }
+                    });
+                });
+        }
+
+        // Student search functionality
+        let studentSearchTimeout;
+        
+        // Helper function to escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function searchStudents(query) {
+            clearTimeout(studentSearchTimeout);
+            
+            if (query.length < 2) {
+                document.getElementById('studentSearchResults').style.display = 'none';
+                return;
+            }
+            
+            studentSearchTimeout = setTimeout(() => {
+                fetch(`/ExamMarks/SearchStudents?query=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const resultsDiv = document.getElementById('studentSearchResults');
+                        if (data.length === 0) {
+                            resultsDiv.innerHTML = '<div class="p-3 text-gray-500 text-sm">No students found</div>';
+                            resultsDiv.style.display = 'block';
+                        } else {
+                            resultsDiv.innerHTML = data.map(student => {
+                                const escapedName = escapeHtml(student.studentName);
+                                const escapedClass = escapeHtml(student.className);
+                                const escapedSection = escapeHtml(student.sectionName);
+                                const escapedNameForJs = student.studentName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                                
+                                return `
+                                    <div class="p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-200 last:border-b-0" 
+                                         onclick="selectStudent(${student.id}, '${escapedNameForJs}')">
+                                        <div class="font-medium text-gray-900">${escapedName}</div>
+                                        <div class="text-xs text-gray-500">Class: ${escapedClass} - ${escapedSection}</div>
+                                    </div>
+                                `;
+                            }).join('');
+                            resultsDiv.style.display = 'block';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error searching students:', error);
+                        const resultsDiv = document.getElementById('studentSearchResults');
+                        resultsDiv.innerHTML = '<div class="p-3 text-red-500 text-sm">Error loading students</div>';
+                        resultsDiv.style.display = 'block';
+                    });
+            }, 300);
+        }
+        
+        function selectStudent(studentId, studentName) {
+            document.getElementById('studentIdInput').value = studentId;
+            document.getElementById('studentSearchInput').value = studentName;
+            document.getElementById('studentSearchResults').style.display = 'none';
+        }
+        
+        // Load student data when in studentwise mode
+        document.addEventListener('DOMContentLoaded', function() {
+            @if (Model.FilterMode == "studentwise" && Model.StudentId.HasValue && Model.ExamCategoryId.HasValue)
+            {
+                <text>
+                loadStudentData(@Model.StudentId, @Model.ExamCategoryId);
+                </text>
+            }
+        });
+        
+        function loadStudentData(studentId, examCategoryId) {
+            if (!studentId || !examCategoryId) return;
+            
+            fetch(`/ExamMarks/GetStudentAnalysisData?studentId=${studentId}&examCategoryId=${examCategoryId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update student name
+                        document.getElementById('studentDisplayName').textContent = data.studentName;
+                        
+                        // Load latest exam results
+                        loadLatestExamResults(data.latestExam);
+                        
+                        // Load history
+                        loadExamHistory(data.history);
+                        
+                        // Load growth chart
+                        loadGrowthChart(data.growth);
+                    } else {
+                        console.error('Failed to load student data:', data.message);
+                        showError('Failed to load student data: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading student data:', error);
+                    showError('Error loading student data');
+                });
+        }
+        
+        function loadLatestExamResults(latestExam) {
+            const tbody = document.getElementById('latestExamTableBody');
+            const tfoot = document.getElementById('latestExamTableFooter');
+            
+            if (!latestExam || !latestExam.subjects || latestExam.subjects.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-500">No exam results found</td></tr>';
+                tfoot.style.display = 'none';
+                return;
+            }
+            
+            let totalMarks = 0;
+            let totalObtained = 0;
+            
+            tbody.innerHTML = latestExam.subjects.map(subject => {
+                totalMarks += subject.totalMarks;
+                totalObtained += subject.obtainedMarks;
+                const percentage = subject.totalMarks > 0 ? ((subject.obtainedMarks / subject.totalMarks) * 100).toFixed(2) : 0;
+                
+                const escapedSubjectName = escapeHtml(subject.subjectName);
+                const escapedGrade = escapeHtml(subject.grade);
+                
+                return `
+                    <tr class="border-b border-gray-200 hover:bg-gray-50">
+                        <td class="py-3 px-4">${escapedSubjectName}</td>
+                        <td class="text-center py-3 px-4">${subject.totalMarks}</td>
+                        <td class="text-center py-3 px-4">${subject.obtainedMarks}</td>
+                        <td class="text-center py-3 px-4">${percentage}%</td>
+                        <td class="text-center py-3 px-4">
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold ${getGradeColor(subject.grade)}">
+                                ${escapedGrade}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            const overallPercentage = totalMarks > 0 ? ((totalObtained / totalMarks) * 100).toFixed(2) : 0;
+            const overallGrade = calculateGrade(overallPercentage);
+            
+            document.getElementById('latestTotalMarks').textContent = totalMarks;
+            document.getElementById('latestObtainedMarks').textContent = totalObtained;
+            document.getElementById('latestPercentage').textContent = overallPercentage + '%';
+            document.getElementById('latestGrade').innerHTML = `
+                <span class="px-3 py-1 rounded-full text-xs font-semibold ${getGradeColor(overallGrade)}">
+                    ${overallGrade}
+                </span>
+            `;
+            tfoot.style.display = 'table-footer-group';
+        }
+        
+        function loadExamHistory(history) {
+            const tbody = document.getElementById('historyTableBody');
+            const headerCell = document.getElementById('historyExamsHeader');
+            
+            if (!history || !history.exams || history.exams.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="20" class="text-center py-8 text-gray-500">No exam history found</td></tr>';
+                headerCell.textContent = 'No Exams';
+                return;
+            }
+            
+            // Build header with exam names
+            headerCell.setAttribute('colspan', history.exams.length * 2);
+            let headerHtml = '<tr class="border-b border-gray-300"><th class="text-left py-3 px-2 font-semibold text-gray-700 sticky left-0 bg-white">Subject</th>';
+            history.exams.forEach(exam => {
+                const escapedExamName = escapeHtml(exam.examName);
+                headerHtml += `<th class="text-center py-2 px-2 font-semibold text-gray-700 text-xs" colspan="2">${escapedExamName}</th>`;
+            });
+            headerHtml += '</tr><tr class="border-b border-gray-200"><th class="sticky left-0 bg-white"></th>';
+            history.exams.forEach(() => {
+                headerHtml += '<th class="text-center py-2 px-1 text-gray-600 text-xs">Total</th>';
+                headerHtml += '<th class="text-center py-2 px-1 text-gray-600 text-xs">Obtained</th>';
+            });
+            headerHtml += '</tr>';
+            
+            // Replace the header
+            const thead = document.querySelector('#historyExamsHeader').closest('thead');
+            thead.innerHTML = headerHtml;
+            
+            // Build rows for each subject
+            let rowsHtml = '';
+            history.subjects.forEach(subject => {
+                const escapedSubjectName = escapeHtml(subject.subjectName);
+                rowsHtml += `<tr class="border-b border-gray-100 hover:bg-gray-50">
+                    <td class="py-2 px-2 font-medium sticky left-0 bg-white">${escapedSubjectName}</td>`;
+                
+                history.exams.forEach(exam => {
+                    const mark = subject.marks.find(m => m.examId === exam.examId);
+                    if (mark) {
+                        rowsHtml += `<td class="text-center py-2 px-1 text-xs">${mark.totalMarks}</td>`;
+                        rowsHtml += `<td class="text-center py-2 px-1 text-xs font-semibold">${mark.obtainedMarks}</td>`;
+                    } else {
+                        rowsHtml += '<td class="text-center py-2 px-1 text-xs text-gray-400">-</td>';
+                        rowsHtml += '<td class="text-center py-2 px-1 text-xs text-gray-400">-</td>';
+                    }
+                });
+                
+                rowsHtml += '</tr>';
+            });
+            
+            tbody.innerHTML = rowsHtml;
+        }
+        
+        function loadGrowthChart(growth) {
+            const chartElement = document.getElementById('studentGrowthChart');
+            
+            if (!growth || !growth.exams || growth.exams.length === 0) {
+                chartElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 400px; color: #9CA3AF;"><i class="fas fa-info-circle mr-2"></i>No growth data available</div>';
+                return;
+            }
+            
+            const growthChart = echarts.init(chartElement);
+            chartInstances.studentGrowthChart = growthChart;
+            
+            growthChart.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function(params) {
+                        let result = params[0].name + '<br/>';
+                        params.forEach(param => {
+                            result += param.marker + ' ' + param.seriesName + ': ' + param.value + '%<br/>';
+                        });
+                        return result;
+                    }
+                },
+                legend: {
+                    data: ['Overall Percentage'],
+                    top: 'top'
+                },
+                xAxis: {
+                    type: 'category',
+                    data: growth.exams.map(e => e.examName),
+                    axisLabel: { 
+                        rotate: 45,
+                        fontSize: 11
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: 'Percentage (%)',
+                    min: 0,
+                    max: 100
+                },
+                series: [{
+                    name: 'Overall Percentage',
+                    type: 'line',
+                    data: growth.exams.map(e => e.percentage),
+                    smooth: true,
+                    itemStyle: { 
+                        color: '#9C27B0',
+                        borderWidth: 3
+                    },
+                    lineStyle: { 
+                        width: 3,
+                        color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                            { offset: 0, color: '#FFD700' },
+                            { offset: 1, color: '#9C27B0' }
+                        ])
+                    },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(255, 215, 0, 0.3)' },
+                            { offset: 1, color: 'rgba(156, 39, 176, 0.1)' }
+                        ])
+                    },
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: '{c}%',
+                        fontSize: 10
+                    }
+                }]
+            });
+        }
+        
+        function getGradeColor(grade) {
+            const gradeColors = {
+                'A+': 'bg-green-100 text-green-800',
+                'A': 'bg-green-100 text-green-700',
+                'B+': 'bg-blue-100 text-blue-800',
+                'B': 'bg-blue-100 text-blue-700',
+                'C': 'bg-yellow-100 text-yellow-800',
+                'D': 'bg-orange-100 text-orange-800',
+                'F': 'bg-red-100 text-red-800'
+            };
+            return gradeColors[grade] || 'bg-gray-100 text-gray-800';
+        }
+        
+        function calculateGrade(percentage) {
+            if (percentage >= 90) return 'A+';
+            if (percentage >= 80) return 'A';
+            if (percentage >= 75) return 'B+';
+            if (percentage >= 70) return 'B';
+            if (percentage >= 50) return 'C';
+            if (percentage >= 40) return 'D';
+            return 'F';
+        }
+        
+        function showError(message) {
+            // Show error toast
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg z-50';
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-circle mr-3"></i>
+                    ${message}
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                if (document.body.contains(toast)) {
+                    document.body.removeChild(toast);
+                }
+            }, 5000);
+        }
+
+        function exportReport() {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 right-4 bg-[#4CAF50] text-white px-6 py-4 rounded-lg shadow-lg z-50';
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle mr-3"></i>
+                    Report export initiated!
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 3000);
+        }
+
+        // Make charts responsive
+        window.addEventListener('resize', function() {
+            @if (Model.ExamCategoryId.HasValue && Model.ExamMarksList.Any())
+            {
+                <text>
+                Object.values(chartInstances).forEach(chart => {
+                    if (chart && !chart.isDisposed()) {
+                        chart.resize();
+                    }
+                });
+                </text>
+            }
+        });
+    </script>
+</body>
+</html>
