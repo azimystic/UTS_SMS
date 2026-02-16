@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using UTS_SMS.Models;
-using UTS_SMS;
+using SMS.Models;
+using SMS.Services;
 
 namespace SMS.Controllers
 {
