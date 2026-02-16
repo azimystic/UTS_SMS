@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SMS.Models
+namespace UTS_SMS.Models
 {
     /// <summary>
     /// Maps roles to menu items (both parent and child menus)

@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 
-namespace SMS.Models
+namespace UTS_SMS.Models
 {
     public class Employee
     {

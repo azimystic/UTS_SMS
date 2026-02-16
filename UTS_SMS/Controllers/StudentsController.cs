@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using UTS_SMS.Models;
 using SMS.Services;
+using UTS_SMS.Models;
 
 namespace SMS.Controllers
 {

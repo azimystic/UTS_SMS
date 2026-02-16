@@ -1,9 +1,9 @@
-@model SMS.Models.LeaveRequest
+@model UTS_SMS.Models.LeaveRequest
 
 @{
     ViewData["Title"] = "Apply for Leave";
-    var leaveBalances = ViewBag.LeaveBalances as List<SMS.Models.LeaveBalance> ?? new List<SMS.Models.LeaveBalance>();
-    var approvedLeaves = ViewBag.ApprovedLeaves as List<SMS.Models.LeaveRequest> ?? new List<SMS.Models.LeaveRequest>();
+    var leaveBalances = ViewBag.LeaveBalances as List<UTS_SMS.Models.LeaveBalance> ?? new List<UTS_SMS.Models.LeaveBalance>();
+    var approvedLeaves = ViewBag.ApprovedLeaves as List<UTS_SMS.Models.LeaveRequest> ?? new List<UTS_SMS.Models.LeaveRequest>();
 }
 
 <div class="min-h-screen p-4 md:p-6">

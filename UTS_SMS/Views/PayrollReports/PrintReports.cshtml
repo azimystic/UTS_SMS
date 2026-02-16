@@ -6,7 +6,7 @@
 
     var startDate = ViewBag.StartDate as DateTime? ?? DateTime.Now.AddMonths(-1);
     var endDate = ViewBag.EndDate as DateTime? ?? DateTime.Now;
-    var campus = ViewBag.Campus as SMS.Models.Campus;
+    var campus = ViewBag.Campus as UTS_SMS.Models.Campus;
 
     var totalPayable = Model.Sum(p => p.TotalPayable);
     var totalPaid = Model.Sum(p => p.TotalPaid);

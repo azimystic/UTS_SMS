@@ -1,9 +1,9 @@
-@model IEnumerable<SMS.Models.StudentMigration>
+@model IEnumerable<UTS_SMS.Models.StudentMigration>
 
 @{
     ViewData["Title"] = "Student Migration Requests";
     var selectedStatus = ViewBag.SelectedStatus as string ?? "Pending";
-    var campuses = ViewBag.Campuses as List<SMS.Models.Campus>;
+    var campuses = ViewBag.Campuses as List<UTS_SMS.Models.Campus>;
     var userCampusId = ViewBag.UserCampusId as int?;
     var isOwner = ViewBag.IsOwner as bool? ?? false;
 }

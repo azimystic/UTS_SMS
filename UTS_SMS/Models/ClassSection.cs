@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace SMS.Models
+namespace UTS_SMS.Models
 {
     // Class Section Model
     public class ClassSection

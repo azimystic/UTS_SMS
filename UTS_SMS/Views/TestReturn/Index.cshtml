@@ -1,4 +1,4 @@
-@model IEnumerable<SMS.Models.TestReturn>
+@model IEnumerable<UTS_SMS.Models.TestReturn>
 
 @{
     ViewData["Title"] = "Test Return & Quality";
@@ -6,7 +6,7 @@
     var currentYear = ViewBag.CurrentYear as int? ?? DateTime.Now.Year;
     var monthOptions = ViewBag.MonthOptions as List<SelectListItem> ?? new List<SelectListItem>();
     var yearOptions = ViewBag.YearOptions as List<SelectListItem> ?? new List<SelectListItem>();
-    var campusList = ViewBag.CampusList as List<SMS.Models.Campus> ?? new List<SMS.Models.Campus>();
+    var campusList = ViewBag.CampusList as List<UTS_SMS.Models.Campus> ?? new List<UTS_SMS.Models.Campus>();
 }
 
 <div class="min-h-screen  ">

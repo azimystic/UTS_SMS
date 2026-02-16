@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace SMS.Models
+namespace UTS_SMS.Models
 {
     public class PaginatedList<T> : List<T>
     {

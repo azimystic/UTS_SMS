@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace SMS.Models
+namespace UTS_SMS.Models
 {
     public class AcademicYear
     {

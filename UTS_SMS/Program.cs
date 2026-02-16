@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using SMS;
-using SMS.Models;
+using UTS_SMS.Models;
 using SMS.Services;
 
 var builder = WebApplication.CreateBuilder(args);

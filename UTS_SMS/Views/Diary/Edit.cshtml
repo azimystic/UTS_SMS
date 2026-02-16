@@ -76,14 +76,14 @@
                 </div>
 
                 <!-- Existing Images Section -->
-                @if (ViewBag.DiaryImages != null && ((List<SMS.Models.DiaryImage>)ViewBag.DiaryImages).Any())
+                @if (ViewBag.DiaryImages != null && ((List<UTS_SMS.Models.DiaryImage>)ViewBag.DiaryImages).Any())
                 {
                     <div>
                         <label class="block text-sm font-medium text-neutral-700 mb-2">
                             📷 Existing Images
                         </label>
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            @foreach (var image in (List<SMS.Models.DiaryImage>)ViewBag.DiaryImages)
+                            @foreach (var image in (List<UTS_SMS.Models.DiaryImage>)ViewBag.DiaryImages)
                             {
                                 <div class="relative group">
                                     <img src="/@image.ImagePath" alt="@image.OriginalFileName" class="w-full h-32 object-cover rounded-lg border">

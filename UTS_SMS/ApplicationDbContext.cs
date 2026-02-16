@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using SMS.Models;
+using UTS_SMS.Models;
 using System.Data;
 
 namespace SMS

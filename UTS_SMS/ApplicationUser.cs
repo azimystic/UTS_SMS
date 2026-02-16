@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SMS.Models
+namespace UTS_SMS.Models
 {
     public class ApplicationUser : IdentityUser
     {
@@ -18,6 +18,12 @@ namespace SMS.Models
         public bool IsActive { get; set; } = true;
         public int? CampusId { get; set; }
         
-     
+        [ForeignKey("CampusId")]
+        public Campus? Campus { get; set; }
+
+        // Navigation properties
+        public virtual Student? Student { get; set; }
+        public virtual Employee? Employee { get; set; }
+        public virtual Family? Family { get; set; }
     }
 }
