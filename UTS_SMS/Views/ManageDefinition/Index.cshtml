@@ -1,0 +1,211 @@
+﻿@{
+    ViewData["Title"] = "Admin Dashboard";
+    Layout = "_Layout"; // Assumes you have a shared layout
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-bold text-primary-800">School Management System</h1>
+            <p class="text-neutral-600 mt-2">Navigate to manage different aspects of your institution</p>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+            <!-- Classes -->
+            <a asp-controller="Classes" asp-action="Index" class="group">
+                <div class="bg-white rounded-2xl shadow-sms-lg hover:shadow-sms-xl transition-all duration-300 transform hover:scale-105 p-6 text-center border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:from-primary-600 group-hover:to-primary-400">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-semibold text-primary-800 mb-2">Classes</h2>
+                    <p class="text-neutral-600 text-sm">Manage academic classes</p>
+                </div>
+            </a>
+
+            <!-- Class Sections -->
+            <a asp-controller="ClassSections" asp-action="Index" class="group">
+                <div class="bg-white rounded-2xl shadow-sms-lg hover:shadow-sms-xl transition-all duration-300 transform hover:scale-105 p-6 text-center border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:from-purple-600 group-hover:to-pink-700">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-semibold text-primary-800 mb-2">Class Sections</h2>
+                    <p class="text-neutral-600 text-sm">Manage sections like A, B, C</p>
+                </div>
+            </a>
+
+            <!-- Teacher Assignments -->
+            <a asp-controller="TeacherAssignments" asp-action="Index" class="group">
+                <div class="bg-white rounded-2xl shadow-sms-lg hover:shadow-sms-xl transition-all duration-300 transform hover:scale-105 p-6 text-center border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:from-indigo-600 group-hover:to-purple-700">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6m6-6V4a1 1 0 00-1-1H9a1 1 0 00-1 1v2"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-semibold text-primary-800 mb-2">Teacher Assignments</h2>
+                    <p class="text-neutral-600 text-sm">Assign teachers to classes</p>
+                </div>
+            </a>
+
+            <!-- Subjects -->
+            <a asp-controller="Subjects" asp-action="Index" class="group">
+                <div class="bg-white rounded-2xl shadow-sms-lg hover:shadow-sms-xl transition-all duration-300 transform hover:scale-105 p-6 text-center border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:from-green-600 group-hover:to-teal-700">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-semibold text-primary-800 mb-2">Subjects</h2>
+                    <p class="text-neutral-600 text-sm">Manage academic subjects</p>
+                </div>
+            </a>
+
+            <!-- Campuses -->
+            <a asp-controller="Campuses" asp-action="Index" class="group">
+                <div class="bg-white rounded-2xl shadow-sms-lg hover:shadow-sms-xl transition-all duration-300 transform hover:scale-105 p-6 text-center border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:from-orange-600 group-hover:to-red-700">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-semibold text-primary-800 mb-2">Campuses</h2>
+                    <p class="text-neutral-600 text-sm">Manage school campuses</p>
+                </div>
+            </a>
+
+            <!-- Bank Accounts -->
+            <a asp-controller="BankAccounts" asp-action="Index" class="group">
+                <div class="bg-white rounded-2xl shadow-sms-lg hover:shadow-sms-xl transition-all duration-300 transform hover:scale-105 p-6 text-center border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:from-teal-600 group-hover:to-cyan-700">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-semibold text-primary-800 mb-2">Bank Accounts</h2>
+                    <p class="text-neutral-600 text-sm">Manage financial accounts</p>
+                </div>
+            </a>
+
+            <!-- Class Fees -->
+            <a asp-controller="ClassFee" asp-action="Index" class="group">
+                <div class="bg-white rounded-2xl shadow-sms-lg hover:shadow-sms-xl transition-all duration-300 transform hover:scale-105 p-6 text-center border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:from-yellow-600 group-hover:to-orange-700">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-semibold text-primary-800 mb-2">Class Fees</h2>
+                    <p class="text-neutral-600 text-sm">Set tuition and admission fees</p>
+                </div>
+            </a>
+
+            <!-- Diary -->
+            <a asp-controller="SubjectsGroupings" asp-action="Index" class="group">
+                <div class="bg-white rounded-2xl shadow-sms-lg hover:shadow-sms-xl transition-all duration-300 transform hover:scale-105 p-6 text-center border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:from-pink-600 group-hover:to-rose-700">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-semibold text-primary-800 mb-2">Subjects Groupings</h2>
+                    <p class="text-neutral-600 text-sm">Assign Subjects</p>
+                </div>
+            </a>
+
+            <!-- Exam Definitions -->
+            <a asp-controller="ExamCategories" asp-action="Index" class="group">
+                <div class="bg-white rounded-2xl shadow-sms-lg hover:shadow-sms-xl transition-all duration-300 transform hover:scale-105 p-6 text-center border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:from-cyan-600 group-hover:to-blue-700">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-semibold text-primary-800 mb-2">Exam Categories</h2>
+                    <p class="text-neutral-600 text-sm">Define exam types</p>
+                </div>
+            </a>
+            <!-- Exam Definitions -->
+            <a asp-controller="Exams" asp-action="Index" class="group">
+                <div class="bg-white rounded-2xl shadow-sms-lg hover:shadow-sms-xl transition-all duration-300 transform hover:scale-105 p-6 text-center border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:from-cyan-600 group-hover:to-blue-700">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-semibold text-primary-800 mb-2">Define Exam/Test</h2>
+                    <p class="text-neutral-600 text-sm">Define a exam or quiz/test </p>
+                </div>
+            </a>
+
+            <!-- Subject Definitions -->
+            <a asp-controller="StudentFineCharges" asp-action="Index" class="group">
+                <div class="bg-white rounded-2xl shadow-sms-lg hover:shadow-sms-xl transition-all duration-300 transform hover:scale-105 p-6 text-center border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-lime-500 to-emerald-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:from-lime-600 group-hover:to-emerald-700">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-semibold text-primary-800 mb-2">Student Fine/Charges</h2>
+                    <p class="text-neutral-600 text-sm">Define subject categories</p>
+                </div>
+            </a>
+            <!-- Student Category -->
+            <a asp-controller="StudentCategory" asp-action="Index" class="group">
+                <div class="bg-white rounded-2xl shadow-sms-lg hover:shadow-sms-xl transition-all duration-300 transform hover:scale-105 p-6 text-center border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-lime-500 to-emerald-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:from-lime-600 group-hover:to-emerald-700">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-semibold text-primary-800 mb-2">Student Category</h2>
+                    <p class="text-neutral-600 text-sm">Define subject categories</p>
+                </div>
+            </a>
+            <!-- Student Promotion -->
+            <a asp-controller="StudentPromotion" asp-action="Index" class="group">
+                <div class="bg-white rounded-2xl shadow-sms-lg hover:shadow-sms-xl transition-all duration-300 transform hover:scale-105 p-6 text-center border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-lime-500 to-emerald-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:from-lime-600 group-hover:to-emerald-700">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-semibold text-primary-800 mb-2">Student Promotion</h2>
+                    <p class="text-neutral-600 text-sm">Define subject categories</p>
+                </div>
+            </a>
+
+            <!-- Academic Years -->
+            <a asp-controller="AcademicYears" asp-action="Index" class="group">
+                <div class="bg-white rounded-2xl shadow-sms-lg hover:shadow-sms-xl transition-all duration-300 transform hover:scale-105 p-6 text-center border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:from-blue-600 group-hover:to-cyan-700">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-semibold text-primary-800 mb-2">Academic Years</h2>
+                    <p class="text-neutral-600 text-sm">Manage academic year definitions</p>
+                </div>
+            </a>
+
+            <!-- Salary Definition -->
+            <a asp-controller="SalaryDefinition" asp-action="Index" class="group">
+                <div class="bg-white rounded-2xl shadow-sms-lg hover:shadow-sms-xl transition-all duration-300 transform hover:scale-105 p-6 text-center border border-gray-100">
+                    <div class="w-16 h-16 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 group-hover:from-emerald-600 group-hover:to-green-700">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-semibold text-primary-800 mb-2">Salary Definition</h2>
+                    <p class="text-neutral-600 text-sm">Define salary structures and components</p>
+                </div>
+            </a>
+
+        </div>
+    </div>
+</div>
