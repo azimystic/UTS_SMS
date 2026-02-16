@@ -1,0 +1,903 @@
+@model SMS.Models.PositionFiltersDto
+
+@{
+    ViewData["Title"] = "Student Position Computing";
+}
+
+<div class="min-h-screen bg-neutral-50 py-4">
+    <!-- Header - Full Width -->
+    <div class="w-full px-4 md:px-6 mb-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-primary-800">Student Position Computing</h1>
+                <p class="text-sm text-neutral-600 mt-1">Computing positions for selected class (Top 9 Performers)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages - Full Width -->
+    <div id="messageContainer" class="hidden w-full px-4 md:px-6 mb-4">
+        <div id="successMessage" class="hidden bg-success-light border-l-4 border-success text-success p-4 rounded-lg animate-fade-in"></div>
+        <div id="errorMessage" class="hidden bg-error-light border-l-4 border-error text-error p-4 rounded-lg animate-fade-in"></div>
+    </div>
+
+    <!-- Selection Criteria - Full Width -->
+    <div class="w-full px-4 md:px-6 mb-6">
+        <div class="bg-white p-6 rounded-xl shadow-sms-md">
+            <h2 class="text-xl font-semibold text-primary-800 mb-4">Selection Criteria</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <!-- Exam Category -->
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Exam Category *</label>
+                    <select id="examCategorySelect" class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all">
+                        <option value="">Select Category</option>
+                        @foreach (var category in Model.ExamCategories)
+                        {
+                            <option value="@category.Id">@category.Name</option>
+                        }
+                    </select>
+                </div>
+                
+                <!-- Exam Name -->
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Exam Name *</label>
+                    <select id="examSelect" class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" disabled>
+                        <option value="">Select Exam</option>
+                    </select>
+                </div>
+                
+                <!-- Class -->
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Class *</label>
+                    <select id="classSelect" class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" disabled>
+                        <option value="">Select Class</option>
+                    </select>
+                </div>
+                
+                <!-- Academic Year (Auto-selected) -->
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">
+                        Academic Year *
+                        <button id="changeYearBtn" class="ml-2 text-primary-600 hover:text-primary-800 hidden" title="Change Year">
+                            <svg class="inline w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                            </svg>
+                        </button>
+                    </label>
+                    <select id="academicYearSelect" class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all bg-neutral-100" disabled>
+                        <option value="">Select Year</option>
+                    </select>
+                </div>
+                
+                <!-- Compute Button -->
+                <div class="flex items-end">
+                    <button id="computeBtn" class="w-full bg-gradient-primary hover:bg-primary-700 text-white px-4 py-2 rounded-md transition-colors duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                        Compute Positions
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Existing Positions Alert - Full Width -->
+    <div id="existingPositionsAlert" class="w-full px-4 md:px-6 mb-6 hidden">
+        <div class="bg-warning-light border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    <div>
+                        <h3 class="font-medium">Existing Positions Found</h3>
+                        <p class="text-sm">Positions have already been computed. You can view or recalculate.</p>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <button id="viewExistingBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm transition-colors">
+                        View Existing
+                    </button>
+                    <button id="recalculateBtn" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md text-sm transition-colors">
+                        Recalculate
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section - Full Width -->
+    <div id="resultsSection" class="w-full px-4 md:px-6 hidden">
+        <!-- Summary Info -->
+        <div class="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h3 class="text-xl font-bold text-primary-800">Computation Summary</h3>
+                    <p class="text-sm text-neutral-600 mt-1">
+                        <span id="examInfo">-</span> | 
+                        <span id="classInfo">-</span> | 
+                        <span id="yearInfo">-</span>
+                    </p>
+                </div>
+                <div class="mt-3 md:mt-0 text-right">
+                    <div class="text-2xl font-bold text-primary-600" id="totalStudentsCount">0</div>
+                    <div class="text-sm text-neutral-600">Total Students Evaluated</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Changes Detection Alerts -->
+        <div id="changesAlert" class="bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-4 rounded-lg mb-6 hidden">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
+                </svg>
+                <div>
+                    <h3 class="font-medium">Changes Detected</h3>
+                    <p class="text-sm">The computed positions differ from existing records. Review changes below.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="noChangesAlert" class="bg-success-light border-l-4 border-success text-success p-4 rounded-lg mb-6 hidden">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                </svg>
+                <div>
+                    <h3 class="font-medium">No Changes Found</h3>
+                    <p class="text-sm">The computed positions match existing records. No updates needed.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Performers Display -->
+        <div class="bg-white p-6 rounded-xl shadow-sms-md mb-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                <h2 class="text-xl font-bold text-primary-800">Top 9 Performers</h2>
+                <div class="flex space-x-2 mt-2 md:mt-0">
+                    <button id="savePositionsBtn" class="bg-success hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm" disabled>
+                        Save Positions
+                    </button>
+                    <button id="overwriteBtn" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-md transition-colors duration-300 text-sm hidden">
+                        Overwrite Existing
+                    </button>
+                </div>
+            </div>
+
+            <!-- Top 3 Elite Positions -->
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold text-neutral-700 mb-4 text-center">Elite Tier</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- 2nd Position -->
+                    <div id="position2" class="elite-card bg-gradient-to-br from-gray-100 to-gray-200 p-6 rounded-xl shadow-sms-lg transform hover:scale-105 transition-all duration-300 cursor-pointer">
+                        <div class="text-center">
+                            <div class="text-5xl mb-2">🥈</div>
+                            <div class="bg-gray-600 text-white px-3 py-1 rounded-full text-sm font-bold mb-3">2nd Position</div>
+                            <div class="font-bold text-primary-800 text-lg student-name">-</div>
+                            <div class="text-sm text-neutral-600 father-name">-</div>
+                            <div class="text-sm text-neutral-500 class-section">-</div>
+                            <div class="text-2xl font-bold text-gray-700 mt-2 percentage">-</div>
+                        </div>
+                    </div>
+
+                    <!-- 1st Position (Champion) -->
+                    <div id="position1" class="elite-card bg-gradient-to-br from-yellow-200 to-yellow-300 p-6 rounded-xl shadow-sms-xl transform hover:scale-105 transition-all duration-300 cursor-pointer md:scale-110">
+                        <div class="text-center">
+                            <div class="text-6xl mb-2">👑</div>
+                            <div class="bg-yellow-600 text-white px-3 py-1 rounded-full text-sm font-bold mb-3">CHAMPION</div>
+                            <div class="font-bold text-primary-800 text-xl student-name">-</div>
+                            <div class="text-sm text-neutral-600 father-name">-</div>
+                            <div class="text-sm text-neutral-500 class-section">-</div>
+                            <div class="text-3xl font-bold text-yellow-700 mt-2 percentage">-</div>
+                        </div>
+                    </div>
+
+                    <!-- 3rd Position -->
+                    <div id="position3" class="elite-card bg-gradient-to-br from-orange-100 to-orange-200 p-6 rounded-xl shadow-sms-lg transform hover:scale-105 transition-all duration-300 cursor-pointer">
+                        <div class="text-center">
+                            <div class="text-5xl mb-2">🥉</div>
+                            <div class="bg-orange-600 text-white px-3 py-1 rounded-full text-sm font-bold mb-3">3rd Position</div>
+                            <div class="font-bold text-primary-800 text-lg student-name">-</div>
+                            <div class="text-sm text-neutral-600 father-name">-</div>
+                            <div class="text-sm text-neutral-500 class-section">-</div>
+                            <div class="text-2xl font-bold text-orange-700 mt-2 percentage">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Diamond Tier -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-neutral-700 mb-4">Diamond Tier</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Positions 4-6 -->
+                    <div id="position4" class="position-card bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg shadow-sms-md hover:shadow-sms-lg transition-all duration-300 cursor-pointer">
+                        <div class="flex items-center space-x-3">
+                            <div class="text-3xl">💎</div>
+                            <div class="flex-1">
+                                <div class="font-bold text-primary-800">Diamond 1st</div>
+                                <div class="text-sm font-medium student-name">-</div>
+                                <div class="text-xs text-neutral-600 father-name">-</div>
+                                <div class="text-xs text-neutral-500 class-section">-</div>
+                                <div class="text-lg font-bold text-primary-600 percentage">-</div>
+                            </div>
+                            <div class="bg-gradient-primary text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">4</div>
+                        </div>
+                    </div>
+
+                    <div id="position5" class="position-card bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg shadow-sms-md hover:shadow-sms-lg transition-all duration-300 cursor-pointer">
+                        <div class="flex items-center space-x-3">
+                            <div class="text-3xl">💎</div>
+                            <div class="flex-1">
+                                <div class="font-bold text-blue-700">Diamond 2nd</div>
+                                <div class="text-sm font-medium student-name">-</div>
+                                <div class="text-xs text-neutral-600 father-name">-</div>
+                                <div class="text-xs text-neutral-500 class-section">-</div>
+                                <div class="text-lg font-bold text-blue-500 percentage">-</div>
+                            </div>
+                            <div class="bg-primary-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">5</div>
+                        </div>
+                    </div>
+
+                    <div id="position6" class="position-card bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg shadow-sms-md hover:shadow-sms-lg transition-all duration-300 cursor-pointer">
+                        <div class="flex items-center space-x-3">
+                            <div class="text-3xl">💎</div>
+                            <div class="flex-1">
+                                <div class="font-bold text-primary-600">Diamond 3rd</div>
+                                <div class="text-sm font-medium student-name">-</div>
+                                <div class="text-xs text-neutral-600 father-name">-</div>
+                                <div class="text-xs text-neutral-500 class-section">-</div>
+                                <div class="text-lg font-bold text-blue-400 percentage">-</div>
+                            </div>
+                            <div class="bg-blue-400 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">6</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gold Tier -->
+            <div>
+                <h3 class="text-lg font-semibold text-neutral-700 mb-4">Gold Tier</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Positions 7-9 -->
+                    <div id="position7" class="position-card bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-lg shadow-sms-md hover:shadow-sms-lg transition-all duration-300 cursor-pointer">
+                        <div class="flex items-center space-x-3">
+                            <div class="text-3xl">🏆</div>
+                            <div class="flex-1">
+                                <div class="font-bold text-orange-800">Gold 1st</div>
+                                <div class="text-sm font-medium student-name">-</div>
+                                <div class="text-xs text-neutral-600 father-name">-</div>
+                                <div class="text-xs text-neutral-500 class-section">-</div>
+                                <div class="text-lg font-bold text-warning percentage">-</div>
+                            </div>
+                            <div class="bg-orange-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">7</div>
+                        </div>
+                    </div>
+
+                    <div id="position8" class="position-card bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-lg shadow-sms-md hover:shadow-sms-lg transition-all duration-300 cursor-pointer">
+                        <div class="flex items-center space-x-3">
+                            <div class="text-3xl">🏆</div>
+                            <div class="flex-1">
+                                <div class="font-bold text-orange-700">Gold 2nd</div>
+                                <div class="text-sm font-medium student-name">-</div>
+                                <div class="text-xs text-neutral-600 father-name">-</div>
+                                <div class="text-xs text-neutral-500 class-section">-</div>
+                                <div class="text-lg font-bold text-orange-500 percentage">-</div>
+                            </div>
+                            <div class="bg-orange-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">8</div>
+                        </div>
+                    </div>
+
+                    <div id="position9" class="position-card bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-lg shadow-sms-md hover:shadow-sms-lg transition-all duration-300 cursor-pointer">
+                        <div class="flex items-center space-x-3">
+                            <div class="text-3xl">🏆</div>
+                            <div class="flex-1">
+                                <div class="font-bold text-warning">Gold 3rd</div>
+                                <div class="text-sm font-medium student-name">-</div>
+                                <div class="text-xs text-neutral-600 father-name">-</div>
+                                <div class="text-xs text-neutral-500 class-section">-</div>
+                                <div class="text-lg font-bold text-orange-400 percentage">-</div>
+                            </div>
+                            <div class="bg-orange-400 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">9</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Details Modal -->
+        <div id="performanceModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50 overflow-y-auto">
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="bg-white rounded-lg shadow-sms-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-semibold text-primary-800" id="modalTitle">Student Performance Details</h3>
+                            <button id="closeModalBtn" class="text-neutral-400 hover:text-neutral-600 text-3xl font-bold">&times;</button>
+                        </div>
+                        
+                        <!-- Student Info Card -->
+                        <div id="studentInfoCard" class="mb-6 p-4 bg-gradient-to-r from-primary-50 to-blue-50 rounded-lg border border-primary-200">
+                            <!-- Will be populated dynamically -->
+                        </div>
+                        
+                        <!-- Subject Marks Table -->
+                        <div class="overflow-x-auto">
+                            <h4 class="text-lg font-semibold text-neutral-700 mb-3">Subject-wise Performance</h4>
+                            <table class="min-w-full divide-y divide-primary-100" id="subjectMarksTable">
+                                <thead class="bg-neutral-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase">Subject</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-neutral-500 uppercase">Obtained</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-neutral-500 uppercase">Total</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-neutral-500 uppercase">%</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-neutral-500 uppercase">Grade</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-neutral-500 uppercase">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-primary-100" id="subjectMarksBody">
+                                    <!-- Will be populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/jquery.js"></script>
+    <script>
+        $(document).ready(function() {
+            let computedPositions = [];
+            let hasExistingPositions = false;
+            let hasChanges = false;
+            let currentRequest = {};
+            let availableYears = [];
+
+            // Form validation
+            function validateForm() {
+                const examCategory = $('#examCategorySelect').val();
+                const exam = $('#examSelect').val();
+                const classId = $('#classSelect').val();
+                const year = $('#academicYearSelect').val();
+
+                const isValid = examCategory && exam && classId && year;
+                $('#computeBtn').prop('disabled', !isValid);
+                return isValid;
+            }
+
+            // Load exams by category
+            function loadExams(categoryId) {
+                $.get('/StudentPosition/GetExamsByCategory', { examCategoryId: categoryId })
+                    .done(function(data) {
+                        $('#examSelect').empty().append('<option value="">Select Exam</option>');
+                        $.each(data, function(index, item) {
+                            $('#examSelect').append(`<option value="${item.id}">${item.name}</option>`);
+                        });
+                        $('#examSelect').prop('disabled', false);
+                    })
+                    .fail(function() {
+                        showMessage('Error loading exams', 'error');
+                    });
+            }
+
+            // Load classes by exam
+            function loadClasses(examId) {
+                $.get('/StudentPosition/GetClassesByExam', { examId: examId })
+                    .done(function(data) {
+                        $('#classSelect').empty().append('<option value="">Select Class</option>');
+                        $.each(data, function(index, item) {
+                            $('#classSelect').append(`<option value="${item.id}" data-current-year="${item.currentAcademicYear}">${item.name} (Grade ${item.gradeLevel})</option>`);
+                        });
+                        $('#classSelect').prop('disabled', false);
+                    })
+                    .fail(function() {
+                        showMessage('Error loading classes', 'error');
+                    });
+            }
+
+            // Load academic years for class
+            function loadAcademicYears(classId) {
+                $.get('/StudentPosition/GetAcademicYearsForClass', { classId: classId })
+                    .done(function(data) {
+                        availableYears = data.availableYears || [];
+                        $('#academicYearSelect').empty();
+                        
+                        $.each(availableYears, function(index, year) {
+                            const selected = year === data.currentYear ? 'selected' : '';
+                            $('#academicYearSelect').append(`<option value="${year}" ${selected}>${year}</option>`);
+                        });
+                        
+                        // Disable the select but show change icon
+                        $('#academicYearSelect').prop('disabled', true).addClass('bg-neutral-100');
+                        $('#changeYearBtn').removeClass('hidden');
+                        
+                        validateForm();
+                        checkExistingPositions();
+                    })
+                    .fail(function() {
+                        showMessage('Error loading academic years', 'error');
+                    });
+            }
+
+            // Check for existing positions
+            function checkExistingPositions() {
+                const examId = $('#examSelect').val();
+                const academicYear = $('#academicYearSelect').val();
+                const classId = $('#classSelect').val();
+
+                if (examId && academicYear && classId) {
+                    $.get('/StudentPosition/CheckExistingPositions', {
+                        examId: parseInt(examId),
+                        academicYear: parseInt(academicYear),
+                        classId: parseInt(classId)
+                    })
+                    .done(function(data) {
+                        if (data.exists) {
+                            $('#existingPositionsAlert').removeClass('hidden');
+                            hasExistingPositions = true;
+                        } else {
+                            $('#existingPositionsAlert').addClass('hidden');
+                            hasExistingPositions = false;
+                        }
+                    })
+                    .fail(function(xhr, status, error) {
+                        console.error('Error checking existing positions:', error);
+                        $('#existingPositionsAlert').addClass('hidden');
+                        hasExistingPositions = false;
+                    });
+                }
+            }
+
+            // Event handlers
+            $('#examCategorySelect').change(function() {
+                const categoryId = $(this).val();
+                $('#examSelect').prop('disabled', !categoryId).empty().append('<option value="">Select Exam</option>');
+                $('#classSelect').prop('disabled', true).empty().append('<option value="">Select Class</option>');
+                $('#academicYearSelect').prop('disabled', true).empty().append('<option value="">Select Year</option>');
+                $('#changeYearBtn').addClass('hidden');
+                
+                if (categoryId) {
+                    loadExams(categoryId);
+                }
+                validateForm();
+            });
+
+            $('#examSelect').change(function() {
+                const examId = $(this).val();
+                $('#classSelect').prop('disabled', !examId).empty().append('<option value="">Select Class</option>');
+                $('#academicYearSelect').prop('disabled', true).empty().append('<option value="">Select Year</option>');
+                $('#changeYearBtn').addClass('hidden');
+                
+                if (examId) {
+                    loadClasses(examId);
+                }
+                validateForm();
+            });
+
+            $('#classSelect').change(function() {
+                const classId = $(this).val();
+                if (classId) {
+                    loadAcademicYears(classId);
+                } else {
+                    $('#academicYearSelect').prop('disabled', true).empty().append('<option value="">Select Year</option>');
+                    $('#changeYearBtn').addClass('hidden');
+                }
+            });
+
+            // Change year button
+            $('#changeYearBtn').click(function() {
+                const isDisabled = $('#academicYearSelect').prop('disabled');
+                $('#academicYearSelect').prop('disabled', !isDisabled).toggleClass('bg-neutral-100');
+                
+                if (!isDisabled) {
+                    // Re-check existing positions when year is changed
+                    checkExistingPositions();
+                }
+            });
+
+            $('#academicYearSelect').change(function() {
+                if (!$(this).prop('disabled')) {
+                    checkExistingPositions();
+                }
+            });
+
+            // Compute positions
+            $('#computeBtn').click(function() {
+                if (!validateForm()) return;
+
+                currentRequest = {
+                    examCategoryId: parseInt($('#examCategorySelect').val()),
+                    examId: parseInt($('#examSelect').val()),
+                    academicYear: parseInt($('#academicYearSelect').val()),
+                    classId: parseInt($('#classSelect').val())
+                };
+
+                $(this).prop('disabled', true).text('Computing...');
+
+                $.ajax({
+                    url: '/StudentPosition/ComputePositions',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(currentRequest),
+                    success: function(response) {
+                        if (response.success) {
+                            computedPositions = response.positions;
+                            hasExistingPositions = response.hasExistingPositions || false;
+                            hasChanges = response.hasChanges || false;
+
+                            displayResults(response);
+                            updateSummaryInfo(response);
+                            showMessage('Positions computed successfully', 'success');
+                        } else {
+                            showMessage(response.message, 'error');
+                        }
+                    },
+                    error: function() {
+                        showMessage('An error occurred while computing positions.', 'error');
+                    },
+                    complete: function() {
+                        $('#computeBtn').prop('disabled', false).text('Compute Positions');
+                    }
+                });
+            });
+
+            // View existing positions
+            $('#viewExistingBtn').click(function() {
+                if (!validateForm()) return;
+
+                $(this).prop('disabled', true).text('Loading...');
+
+                $.ajax({
+                    url: '/StudentPosition/GetExistingPositions',
+                    type: 'GET',
+                    data: {
+                        examId: parseInt($('#examSelect').val()),
+                        academicYear: parseInt($('#academicYearSelect').val()),
+                        classId: parseInt($('#classSelect').val())
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            computedPositions = response.positions;
+                            hasExistingPositions = true;
+                            hasChanges = false;
+
+                            currentRequest = {
+                                examCategoryId: parseInt($('#examCategorySelect').val()),
+                                examId: parseInt($('#examSelect').val()),
+                                academicYear: parseInt($('#academicYearSelect').val()),
+                                classId: parseInt($('#classSelect').val())
+                            };
+
+                            displayResults({ positions: response.positions, totalStudents: response.positions.length });
+                            updateSummaryInfo({ positions: response.positions, totalStudents: response.positions.length });
+                            showMessage('Existing positions loaded successfully', 'success');
+                        } else {
+                            showMessage('Error loading existing positions', 'error');
+                        }
+                    },
+                    error: function() {
+                        showMessage('An error occurred while loading existing positions.', 'error');
+                    },
+                    complete: function() {
+                        $('#viewExistingBtn').prop('disabled', false).text('View Existing');
+                    }
+                });
+            });
+
+            // Recalculate positions
+            $('#recalculateBtn').click(function() {
+                if (!validateForm()) {
+                    showMessage('Please fill all required fields first', 'error');
+                    return;
+                }
+
+                $(this).prop('disabled', true).text('Recalculating...');
+
+                currentRequest = {
+                    examCategoryId: parseInt($('#examCategorySelect').val()),
+                    examId: parseInt($('#examSelect').val()),
+                    academicYear: parseInt($('#academicYearSelect').val()),
+                    classId: parseInt($('#classSelect').val())
+                };
+
+                $.ajax({
+                    url: '/StudentPosition/RecalculatePositions',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(currentRequest),
+                    success: function(response) {
+                        if (response.success) {
+                            computedPositions = response.positions;
+                            hasChanges = response.hasChanges;
+
+                            displayResults({ positions: response.positions, totalStudents: response.positions.length });
+                            updateSummaryInfo({ positions: response.positions, totalStudents: response.positions.length });
+
+                            if (hasChanges) {
+                                $('#changesAlert').removeClass('hidden');
+                                $('#noChangesAlert').addClass('hidden');
+                                $('#overwriteBtn').removeClass('hidden').prop('disabled', false);
+                                $('#savePositionsBtn').addClass('hidden');
+                            } else {
+                                $('#noChangesAlert').removeClass('hidden');
+                                $('#changesAlert').addClass('hidden');
+                                $('#overwriteBtn').addClass('hidden');
+                                $('#savePositionsBtn').addClass('hidden');
+                            }
+
+                            $('#existingPositionsAlert').addClass('hidden');
+                            showMessage('Positions recalculated successfully', 'success');
+                        } else {
+                            showMessage(response.message, 'error');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        showMessage('Error recalculating positions: ' + error, 'error');
+                    },
+                    complete: function() {
+                        $('#recalculateBtn').prop('disabled', false).text('Recalculate');
+                    }
+                });
+            });
+
+            // Save positions
+            $('#savePositionsBtn').click(function() {
+                if (computedPositions.length === 0) {
+                    showMessage('No positions to save', 'error');
+                    return;
+                }
+
+                if (confirm(`Save positions for ${computedPositions.length} students?`)) {
+                    savePositions(false);
+                }
+            });
+
+            // Overwrite existing positions
+            $('#overwriteBtn').click(function() {
+                if (confirm('This will overwrite existing position records. Are you sure?')) {
+                    savePositions(true);
+                }
+            });
+
+            // Position card click handler
+            $(document).on('click', '.position-card, .elite-card', function() {
+                const position = parseInt($(this).attr('id').replace('position', ''));
+                const student = computedPositions.find(p => p.position === position || p.Position === position);
+                
+                if (student) {
+                    showPerformanceDetails(student);
+                }
+            });
+
+            // Close modal
+            $('#closeModalBtn').click(function() {
+                $('#performanceModal').addClass('hidden');
+            });
+
+            // Functions
+            function displayResults(response) {
+                $('#resultsSection').removeClass('hidden');
+
+                // Clear all position cards
+                for (let i = 1; i <= 9; i++) {
+                    clearPositionCard(i);
+                }
+
+                // Populate position cards
+                if (response.positions && response.positions.length > 0) {
+                    response.positions.forEach(function(student) {
+                        populatePositionCard(student);
+                    });
+                }
+
+                // Show appropriate alerts and buttons
+                if (hasExistingPositions) {
+                    if (hasChanges) {
+                        $('#changesAlert').removeClass('hidden');
+                        $('#noChangesAlert').addClass('hidden');
+                        $('#overwriteBtn').removeClass('hidden').prop('disabled', false);
+                        $('#savePositionsBtn').addClass('hidden');
+                    } else {
+                        $('#noChangesAlert').removeClass('hidden');
+                        $('#changesAlert').addClass('hidden');
+                        $('#overwriteBtn').addClass('hidden');
+                        $('#savePositionsBtn').addClass('hidden');
+                    }
+                } else {
+                    // No existing positions - enable save button
+                    $('#savePositionsBtn').removeClass('hidden').prop('disabled', false);
+                    $('#overwriteBtn').addClass('hidden');
+                    $('#changesAlert').addClass('hidden');
+                    $('#noChangesAlert').addClass('hidden');
+                }
+            }
+
+            function populatePositionCard(student) {
+                const position = student.position || student.Position;
+                const card = $(`#position${position}`);
+
+                const studentName = student.studentName || student.StudentName || '-';
+                const fatherName = student.fatherName || student.FatherName || '-';
+                const className = student.className || student.ClassName || '-';
+                const sectionName = student.sectionName || student.SectionName || '-';
+                const percentage = student.finalPercentage || student.FinalPercentage || '-';
+
+                card.find('.student-name').text(studentName);
+                card.find('.father-name').text(`Father: ${fatherName}`);
+                card.find('.class-section').text(`${className} - ${sectionName}`);
+                card.find('.percentage').text(percentage !== '-' ? `${percentage}%` : '-');
+                
+                // Add animation
+                card.addClass('animate-slide-up');
+                setTimeout(() => card.removeClass('animate-slide-up'), 500);
+            }
+
+            function clearPositionCard(position) {
+                const card = $(`#position${position}`);
+                card.find('.student-name').text('-');
+                card.find('.father-name').text('-');
+                card.find('.class-section').text('-');
+                card.find('.percentage').text('-');
+            }
+
+            function updateSummaryInfo(response) {
+                const examName = $('#examSelect option:selected').text();
+                const className = $('#classSelect option:selected').text();
+                const year = $('#academicYearSelect').val();
+ 
+                $('#examInfo').text(examName);
+                $('#classInfo').text(className);
+                $('#yearInfo').text(`Academic Year ${year}`);
+                $('#totalStudentsCount').text(response.totalStudents || response.positions.length);
+            }
+
+            function savePositions(overwrite) {
+                $('#savePositionsBtn, #overwriteBtn').prop('disabled', true);
+                $('#savePositionsBtn').text('Saving...');
+
+                const saveRequest = {
+                    examId: currentRequest.examId,
+                    academicYear: currentRequest.academicYear,
+                    classId: currentRequest.classId,
+                    positions: computedPositions,
+                    overwriteExisting: overwrite
+                };
+
+                $.ajax({
+                    url: '/StudentPosition/SavePositions',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(saveRequest),
+                    success: function(response) {
+                        if (response.success) {
+                            showMessage(response.message, 'success');
+                            $('#savePositionsBtn').text('Saved Successfully').removeClass('bg-success hover:bg-green-700').addClass('bg-neutral-500');
+                            $('#overwriteBtn').addClass('hidden');
+                            $('#changesAlert').addClass('hidden');
+                        } else {
+                            showMessage(response.message, 'error');
+                        }
+                    },
+                    error: function() {
+                        showMessage('Error saving positions', 'error');
+                    },
+                    complete: function() {
+                        $('#savePositionsBtn, #overwriteBtn').prop('disabled', false);
+                        if ($('#savePositionsBtn').text() === 'Saving...') {
+                            $('#savePositionsBtn').text('Save Positions');
+                        }
+                    }
+                });
+            }
+
+            function showPerformanceDetails(student) {
+                const studentName = student.studentName || student.StudentName;
+                const position = student.position || student.Position;
+                const percentage = student.finalPercentage || student.FinalPercentage;
+                const award = student.award || student.Award;
+                
+                $('#modalTitle').text(`${studentName} - Performance Details`);
+                
+                // Show student info card
+                $('#studentInfoCard').html(`
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        <div>
+                            <div class="text-2xl font-bold text-primary-600">${position}</div>
+                            <div class="text-sm text-neutral-600">Position</div>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold text-success">${percentage}%</div>
+                            <div class="text-sm text-neutral-600">Final %</div>
+                        </div>
+                        <div>
+                            <div class="text-xl font-bold text-warning">${award}</div>
+                            <div class="text-sm text-neutral-600">Award</div>
+                        </div>
+                        <div>
+                            <div class="text-lg font-semibold text-neutral-700">${student.className || student.ClassName} - ${student.sectionName || student.SectionName}</div>
+                            <div class="text-sm text-neutral-600">Class & Section</div>
+                        </div>
+                    </div>
+                `);
+                
+                $('#subjectMarksBody').html('<tr><td colspan="6" class="text-center py-4">Loading...</td></tr>');
+                $('#performanceModal').removeClass('hidden');
+
+                $.get('/StudentPosition/GetStudentPerformanceDetails', {
+                    studentId: student.studentId || student.StudentId,
+                    examId: currentRequest.examId,
+                    academicYear: currentRequest.academicYear
+                })
+                .done(function(subjects) {
+                    let tableHtml = '';
+                    
+                    subjects.forEach(function(subject) {
+                        const statusClass = !subject.isCounted ? 'bg-gray-100 text-gray-500' : 
+                                          subject.percentage >= 50 ? 'bg-green-50' : 'bg-red-50';
+                        const notCountedBadge = !subject.isCounted ? ' <span class="text-xs bg-gray-200 px-2 py-1 rounded">Not Counted</span>' : '';
+                        
+                        tableHtml += `
+                            <tr class="${statusClass}">
+                                <td class="px-4 py-3 text-sm font-medium text-neutral-800">${subject.subjectName}${notCountedBadge}</td>
+                                <td class="px-4 py-3 text-sm text-center">${subject.obtainedMarks}</td>
+                                <td class="px-4 py-3 text-sm text-center">${subject.totalMarks || '-'}</td>
+                                <td class="px-4 py-3 text-sm text-center font-semibold">${subject.percentage ? subject.percentage.toFixed(2) + '%' : '-'}</td>
+                                <td class="px-4 py-3 text-sm text-center font-bold">${subject.grade}</td>
+                                <td class="px-4 py-3 text-sm text-center">${subject.status}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    $('#subjectMarksBody').html(tableHtml);
+                })
+                .fail(function() {
+                    $('#subjectMarksBody').html('<tr><td colspan="6" class="text-center py-4 text-error">Error loading performance details</td></tr>');
+                });
+            }
+
+            function showMessage(message, type) {
+                $('#messageContainer').removeClass('hidden');
+                if (type === 'success') {
+                    $('#successMessage').text(message).removeClass('hidden');
+                    $('#errorMessage').addClass('hidden');
+                } else {
+                    $('#errorMessage').text(message).removeClass('hidden');
+                    $('#successMessage').addClass('hidden');
+                }
+
+                setTimeout(function() {
+                    $('#messageContainer').addClass('hidden');
+                    $('#successMessage, #errorMessage').addClass('hidden');
+                }, 5000);
+            }
+        });
+    </script>
+    <style>
+        .animate-slide-up {
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        @@keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @@keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+}

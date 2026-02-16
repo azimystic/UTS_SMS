@@ -1,0 +1,367 @@
+@{
+    ViewData["Title"] = "Add Fine/Charge";
+}
+
+<div class="min-h-screen   p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="mb-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-primary-800">Add Fine/Charge</h1>
+                    <p class="text-neutral-600 mt-2">Search for a student and add charges</p>
+                </div>
+                <a asp-action="Index" class="bg-neutral-100 hover:bg-neutral-200 text-neutral-800 px-4 py-2 rounded-lg transition-all duration-300">
+                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Back to List
+                </a>
+            </div>
+        </div>
+
+        <!-- Student Search Section -->
+        <div class="bg-white rounded-xl shadow-sms-md p-6 mb-6">
+            <h2 class="text-xl font-semibold text-primary-800 mb-4">Search Student</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Search by Name, CNIC, or Father CNIC</label>
+                    <input type="text" id="fineChargeSearchInput" placeholder="Type to search..." 
+                           class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Class Filter</label>
+                    <select id="fineChargeClassFilter" class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400">
+                        <option value="">All Classes</option>
+                        @foreach (var cls in ViewBag.Classes as IEnumerable<Class>)
+                        {
+                            <option value="@cls.Id">@cls.Name</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Section Filter</label>
+                    <select id="fineChargeSectionFilter" class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400">
+                        <option value="">All Sections</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Search Results -->
+            <div id="fineChargeSearchResults" class="mt-4 hidden">
+                <h3 class="text-sm font-semibold text-neutral-700 mb-2">Search Results:</h3>
+                <div id="fineChargeStudentList" class="space-y-2 max-h-64 overflow-y-auto">
+                    <!-- Student results will appear here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Selected Student Section -->
+        <div id="fineChargeSelectedStudentSection" class="hidden">
+            <!-- Student Info Card -->
+            <div class="bg-white rounded-xl shadow-sms-md p-6 mb-6">
+                <div class="flex justify-between items-start">
+                    <div class="flex items-center">
+                        <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl mr-4">
+                            <span id="fineChargeStudentInitial">?</span>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-primary-800" id="fineChargeStudentName">Student Name</h2>
+                            <p class="text-neutral-600"><span id="fineChargeStudentClass">Class</span> - <span id="fineChargeStudentSection">Section</span></p>
+                            <p class="text-sm text-neutral-500">Father: <span id="fineChargeStudentFather">Father Name</span></p>
+                        </div>
+                    </div>
+                    <button onclick="clearStudent()" class="text-error hover:text-red-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <input type="hidden" id="fineChargeSelectedStudentId" value="" />
+            </div>
+
+            <!-- Previous Charges -->
+            <div class="bg-white rounded-xl shadow-sms-md p-6 mb-6">
+                <h3 class="text-lg font-semibold text-primary-800 mb-4">Previous Charges</h3>
+                <div id="fineChargePreviousChargesList" class="space-y-2">
+                    <!-- Previous charges will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Add New Charges Form -->
+            <div class="bg-white rounded-xl shadow-sms-md p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-primary-800">Add New Charges</h3>
+                    <button type="button" id="fineChargeAddChargeBtn" class="bg-gradient-primary hover:shadow-sms-lg text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Add Charge Row
+                    </button>
+                </div>
+
+                <form asp-action="Create" method="post" id="fineChargesForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="studentId" id="fineChargeFormStudentId" />
+                    
+                    <div id="fineChargeChargesContainer" class="space-y-4">
+                        <!-- Charge rows will be added here -->
+                    </div>
+
+                    <div class="flex gap-4 mt-6 pt-6 border-t">
+                        <button type="submit" class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-3 rounded-lg shadow-sms-md hover:shadow-sms-lg transition-all duration-300">
+                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Save Charges
+                        </button>
+                        <button type="button" onclick="clearStudent()" class="bg-neutral-100 hover:bg-neutral-200 text-neutral-800 px-6 py-3 rounded-lg transition-all duration-300">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Template Modal -->
+<div id="fineChargeTemplateModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[9999]">
+    <div class="bg-white rounded-lg p-6 max-w-2xl w-full m-4">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold text-primary-800">Select Template</h3>
+            <button onclick="closeTemplateModal()" class="text-neutral-500 hover:text-neutral-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div id="fineChargeTemplateList" class="space-y-2 max-h-96 overflow-y-auto">
+            @foreach (var template in ViewBag.Templates as IEnumerable<FineChargeTemplate>)
+            {
+                <div class="border border-primary-200 rounded-lg p-3 hover:bg-primary-50 cursor-pointer transition-colors" 
+                     onclick="applyTemplate('@template.Name', @template.Amount, '@template.Description')">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h4 class="font-semibold text-primary-800">@template.Name</h4>
+                            @if (!string.IsNullOrEmpty(template.Description))
+                            {
+                                <p class="text-sm text-neutral-600">@template.Description</p>
+                            }
+                        </div>
+                        <span class="text-lg font-bold text-primary-600">Rs. @template.Amount.ToString("N0")</span>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let chargeCounter = 0;
+        let currentTemplateTarget = null;
+
+        // Search students
+        let searchTimeout;
+        document.getElementById('fineChargeSearchInput').addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(searchStudents, 300);
+        });
+
+        document.getElementById('fineChargeClassFilter').addEventListener('change', searchStudents);
+        document.getElementById('fineChargeSectionFilter').addEventListener('change', searchStudents);
+
+        // Load sections when class is selected
+        document.getElementById('fineChargeClassFilter').addEventListener('change', function() {
+            const classId = this.value;
+            const sectionFilter = document.getElementById('fineChargeSectionFilter');
+            
+            if (classId) {
+                fetch(`/Students/GetSectionsByClass?classId=${classId}`)
+                    .then(response => response.json())
+                    .then(sections => {
+                        sectionFilter.innerHTML = '<option value="">All Sections</option>';
+                        sections.forEach(section => {
+                            sectionFilter.innerHTML += `<option value="${section.id}">${section.name}</option>`;
+                        });
+                    });
+            } else {
+                sectionFilter.innerHTML = '<option value="">All Sections</option>';
+            }
+        });
+
+        function searchStudents() {
+            const searchTerm = document.getElementById('fineChargeSearchInput').value;
+            const classId = document.getElementById('fineChargeClassFilter').value;
+            const sectionId = document.getElementById('fineChargeSectionFilter').value;
+
+            if (searchTerm.length < 2 && !classId && !sectionId) {
+                document.getElementById('fineChargeSearchResults').classList.add('hidden');
+                return;
+            }
+
+            fetch(`/StudentFineCharges/SearchStudents?searchTerm=${encodeURIComponent(searchTerm)}&classId=${classId || ''}&sectionId=${sectionId || ''}`)
+                .then(response => response.json())
+                .then(students => {
+                    const studentList = document.getElementById('fineChargeStudentList');
+                    if (students.length === 0) {
+                        studentList.innerHTML = '<p class="text-neutral-500 text-center py-4">No students found</p>';
+                    } else {
+                        studentList.innerHTML = students.map(student => `
+                            <div class="border border-primary-200 rounded-lg p-3 hover:bg-primary-50 cursor-pointer transition-colors" 
+                                 onclick="selectStudent(${student.id}, '${student.name}', '${student.fatherName}', '${student.className}', '${student.sectionName}')">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <h4 class="font-semibold text-primary-800">${student.name}</h4>
+                                        <p class="text-sm text-neutral-600">Father: ${student.fatherName}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-sm font-medium text-primary-600">${student.className} - ${student.sectionName}</p>
+                                        <p class="text-xs text-neutral-500">${student.studentCnic}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                    document.getElementById('fineChargeSearchResults').classList.remove('hidden');
+                });
+        }
+
+        function selectStudent(id, name, father, className, section) {
+            document.getElementById('fineChargeSelectedStudentId').value = id;
+            document.getElementById('fineChargeFormStudentId').value = id;
+            document.getElementById('fineChargeStudentName').textContent = name;
+            document.getElementById('fineChargeStudentFather').textContent = father;
+            document.getElementById('fineChargeStudentClass').textContent = className;
+            document.getElementById('fineChargeStudentSection').textContent = section;
+            document.getElementById('fineChargeStudentInitial').textContent = name.charAt(0).toUpperCase();
+
+            document.getElementById('fineChargeSearchResults').classList.add('hidden');
+            document.getElementById('fineChargeSelectedStudentSection').classList.remove('hidden');
+
+            // Load previous charges
+            loadPreviousCharges(id);
+
+            // Add first charge row
+            if (chargeCounter === 0) {
+                addChargeRow();
+            }
+        }
+
+        function loadPreviousCharges(studentId) {
+            fetch(`/StudentFineCharges/GetStudentFines?studentId=${studentId}`)
+                .then(response => response.json())
+                .then(charges => {
+                    const container = document.getElementById('fineChargePreviousChargesList');
+                    if (charges.length === 0) {
+                        container.innerHTML = '<p class="text-neutral-500 text-sm">No previous charges</p>';
+                    } else {
+                        container.innerHTML = charges.map(charge => `
+                            <div class="flex justify-between items-center py-2 px-3 bg-neutral-50 rounded-lg text-sm">
+                                <div class="flex-1">
+                                    <span class="font-medium text-primary-800">${charge.chargeName}</span>
+                                    <span class="text-neutral-500 ml-2">${charge.chargeDate}</span>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <span class="font-semibold text-primary-600">Rs. ${charge.amount.toLocaleString()}</span>
+                                    <span class="px-2 py-1 rounded-full text-xs ${charge.isPaid ? 'bg-success-light text-success' : 'bg-error-light text-error'}">
+                                        ${charge.isPaid ? 'Paid' : 'Unpaid'}
+                                    </span>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                });
+        }
+
+        function clearStudent() {
+            document.getElementById('fineChargeSelectedStudentSection').classList.add('hidden');
+            document.getElementById('fineChargeSelectedStudentId').value = '';
+            document.getElementById('fineChargeFormStudentId').value = '';
+            document.getElementById('fineChargeChargesContainer').innerHTML = '';
+            document.getElementById('fineChargeSearchInput').value = '';
+            chargeCounter = 0;
+        }
+
+        document.getElementById('fineChargeAddChargeBtn').addEventListener('click', addChargeRow);
+
+        function addChargeRow() {
+            const container = document.getElementById('fineChargeChargesContainer');
+            const row = document.createElement('div');
+            row.className = 'border border-primary-200 rounded-lg p-4 bg-neutral-50';
+            row.id = `charge-${chargeCounter}`;
+            
+            row.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <h4 class="font-semibold text-primary-700">Charge ${chargeCounter + 1}</h4>
+                    <button type="button" onclick="removeCharge('charge-${chargeCounter}')" class="text-error hover:text-red-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">Charge Name *</label>
+                        <div class="relative">
+                            <input type="text" name="charges[${chargeCounter}].ChargeName" id="chargeName-${chargeCounter}"
+                                   class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 pr-10" required />
+                            <button type="button" onclick="openTemplateModal(${chargeCounter})" 
+                                    class="absolute right-2 top-2 text-purple-600 hover:text-purple-800"
+                                    title="Use Template">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">Amount *</label>
+                        <input type="number" name="charges[${chargeCounter}].Amount" id="chargeAmount-${chargeCounter}" step="0.01" min="0"
+                               class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400" required />
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">Description</label>
+                        <input type="text" name="charges[${chargeCounter}].Description" id="chargeDesc-${chargeCounter}"
+                               class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400" />
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(row);
+            chargeCounter++;
+        }
+
+        function removeCharge(chargeId) {
+            document.getElementById(chargeId).remove();
+        }
+
+        function openTemplateModal(counter) {
+            currentTemplateTarget = counter;
+            document.getElementById('fineChargeTemplateModal').classList.remove('hidden');
+            document.getElementById('fineChargeTemplateModal').classList.add('flex');
+        }
+
+        function closeTemplateModal() {
+            document.getElementById('fineChargeTemplateModal').classList.add('hidden');
+            document.getElementById('fineChargeTemplateModal').classList.remove('flex');
+            currentTemplateTarget = null;
+        }
+
+        function applyTemplate(name, amount, description) {
+            if (currentTemplateTarget !== null) {
+                document.getElementById(`chargeName-${currentTemplateTarget}`).value = name;
+                document.getElementById(`chargeAmount-${currentTemplateTarget}`).value = amount;
+                if (description) {
+                    document.getElementById(`chargeDesc-${currentTemplateTarget}`).value = description;
+                }
+                closeTemplateModal();
+            }
+        }
+    </script>
+}

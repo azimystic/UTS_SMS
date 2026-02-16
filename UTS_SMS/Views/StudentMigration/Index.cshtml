@@ -1,0 +1,569 @@
+@model IEnumerable<SMS.Models.StudentMigration>
+
+@{
+    ViewData["Title"] = "Student Migration Requests";
+    var selectedStatus = ViewBag.SelectedStatus as string ?? "Pending";
+    var campuses = ViewBag.Campuses as List<SMS.Models.Campus>;
+    var userCampusId = ViewBag.UserCampusId as int?;
+    var isOwner = ViewBag.IsOwner as bool? ?? false;
+}
+
+<div class="min-h-screen bg-neutral-50 p-2 md:p-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-primary-800 mb-1 flex items-center">
+                <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                </svg>
+                Student Migration Requests
+            </h1>
+            <p class="text-sm text-neutral-600">Review and approve student campus migration requests</p>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="bg-success-light border-l-4 border-success text-success p-3 md:p-4 rounded-lg mb-4 animate-fade-in text-sm flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="bg-error-light border-l-4 border-error text-error p-3 md:p-4 rounded-lg mb-4 animate-fade-in text-sm flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+            </svg>
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <!-- Status Filter Tabs -->
+    <div class="bg-white rounded-xl shadow-sms-md mb-6 p-4">
+        <div class="flex flex-wrap gap-2">
+            <a href="@Url.Action("Index", new { status = "Pending" })" 
+               class="px-4 py-2 rounded-lg transition-colors @(selectedStatus == "Pending" ? "bg-success text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300")">
+               Pending
+            </a>
+            <a href="@Url.Action("Index", new { status = "Approved" })" 
+               class="px-4 py-2 rounded-lg transition-colors @(selectedStatus == "Approved" ? "bg-success text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300")">
+                Approved
+            </a>
+            <a href="@Url.Action("Index", new { status = "Rejected" })" 
+               class="px-4 py-2 rounded-lg transition-colors @(selectedStatus == "Rejected" ? "bg-error text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300")">
+                Rejected
+            </a>
+        </div>
+    </div>
+
+    <!-- Migration Requests List -->
+    <div class="bg-white rounded-xl shadow-sms-md overflow-hidden">
+        @if (Model.Any())
+        {
+            <!-- Desktop Table -->
+            <div class="hidden md:block overflow-x-auto">
+                <table class="min-w-full divide-y divide-primary-100">
+                    <thead class="bg-gradient-dark text-white">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Student</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">From Campus</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">To Campus</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Class/Section</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Outstanding Dues</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Remarks</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Requested Date</th>
+                            @if (selectedStatus == "Pending")
+                            {
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
+                            }
+                            else
+                            {
+                                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Processed By</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-primary-100">
+                        @foreach (var migration in Model)
+                        {
+                            var canTakeAction = isOwner || migration.ToCampusId == userCampusId;
+                            var isFromCampus = migration.FromCampusId == userCampusId;
+                            
+                            <tr class="hover:bg-neutral-50 transition-colors">
+                                <td class="px-6 py-4">
+                                    <div>
+                                        <p class="text-sm font-medium text-primary-800">@migration.Student.StudentName</p>
+                                        <p class="text-xs text-neutral-500">@migration.Student.FatherName</p>
+                                        <p class="text-xs text-neutral-400">@migration.Student.StudentCNIC</p>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                                        @migration.FromCampus.Name
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-success-light text-success">
+                                        @migration.ToCampus.Name
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-neutral-500">
+                                    @(migration.Student.ClassObj?.Name ?? "N/A") - @(migration.Student.SectionObj?.Name ?? "N/A")
+                                </td>
+                                <td class="px-6 py-4">
+                                    @if (migration.OutstandingDues > 0)
+                                    {
+                                        <span class="text-sm font-semibold text-error">Rs. @migration.OutstandingDues.ToString("N2")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-sm text-success">Clear</span>
+                                    }
+                                </td>
+                                <td class="px-6 py-4 text-sm text-neutral-500">
+                                    @(migration.Remarks ?? "N/A")
+                                </td>
+                                <td class="px-6 py-4 text-sm text-neutral-500">
+                                    @migration.RequestedDate.ToString("dd MMM yyyy")
+                                    <p class="text-xs text-neutral-400">by @migration.RequestedBy</p>
+                                </td>
+                                @if (selectedStatus == "Pending")
+                                {
+                                    <td class="px-6 py-4">
+                                        @if (canTakeAction)
+                                        {
+                                            <div class="flex space-x-2">
+                                                <a href="@Url.Action("Create", "Students", new { migrationId = migration.Id })" class="bg-success hover:bg-green-700 text-white px-3 py-1 rounded text-xs">
+                                                    Approve
+                                                </a>
+                                                <button onclick="showRejectModal(@migration.Id)" class="bg-error hover:bg-red-700 text-white px-3 py-1 rounded text-xs">
+                                                    Reject
+                                                </button>
+                                            </div>
+                                        }
+                                        else if (isFromCampus)
+                                        {
+                                            <span class="text-xs text-neutral-500 italic">Pending approval from @migration.ToCampus.Name</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-xs text-neutral-500 italic">View only</span>
+                                        }
+                                    </td>
+                                }
+                                else if (selectedStatus == "Rejected")
+                                {
+                                    <td class="px-6 py-4 text-sm text-neutral-500">
+                                        @(migration.ApprovedBy ?? "N/A")
+                                        <p class="text-xs text-error">@migration.RejectionReason</p>
+                                    </td>
+                                }
+                                else
+                                {
+                                    <td class="px-6 py-4 text-sm text-neutral-500">
+                                        @(migration.ApprovedBy ?? "N/A")
+                                        <p class="text-xs text-neutral-400">@(migration.ApprovedDate?.ToString("dd MMM yyyy") ?? "N/A")</p>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile Cards -->
+            <div class="md:hidden p-4 space-y-4">
+                @foreach (var migration in Model)
+                {
+                    var canTakeAction = isOwner || migration.ToCampusId == userCampusId;
+                    var isFromCampus = migration.FromCampusId == userCampusId;
+                    
+                    <div class="bg-neutral-50 rounded-lg p-4 border border-primary-100">
+                        <div class="space-y-3">
+                            <div>
+                                <p class="text-sm font-medium text-primary-800">@migration.Student.StudentName</p>
+                                <p class="text-xs text-neutral-500">@migration.Student.FatherName</p>
+                                <p class="text-xs text-neutral-400">@migration.Student.StudentCNIC</p>
+                            </div>
+                            
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-neutral-600">Migration:</span>
+                                <div class="flex items-center space-x-2">
+                                    <span class="px-2 py-1 rounded text-xs bg-primary-100 text-primary-800">@migration.FromCampus.Name</span>
+                                    <span>?</span>
+                                    <span class="px-2 py-1 rounded text-xs bg-success-light text-success">@migration.ToCampus.Name</span>
+                                </div>
+                            </div>
+                            
+                            <div class="text-sm">
+                                <span class="text-neutral-600">Class/Section:</span>
+                                <span class="text-neutral-800 ml-2">@(migration.Student.ClassObj?.Name ?? "N/A") - @(migration.Student.SectionObj?.Name ?? "N/A")</span>
+                            </div>
+                            
+                            @if (migration.OutstandingDues > 0)
+                            {
+                                <div class="text-sm">
+                                    <span class="text-neutral-600">Outstanding Dues:</span>
+                                    <span class="text-error font-semibold ml-2">Rs. @migration.OutstandingDues.ToString("N2")</span>
+                                </div>
+                            }
+                            
+                            @if (!string.IsNullOrEmpty(migration.Remarks))
+                            {
+                                <div class="text-sm">
+                                    <span class="text-neutral-600">Remarks:</span>
+                                    <p class="text-neutral-500 mt-1">@migration.Remarks</p>
+                                </div>
+                            }
+                            
+                            <div class="text-xs text-neutral-400 pt-2 border-t">
+                                Requested: @migration.RequestedDate.ToString("dd MMM yyyy") by @migration.RequestedBy
+                            </div>
+                            
+                            @if (selectedStatus == "Pending")
+                            {
+                                @if (canTakeAction)
+                                {
+                                    <div class="flex space-x-2 pt-2">
+                                        <a href="@Url.Action("Create", "Students", new { migrationId = migration.Id })" class="flex-1 bg-success hover:bg-green-700 text-white px-3 py-2 rounded text-sm text-center">
+                                            ✓ Approve
+                                        </a>
+                                        <button onclick="showRejectModal(@migration.Id)" class="flex-1 bg-error hover:bg-red-700 text-white px-3 py-2 rounded text-sm">
+                                            ✗ Reject
+                                        </button>
+                                    </div>
+                                }
+                                else if (isFromCampus)
+                                {
+                                    <div class="pt-2 text-center">
+                                        <span class="text-xs text-neutral-500 italic">Pending approval from @migration.ToCampus.Name</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="pt-2 text-center">
+                                        <span class="text-xs text-neutral-500 italic">View only</span>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-12">
+                <svg class="mx-auto h-16 w-16 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                </svg>
+                <h3 class="mt-4 text-lg font-medium text-primary-800">No @selectedStatus.ToLower() requests</h3>
+                <p class="mt-2 text-sm text-neutral-500">There are no @selectedStatus.ToLower() migration requests at the moment.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Approve Modal -->
+<div id="approveModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <h3 class="text-lg font-semibold text-primary-800 mb-4 flex items-center">
+            <svg class="w-6 h-6 mr-2 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Approve Migration Request
+        </h3>
+        <form id="approveForm" asp-action="ApproveMigration" method="post">
+            <input type="hidden" id="approveMigrationId" name="id" />
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-neutral-700 mb-2">Student Name</label>
+                <input type="text" id="approveStudentName" readonly class="w-full px-3 py-2 border border-primary-200 rounded-md bg-gray-100" />
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-neutral-700 mb-2">Assign to Class *</label>
+                <select id="approveClassSelect" name="targetClassId" required class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400">
+                    <option value="">Select Class</option>
+                </select>
+                <div id="classLoader" class="hidden mt-2">
+                    <div class="flex items-center text-sm text-primary-600">
+                        <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Loading classes...
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-neutral-700 mb-2">Assign to Section *</label>
+                <select id="approveSectionSelect" name="targetSectionId" required disabled class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400">
+                    <option value="">Select Section</option>
+                </select>
+                <div id="sectionLoader" class="hidden mt-2">
+                    <div class="flex items-center text-sm text-primary-600">
+                        <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Loading sections...
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-neutral-700 mb-2">Subjects Grouping</label>
+                <select id="approveSubjectsGroupingSelect" name="targetSubjectsGroupingId" class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400">
+                    <option value="">Select Subjects Grouping (Optional)</option>
+                </select>
+                <div id="subjectsGroupingLoader" class="hidden mt-2">
+                    <div class="flex items-center text-sm text-primary-600">
+                        <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Loading groupings...
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-neutral-700 mb-2">Student Category</label>
+                <select id="approveStudentCategorySelect" name="targetStudentCategoryId" class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400">
+                    <option value="">Select Student Category (Optional)</option>
+                </select>
+                <div id="studentCategoryLoader" class="hidden mt-2">
+                    <div class="flex items-center text-sm text-primary-600">
+                        <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Loading categories...
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <p class="text-xs text-blue-800">
+                    <strong>Note:</strong> The student will be assigned to the selected class, section, subjects grouping, and category in the new campus.
+                </p>
+            </div>
+            
+            <div class="flex space-x-3">
+                <button type="button" onclick="hideApproveModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">
+                    Cancel
+                </button>
+                <button type="submit" id="approveSubmitBtn" class="flex-1 bg-success hover:bg-green-700 text-white px-4 py-2 rounded">
+                    Approve Migration
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div id="rejectModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <h3 class="text-lg font-semibold text-primary-800 mb-4">Reject Migration Request</h3>
+        <form id="rejectForm" asp-action="RejectMigration" method="post">
+            <input type="hidden" id="rejectMigrationId" name="id" />
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-neutral-700 mb-2">Rejection Reason *</label>
+                <textarea name="rejectionReason" required class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" rows="4" placeholder="Enter reason for rejection"></textarea>
+            </div>
+            <div class="flex space-x-3">
+                <button type="button" onclick="hideRejectModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">
+                    Cancel
+                </button>
+                <button type="submit" class="flex-1 bg-error hover:bg-red-700 text-white px-4 py-2 rounded">
+                    Reject
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentCampusId = null;
+
+        function showApproveModal(migrationId, toCampusId, studentName) {
+            currentCampusId = toCampusId;
+            document.getElementById('approveMigrationId').value = migrationId;
+            document.getElementById('approveStudentName').value = studentName;
+            document.getElementById('approveClassSelect').innerHTML = '<option value="">Select Class</option>';
+            document.getElementById('approveSectionSelect').innerHTML = '<option value="">Select Section</option>';
+            document.getElementById('approveSectionSelect').disabled = true;
+            document.getElementById('approveSubjectsGroupingSelect').innerHTML = '<option value="">Select Subjects Grouping (Optional)</option>';
+            document.getElementById('approveStudentCategorySelect').innerHTML = '<option value="">Select Student Category (Optional)</option>';
+            document.getElementById('approveModal').classList.remove('hidden');
+            
+            // Load all dropdowns for the target campus
+            loadClassesForCampus(toCampusId);
+            loadSubjectsGroupingsForCampus(toCampusId);
+            loadStudentCategoriesForCampus(toCampusId);
+        }
+
+        function hideApproveModal() {
+            document.getElementById('approveModal').classList.add('hidden');
+            currentCampusId = null;
+        }
+
+        function loadClassesForCampus(campusId) {
+            document.getElementById('classLoader').classList.remove('hidden');
+            document.getElementById('approveClassSelect').disabled = true;
+            
+            fetch(`/StudentMigration/GetClassesByCampus?campusId=${campusId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const classSelect = document.getElementById('approveClassSelect');
+                    classSelect.innerHTML = '<option value="">Select Class</option>';
+                    
+                    data.forEach(cls => {
+                        const option = document.createElement('option');
+                        option.value = cls.id;
+                        option.textContent = cls.name;
+                        classSelect.appendChild(option);
+                    });
+                    
+                    classSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error loading classes:', error);
+                    alert('Error loading classes. Please try again.');
+                })
+                .finally(() => {
+                    document.getElementById('classLoader').classList.add('hidden');
+                });
+        }
+
+        function loadSubjectsGroupingsForCampus(campusId) {
+            document.getElementById('subjectsGroupingLoader').classList.remove('hidden');
+            
+            fetch(`/StudentMigration/GetSubjectsGroupingsByCampus?campusId=${campusId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const groupingSelect = document.getElementById('approveSubjectsGroupingSelect');
+                    groupingSelect.innerHTML = '<option value="">Select Subjects Grouping (Optional)</option>';
+                    
+                    data.forEach(grouping => {
+                        const option = document.createElement('option');
+                        option.value = grouping.id;
+                        option.textContent = grouping.name;
+                        groupingSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading subject groupings:', error);
+                })
+                .finally(() => {
+                    document.getElementById('subjectsGroupingLoader').classList.add('hidden');
+                });
+        }
+
+        function loadStudentCategoriesForCampus(campusId) {
+            document.getElementById('studentCategoryLoader').classList.remove('hidden');
+            
+            fetch(`/StudentMigration/GetStudentCategoriesByCampus?campusId=${campusId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const categorySelect = document.getElementById('approveStudentCategorySelect');
+                    categorySelect.innerHTML = '<option value="">Select Student Category (Optional)</option>';
+                    
+                    data.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category.id;
+                        option.textContent = category.name;
+                        categorySelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading student categories:', error);
+                })
+                .finally(() => {
+                    document.getElementById('studentCategoryLoader').classList.add('hidden');
+                });
+        }
+
+        // Class selection handler
+        document.addEventListener('DOMContentLoaded', function() {
+            const classSelect = document.getElementById('approveClassSelect');
+            const sectionSelect = document.getElementById('approveSectionSelect');
+            
+            classSelect.addEventListener('change', function() {
+                const classId = this.value;
+                sectionSelect.innerHTML = '<option value="">Select Section</option>';
+                sectionSelect.disabled = true;
+                
+                if (classId) {
+                    document.getElementById('sectionLoader').classList.remove('hidden');
+                    
+                    fetch(`/StudentMigration/GetSectionsByClass?classId=${classId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            sectionSelect.innerHTML = '<option value="">Select Section</option>';
+                            
+                            data.forEach(section => {
+                                const option = document.createElement('option');
+                                option.value = section.id;
+                                option.textContent = section.name;
+                                sectionSelect.appendChild(option);
+                            });
+                            
+                            sectionSelect.disabled = false;
+                        })
+                        .catch(error => {
+                            console.error('Error loading sections:', error);
+                            alert('Error loading sections. Please try again.');
+                        })
+                        .finally(() => {
+                            document.getElementById('sectionLoader').classList.add('hidden');
+                        });
+                }
+            });
+        });
+
+        function showRejectModal(migrationId) {
+            document.getElementById('rejectMigrationId').value = migrationId;
+            document.getElementById('rejectModal').classList.remove('hidden');
+        }
+
+        function hideRejectModal() {
+            document.getElementById('rejectModal').classList.add('hidden');
+        }
+    </script>
+    
+    <style>
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+}

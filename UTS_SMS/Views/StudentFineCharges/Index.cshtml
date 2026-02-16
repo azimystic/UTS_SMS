@@ -1,0 +1,233 @@
+﻿@model IEnumerable<StudentFineCharge>
+
+@{
+    ViewData["Title"] = "Student Fines & Charges";
+}
+
+<div class="min-h-screen  p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-primary-800">Student Fines & Charges</h1>
+                <p class="text-neutral-600 mt-2">Manage additional charges and fines for students</p>
+            </div>
+            <div class="flex gap-2 mt-4 md:mt-0">
+                <a asp-action="Templates" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow-sms-md hover:shadow-sms-lg transition-all duration-300 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Templates
+                </a>
+                <a asp-action="Create" class="bg-gradient-primary hover:shadow-sms-lg text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center shadow-sms-md">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Add New Charge
+                </a>
+            </div>
+        </div>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="bg-success-light border-l-4 border-success text-success p-4 mb-6 rounded-lg animate-fade-in">
+                @TempData["SuccessMessage"]
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="bg-error-light border-l-4 border-error text-error p-4 mb-6 rounded-lg animate-fade-in">
+                @TempData["ErrorMessage"]
+            </div>
+        }
+
+        <!-- Filters -->
+        <form asp-action="Index" method="get" class="bg-white p-4 rounded-xl shadow-sms-md mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Filter</label>
+                    <select name="filter" class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400">
+                        <option value="all" selected="@(ViewData["Filter"]?.ToString() == "all")">All Charges</option>
+                        <option value="unpaid" selected="@(ViewData["Filter"]?.ToString() == "unpaid")">Unpaid Only</option>
+                        <option value="paid" selected="@(ViewData["Filter"]?.ToString() == "paid")">Paid Only</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Search</label>
+                    <input type="text" name="searchString" value="@ViewData["SearchString"]" 
+                           placeholder="Name, CNIC, Father CNIC..."
+                           class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Class</label>
+                    <select name="classFilter" class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400">
+                        <option value="">All Classes</option>
+                        @foreach (var cls in ViewBag.Classes as IEnumerable<Class>)
+                        {
+                            <option value="@cls.Id" selected="@(ViewData["ClassFilter"]?.ToString() == cls.Id.ToString())">@cls.Name</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Section</label>
+                    <select name="sectionFilter" class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400">
+                        <option value="">All Sections</option>
+                        @foreach (var section in ViewBag.Sections as IEnumerable<ClassSection>)
+                        {
+                            <option value="@@section.Id" selected="@(ViewData["SectionFilter"]?.ToString() == section.Id.ToString())">@@section.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="flex flex-col justify-end">
+                    <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-all duration-300 mb-2">
+                        Apply Filter
+                    </button>
+                    <a asp-action="Index" class="bg-neutral-100 hover:bg-neutral-200 text-neutral-800 px-4 py-2 rounded-lg text-center transition-all duration-300">
+                        Reset
+                    </a>
+                </div>
+            </div>
+        </form>
+
+        <!-- Table -->
+        <div class="bg-white rounded-xl shadow-sms-md overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-primary-100">
+                    <thead class="bg-gradient-dark text-white">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium uppercase">Student</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium uppercase">Father Name</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium uppercase">Class/Section</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium uppercase">Charge Name</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium uppercase">Amount</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium uppercase">Date</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium uppercase">Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-primary-100">
+                        @if (Model.Any())
+                        {
+                            @foreach (var item in Model)
+                            {
+                                <tr class="hover:bg-primary-50 transition-colors duration-200">
+                                    <td class="px-4 py-4 text-sm">
+                                        <a asp-action="Details" asp-route-id="@item.StudentId" class="text-primary-600 hover:text-primary-800 font-medium">
+                                            @item.Student.StudentName
+                                        </a>
+                                    </td>
+                                    <td class="px-4 py-4 text-sm text-neutral-700">@item.Student.FatherName</td>
+                                    <td class="px-4 py-4 text-sm text-neutral-700">
+                                        @item.Student.ClassObj?.Name - @item.Student.SectionObj?.Name
+                                    </td>
+                                    <td class="px-4 py-4 text-sm font-medium">@item.ChargeName</td>
+                                    <td class="px-4 py-4 text-sm font-semibold text-primary-600">₨@item.Amount.ToString("N0")</td>
+                                    <td class="px-4 py-4 text-sm text-neutral-600">@item.ChargeDate.ToString("dd MMM yyyy")</td>
+                                    <td class="px-4 py-4 text-sm">
+                                        @if (item.IsPaid)
+                                        {
+                                            <span class="px-3 py-1 bg-success-light text-success rounded-full text-xs font-medium">Paid</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="px-3 py-1 bg-error-light text-error rounded-full text-xs font-medium">Unpaid</span>
+                                        }
+                                    </td>
+                                    <td class="px-4 py-4 text-sm">
+                                        <div class="flex gap-2">
+                                            <a asp-action="Details" asp-route-id="@item.StudentId" class="text-primary-600 hover:text-primary-800 transition-colors" title="View Details">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="8" class="px-4 py-8 text-center text-neutral-500">
+                                    <div class="flex flex-col items-center">
+                                        <svg class="w-16 h-16 text-neutral-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        <p class="text-lg font-medium">No charges found</p>
+                                        <p class="text-sm">Add charges to get started</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        @if (Model.Any())
+        {
+            var totalCharges = Model.Count();
+            var totalAmount = Model.Sum(m => m.Amount);
+            var paidAmount = Model.Where(m => m.IsPaid).Sum(m => m.Amount);
+            var unpaidAmount = Model.Where(m => !m.IsPaid).Sum(m => m.Amount);
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+                <div class="bg-white p-4 rounded-xl shadow-sms-md">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mr-3">
+                            <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs text-neutral-600">Total Charges</p>
+                            <p class="text-xl font-bold text-primary-800">@totalCharges</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sms-md">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs text-neutral-600">Total Amount</p>
+                            <p class="text-xl font-bold text-primary-800">₨@totalAmount.ToString("N0")</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sms-md">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-success-light rounded-lg flex items-center justify-center mr-3">
+                            <svg class="w-6 h-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs text-neutral-600">Paid Amount</p>
+                            <p class="text-xl font-bold text-success">₨@paidAmount.ToString("N0")</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sms-md">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-error-light rounded-lg flex items-center justify-center mr-3">
+                            <svg class="w-6 h-6 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-xs text-neutral-600">Unpaid Amount</p>
+                            <p class="text-xl font-bold text-error">₨@unpaidAmount.ToString("N0")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
