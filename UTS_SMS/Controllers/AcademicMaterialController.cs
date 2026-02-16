@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SMS;
-using SMS.Models;
+using UTS_SMS.Models;
 using SMS.ViewModels;
 using System.Security.Claims;
 
