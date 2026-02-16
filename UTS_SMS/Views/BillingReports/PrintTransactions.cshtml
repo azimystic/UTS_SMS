@@ -1,0 +1,344 @@
+﻿@model SMS.ViewModels.DailyTransactionsViewModel
+
+@{
+    ViewData["Title"] = "Daily Transactions Report";
+    Layout = null;
+}
+
+<! DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1. 0" />
+    <title>Daily Transactions - @Model.SelectedDate. ToString("dd MMM yyyy")</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 9pt;
+            margin: 0. 2in;
+            padding: 0;
+            color: #000;
+            line-height: 1.2;
+            background: #fff;
+        }
+
+        .report-header {
+            margin-bottom: 0.1in;
+            padding-bottom: 0.05in;
+            border-bottom: 1px solid #666;
+        }
+
+        .campus-logo {
+            margin-top: 20px;
+            height: 1. 5in;
+            width: 1.5in;
+            object-fit: contain;
+        }
+
+        .campus-name {
+            font-size: 18pt;
+            font-weight: bold;
+            margin-bottom: 0.02in;
+        }
+
+        .report-title {
+            font-size: 11pt;
+            font-weight: bold;
+            margin: 0.05in 0;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.1in;
+            margin-bottom: 0.15in;
+        }
+
+        .summary-item {
+            border: 1px solid #ccc;
+            padding: 0.08in;
+            border-radius: 3px;
+            background: #f9f9f9;
+        }
+
+        .summary-title {
+            font-size: 8pt;
+            font-weight: bold;
+            margin-bottom: 0.03in;
+            text-transform: uppercase;
+        }
+
+        .summary-value {
+            font-size: 10pt;
+            font-weight: bold;
+        }
+
+        .grade-header {
+            background: #2f5e93;
+            color: white;
+            padding: 0.08in;
+            font-weight: bold;
+            font-size: 10pt;
+            margin-top: 0.1in;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 0. 1in;
+            page-break-inside: avoid;
+        }
+
+            .data-table th {
+                background: #e6e6e6;
+                border: 1px solid #999;
+                padding: 0.05in;
+                font-size: 8pt;
+                font-weight: bold;
+                text-align: left;
+            }
+
+            .data-table td {
+                border: 1px solid #ccc;
+                padding: 0.04in;
+                font-size: 8pt;
+            }
+
+            .data-table . row-alt {
+                background: #f2f2f2;
+            }
+
+            .data-table .student-row {
+                background: #e8f4fc;
+                font-weight: bold;
+            }
+
+        .grade-total {
+            background: #d9e8f5;
+            font-weight: bold;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        . grand-total {
+            background: #2f5e93;
+            color: white;
+            font-weight: bold;
+        }
+
+        . report-footer {
+            margin-top: 0.2in;
+            padding-top: 0.1in;
+            border-top: 1px solid #666;
+            font-size: 8pt;
+        }
+
+        .no-print {
+            display: block;
+        }
+
+        @@media print {
+            body {
+                margin: 0;
+                padding: 0. 15in;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .grade-section {
+                page-break-inside: avoid;
+            }
+
+            @@page {
+                margin: 0. 3in;
+                size: portrait;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="report-header">
+        <table style="width: 100%;">
+            <tr>
+                <td style="width: 15%; vertical-align: middle;">
+                    @if (!string.IsNullOrEmpty(Model.Campus?.Logo))
+                    {
+                         <img src="~/campusData/Logo/@Model.Campus.Logo"
+                             asp-append-version="true"
+                             alt="@Model.Campus?.Name Logo"
+                             class="campus-logo" />
+                    }
+                </td>
+                <td style="text-align: center; vertical-align: middle;">
+                    <div class="campus-name">@Model.Campus?.Name</div>
+                    @if (!string.IsNullOrEmpty(Model.Campus?.Address))
+                    {
+                        <div style="font-size: 9pt;">@Model.Campus.Address</div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Campus?.Phone))
+                    {
+                        <div style="font-size: 9pt;">Phone: @Model.Campus.Phone</div>
+                    }
+                    <div class="report-title">DAILY TRANSACTIONS REPORT</div>
+                    <div style="font-size: 9pt;">@Model.SelectedDate.ToString("dddd, dd MMMM yyyy")</div>
+                </td>
+                <td style="width: 15%;"></td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Summary -->
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="summary-title">Total Transactions</div>
+            <div class="summary-value">@Model.TotalTransactions</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-title">Total Collection</div>
+            <div class="summary-value" style="color: #00498e;">₨@Model.GrandTotal.ToString("N0")</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-title">Cash Received</div>
+            <div class="summary-value" style="color: #856404;">₨@Model.TotalCash.ToString("N0")</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-title">Online Received</div>
+            <div class="summary-value" style="color: #4c3c8c;">₨@Model.TotalOnline.ToString("N0")</div>
+        </div>
+    </div>
+
+    <!-- Transactions by Grade -->
+    @if (Model.GradeGroups.Any())
+    {
+        @foreach (var gradeGroup in Model.GradeGroups)
+        {
+            <div class="grade-section">
+                <div class="grade-header">
+                    @(gradeGroup.ClassObj?.Name ?? "Unknown Class") - @gradeGroup.Transactions.Count Transaction(s) - Total: ₨@gradeGroup.TotalAmount.ToString("N0")
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;">Student Name</th>
+                            <th style="width: 15%;">Father Name</th>
+                            <th style="width: 8%;">Section</th>
+                            <th style="width: 10%;">Receipt #</th>
+                            <th style="width: 8%;">Time</th>
+                            <th style="width: 10%;">Month/Year</th>
+                            <th style="width: 10%;" class="text-right">Cash</th>
+                            <th style="width: 10%;" class="text-right">Online</th>
+                            <th style="width: 9%;" class="text-right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            var rowIndex = 0;
+                            var transactionBreakdowns = ViewBag.TransactionBreakdowns as Dictionary<int, List<dynamic>>;
+                        }
+                        @foreach (var studentGroup in gradeGroup.StudentGroups)
+                        {
+                            var isFirst = true;
+                            var rowCount = studentGroup.Transactions.Count;
+
+                            @foreach (var transaction in studentGroup.Transactions)
+                            {
+                                var breakdown = transactionBreakdowns != null && transactionBreakdowns.ContainsKey(transaction.Id)
+                                    ? transactionBreakdowns[transaction.Id]
+                                    : new List<dynamic>();
+                                
+                                <tr class="@(rowIndex % 2 == 1 ? "row-alt" : "")">
+                                    @if (isFirst)
+                                    {
+                                        <td rowspan="@rowCount" class="@(rowCount > 1 ? "student-row" : "")" style="border-left: 3px solid #2f5e93;">
+                                            @studentGroup.Student?.StudentName
+                                            @if (rowCount > 1)
+                                            {
+                                                <span style="font-size: 7pt; color: #666;"> (@rowCount payments)</span>
+                                            }
+                                        </td>
+                                        <td rowspan="@rowCount">@studentGroup.Student?.FatherName</td>
+                                        <td rowspan="@rowCount">@studentGroup.Student?.SectionObj?.Name</td>
+                                    }
+                                    <td>#@transaction.Id.ToString("000000")</td>
+                                    <td>@transaction.PaymentDate.ToString("hh:mm tt")</td>
+                                    <td>
+                                        @(new DateTime(transaction.BillingMaster.ForYear, transaction.BillingMaster.ForMonth, 1).ToString("MMM yyyy"))
+                                       
+                                    </td>
+                                    <td class="text-right">₨@transaction.CashPaid.ToString("N0")</td>
+                                    <td class="text-right">₨@transaction.OnlinePaid.ToString("N0")</td>
+                                    <td class="text-right" style="font-weight: bold;">₨@transaction.AmountPaid.ToString("N0")</td>
+                                </tr>
+                                isFirst = false;
+                                rowIndex++;
+                            }
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr class="grade-total">
+                            <td colspan="6" style="text-align: right; font-weight: bold;">Grade Total:</td>
+                            <td class="text-right">₨@gradeGroup.TotalCash.ToString("N0")</td>
+                            <td class="text-right">₨@gradeGroup.TotalOnline.ToString("N0")</td>
+                            <td class="text-right">₨@gradeGroup.TotalAmount.ToString("N0")</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        }
+
+        <!-- Grand Total -->
+        <table class="data-table">
+            <tr class="grand-total">
+                <td colspan="6" style="text-align: right; padding: 0.08in;">GRAND TOTAL:</td>
+                <td style="width: 10%; text-align: right; padding: 0.08in;">₨@Model.TotalCash.ToString("N0")</td>
+                <td style="width: 10%; text-align: right; padding: 0.08in;">₨@Model.TotalOnline.ToString("N0")</td>
+                <td style="width: 9%; text-align: right; padding: 0.08in;">₨@Model.GrandTotal.ToString("N0")</td>
+            </tr>
+        </table>
+    }
+    else
+    {
+        <div style="text-align: center; padding: 1in; color: #666;">
+            <p style="font-size: 14pt;">No transactions found for @Model.SelectedDate.ToString("dd MMMM yyyy")</p>
+        </div>
+    }
+
+    <!-- Footer -->
+    <div class="report-footer">
+        <div style="display: flex; justify-content: space-between;">
+            <div>
+                <div>Report Generated: @DateTime.Now.ToString("dd MMMM yyyy hh:mm tt")</div>
+                <div>Total Records: @Model.TotalTransactions</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="border-top: 1px solid #000; width: 1.5in; margin: 0 auto 0.03in;"></div>
+                <div>Principal / Authorized Signature</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Controls -->
+    <div class="no-print" style="text-align: center; margin-top: 0.2in;">
+        <button onclick="window.print()" style="background: #2f5e93; color: white; border: none; padding: 0.1in 0.2in; border-radius: 3px; cursor: pointer;">
+            Print Report
+        </button>
+        <button onclick="window.close()" style="background: #666; color: white; border: none; padding: 0.1in 0.2in; border-radius: 3px; cursor: pointer; margin-left: 0.1in;">
+            Close
+        </button>
+    </div>
+
+    <script>
+        window.onload = function() {
+            setTimeout(function() {
+                window.print();
+            }, 500);
+        };
+    </script>
+</body>
+</html>

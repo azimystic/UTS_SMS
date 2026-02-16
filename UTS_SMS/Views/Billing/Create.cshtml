@@ -1,0 +1,460 @@
+﻿@model SMS.ViewModels.BillingCreateViewModel
+
+@{
+    ViewData["Title"] = "Pay Fee";
+    var isExistingBilling = ViewBag.IsExistingBilling ?? false;
+    var alreadyPaid = ViewBag.AlreadyPaid ?? 0m;
+    var monthName = System.Globalization.DateTimeFormatInfo.CurrentInfo.GetMonthName(Model.ForMonth);
+}
+
+<div class="min-h-screen gradient-bg">
+    <div class="max-w-[1600px] mx-auto p-4 sm:p-6">
+        
+        <div class="glassmorphism rounded-3xl shadow-lg p-6 sm:p-8 mb-6 hover-lift">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div>
+                    <h1 class="text-3xl sm:text-4xl font-bold text-[#2D2D2D] mb-2">
+                        Fee Payment
+                    </h1>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="px-4 py-1.5 bg-[#FFD700] text-[#2D2D2D] rounded-full text-sm font-bold">
+                            @monthName @Model.ForYear
+                        </span>
+                        @if (isExistingBilling)
+                        {
+                            <span class="px-4 py-1.5 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                                <i class="fas fa-info-circle mr-1"></i> Existing Bill
+                            </span>
+                        }
+                    </div>
+                </div>
+                <a asp-action="Index" asp-controller="Billing" class="mt-4 md:mt-0 px-6 py-3 bg-[#2D2D2D] text-white rounded-full hover:bg-[#1a1a1a] transition-all flex items-center text-sm font-medium">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to List
+                </a>
+            </div>
+        </div>
+
+        <div asp-validation-summary="ModelOnly" class="text-red-600 bg-red-50 p-4 rounded-xl mb-6 text-sm"></div>
+
+        <form asp-action="Create" method="post" id="billingForm">
+            <input type="hidden" asp-for="StudentId" />
+            <input type="hidden" asp-for="ForMonth" />
+            <input type="hidden" asp-for="ForYear" />
+            <input type="hidden" asp-for="RemarksPreviousDues" />
+
+            <div class="flex flex-col md:flex-row gap-6 w-full items-start">
+
+                <div class="w-full md:w-2/3 space-y-6">
+
+                    <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                        <div class="flex items-center gap-4">
+                            <div class="w-16 h-16 rounded-2xl bg-[#FFD700]/20 flex items-center justify-center">
+                                <i class="fas fa-user-graduate text-2xl text-[#2D2D2D]"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-[#2D2D2D]">@Model.StudentName</h2>
+                                <p class="text-gray-600">Student ID: @Model.StudentId</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                        <h3 class="text-lg font-bold text-[#2D2D2D] mb-4 flex items-center">
+                            <i class="fas fa-receipt mr-2 text-[#FFD700]"></i>
+                            Fee Breakdown
+                        </h3>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                            <div class="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl p-4 text-center hover-lift">
+                                <div class="text-xs text-gray-600 uppercase font-medium mb-1">Tuition Fee</div>
+                                <div class="text-2xl font-bold text-blue-700" id="tuitionDisplay">₨@Model.TuitionFee.ToString("N0")</div>
+                                <input type="hidden" asp-for="TuitionFee" id="TuitionFee" />
+                            </div>
+                            
+                            <div class="bg-gradient-to-br from-green-50 to-green-100/50 rounded-2xl p-4 text-center hover-lift">
+                                <div class="text-xs text-gray-600 uppercase font-medium mb-1">Admission Fee</div>
+                                <div class="text-2xl font-bold text-green-700">₨@Model.AdmissionFee.ToString("N0")</div>
+                                <input type="hidden" asp-for="AdmissionFee" id="AdmissionFee" />
+                            </div>
+                            
+                            <div class="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-2xl p-4 text-center hover-lift">
+                                <div class="text-xs text-gray-600 uppercase font-medium mb-1">Extra Charges</div>
+                                <div class="text-2xl font-bold text-purple-700">₨@Model.MiscallaneousCharges.ToString("N0")</div>
+                                <input type="hidden" asp-for="MiscallaneousCharges" id="MiscallaneousCharges" />
+                                <input type="hidden" asp-for="ExtraCharges" />
+                            </div>
+                            
+                            <div class="bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-2xl p-4 text-center hover-lift">
+                                <div class="text-xs text-gray-600 uppercase font-medium mb-1">Previous Dues</div>
+                                <div class="text-2xl font-bold text-orange-700">₨@Model.PreviousDues.ToString("N0")</div>
+                                <input type="hidden" asp-for="PreviousDues" id="PreviousDues" />
+                            </div>
+                        </div>
+                        
+                        @if (!string.IsNullOrEmpty(Model.RemarksPreviousDues))
+                        {
+                            <div class="text-xs text-gray-600 bg-gray-50 rounded-xl p-3 mt-2">
+                                <i class="fas fa-info-circle mr-1 text-[#FFD700]"></i> @Model.RemarksPreviousDues
+                            </div>
+                        }
+
+                        <input type="hidden" asp-for="Fine" id="Fine" value="0" />
+                    </div>
+
+                    @if (Model.ExtraChargeItems != null && Model.ExtraChargeItems.Any())
+                    {
+                        <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                            <h3 class="text-lg font-bold text-[#2D2D2D] mb-4 flex items-center">
+                                <i class="fas fa-list mr-2 text-purple-500"></i>
+                                Extra Charges Details
+                            </h3>
+                            <div class="space-y-2">
+                                @for (int i = 0; i < Model.ExtraChargeItems.Count; i++)
+                                {
+                                    var item = Model.ExtraChargeItems[i];
+                                    <div class="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-xl">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-medium text-[#2D2D2D]">@item.ChargeName</span>
+                                            <span class="px-2 py-0.5 text-xs rounded-full @(item.Category == "Fine/Charge" ? "bg-red-100 text-red-700" : item.Category == "MonthlyCharges" ? "bg-orange-100 text-orange-700" : item.Category == "OncePerClass" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700")">
+                                                @(item.Category == "Fine/Charge" ? "Fine" : item.Category == "MonthlyCharges" ? "Monthly" : item.Category == "OncePerClass" ? "Class" : "Lifetime")
+                                            </span>
+                                        </div>
+                                        <span class="font-bold text-[#2D2D2D]">₨@item.Amount.ToString("N0")</span>
+                                    </div>
+                                    <input type="hidden" name="ExtraChargeItems[@i].ChargeId" value="@item.ChargeId" />
+                                    <input type="hidden" name="ExtraChargeItems[@i].ChargeName" value="@item.ChargeName" />
+                                    <input type="hidden" name="ExtraChargeItems[@i].Amount" value="@item.Amount" />
+                                    <input type="hidden" name="ExtraChargeItems[@i].Category" value="@item.Category" />
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @if (ViewBag.IsEmployeeParent == true)
+                    {
+                        <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift border-2 border-[#FFD700]/30">
+                            <h3 class="text-lg font-bold text-[#2D2D2D] mb-4 flex items-center">
+                                <i class="fas fa-user-tie mr-2 text-[#FFD700]"></i>
+                                Employee Salary Deduction
+                            </h3>
+                            <div class="text-sm text-gray-600 mb-3">Employee: <span class="font-bold text-[#2D2D2D]">@ViewBag.EmployeeName</span></div>
+                            
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                                <div class="bg-gray-50 rounded-xl p-3 text-center">
+                                    <div class="text-xs text-gray-600">Net Salary</div>
+                                    <div class="font-bold text-[#2D2D2D]">₨@(((decimal)ViewBag.EmployeeSalary).ToString("N0"))</div>
+                                </div>
+                                <div class="bg-gray-50 rounded-xl p-3 text-center">
+                                    <div class="text-xs text-gray-600">Used by Siblings</div>
+                                    <div class="font-bold text-red-600">₨@(((decimal)ViewBag.UsedSalary).ToString("N0"))</div>
+                                </div>
+                                <div class="bg-gray-50 rounded-xl p-3 text-center">
+                                    <div class="text-xs text-gray-600">Available</div>
+                                    <div class="font-bold text-[#4CAF50]" id="remainingSalary">₨@(((decimal)ViewBag.AvailableSalary).ToString("N0"))</div>
+                                </div>
+                                <div class="bg-gray-50 rounded-xl p-3 text-center">
+                                    <div class="text-xs text-gray-600">Total Bill</div>
+                                    <div class="font-bold text-blue-600">₨@(((decimal)ViewBag.TotalFeeAmount).ToString("N0"))</div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between bg-[#FFD700]/10 rounded-xl p-4">
+                                <div>
+                                    <div class="text-sm font-medium text-[#2D2D2D]">Salary Deduction Amount</div>
+                                    <div class="text-xs text-gray-500">Max: ₨@(((decimal)ViewBag.AvailableSalary).ToString("N0"))</div>
+                                </div>
+                                <input type="number" id="editableDeduction" 
+                                       class="w-36 px-3 py-2 bg-white border-2 border-[#FFD700] rounded-xl text-right font-bold text-[#2D2D2D] focus:border-[#FFD700] focus:ring-0"
+                                       value="@Model.SalaryDeductionAmount" min="0" max="@ViewBag.AvailableSalary" 
+                                       data-total-fee="@(ViewBag.TotalFeeAmount ?? 0)" />
+                            </div>
+                            <div id="deductionError" class="text-red-600 text-xs mt-2 hidden"></div>
+                            
+                            @if (ViewBag.SiblingDetails != null && ((List<string>)ViewBag.SiblingDetails).Any())
+                            {
+                                <div class="mt-3 text-xs text-gray-600">
+                                    <div class="font-bold uppercase mb-1">Siblings Usage:</div>
+                                    @foreach (var detail in (List<string>)ViewBag.SiblingDetails)
+                                    {
+                                        <div>• @detail</div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                        <input type="hidden" id="salaryDeduction" value="@(ViewBag.DeductionAmount ?? 0)" />
+                        <input asp-for="SalaryDeductionAmount" type="hidden" id="salaryDeductionAmount" value="@Model.SalaryDeductionAmount" />
+                    }
+
+                    @if (isExistingBilling && (decimal)alreadyPaid > 0)
+                    {
+                        <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift border-2 border-[#4CAF50]/30">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 rounded-xl bg-[#4CAF50] flex items-center justify-center">
+                                        <i class="fas fa-check text-white text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm text-gray-600">Already Paid</div>
+                                        <div class="text-2xl font-bold text-[#4CAF50]">₨@(((decimal)alreadyPaid).ToString("N0"))</div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-sm text-gray-600">Remaining Due</div>
+                                    <div class="text-2xl font-bold text-orange-600">₨@((Model.TotalPayable - (decimal)alreadyPaid).ToString("N0"))</div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="w-full md:w-1/3 space-y-6">
+                    
+                    <div class="card-dark rounded-3xl shadow-lg p-6 hover-lift sticky top-6">
+                        <h3 class="text-lg font-bold text-white mb-6 flex items-center">
+                            <i class="fas fa-credit-card mr-2 text-[#FFD700]"></i>
+                            Payment Details
+                        </h3>
+                        
+                        <div class="space-y-4 mb-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Cash Payment</label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500">₨</span>
+                                    <input asp-for="CashPaid" id="CashPaid"
+                                           class="pl-10 w-full px-4 py-3 bg-white border-2 border-gray-300 rounded-xl text-black font-bold focus:border-[#FFD700] focus:ring-0 transition-all" />
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Online Payment</label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500">₨</span>
+                                    <input asp-for="OnlinePaid" id="OnlinePaid"
+                                           class="pl-10 w-full px-4 py-3 bg-white border-2 border-gray-300 rounded-xl text-black font-bold focus:border-[#FFD700] focus:ring-0 transition-all" />
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Bank Account</label>
+                                <select asp-for="OnlineAccount" asp-items="ViewBag.AccountId" id="OnlineAccount"
+                                        class="w-full px-4 py-3 bg-white border-2 border-gray-300 rounded-xl text-black focus:border-[#FFD700] focus:ring-0 transition-all">
+                                    <option value="0">-- Select Account --</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" asp-for="TotalPayable" id="totalpayable" value="@Model.TotalPayable" />
+                        <input type="hidden" id="alreadyPaidAmount" value="@alreadyPaid" />
+                        <input type="hidden" id="isExistingBill" value="@isExistingBilling.ToString().ToLower()" />
+                        
+                        <div class="space-y-4 p-4 bg-gray-700/50 rounded-2xl mb-6">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-400">Total Payable</span>
+                                <span class="text-xl font-bold text-[#FFD700]" id="totalPayable">₨@Model.TotalPayable.ToString("N0")</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-400">Total Paid</span>
+                                <span class="text-xl font-bold text-[#4CAF50]" id="totalPaid">₨@Model.TotalPaid.ToString("N0")</span>
+                            </div>
+                            <div class="border-t border-gray-600 pt-4 flex justify-between items-center">
+                                <span class="text-sm text-gray-400" id="duesLabel">Remaining</span>
+                                <span class="text-2xl font-bold text-red-400" id="dues">₨@Model.Dues.ToString("N0")</span>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <a asp-action="Index" asp-controller="Billing" 
+                               class="flex-1 py-4 px-4 bg-gray-600 hover:bg-gray-500 text-white rounded-2xl font-medium text-center transition-all flex items-center justify-center">
+                                <i class="fas fa-times-circle mr-2"></i>
+                                Cancel
+                            </a>
+                            <button type="submit" 
+                                    class="flex-1 py-4 px-4 bg-[#FFD700] hover:bg-[#FFC700] text-[#2D2D2D] rounded-2xl font-bold transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                Save Payment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/sweetalert2/sweetalert2.min.css" asp-append-version="true" />
+    <script src="~/lib/sweetalert2/sweetalert2.min.js" asp-append-version="true"></script>
+    
+    <style>
+        .gradient-bg { background: linear-gradient(180deg, #F5F1E8 0%, #E8E4D9 50%, #FFFEF9 100%); min-height: 100vh; }
+        .glassmorphism { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); }
+        .card-dark { background: linear-gradient(135deg, #2D2D2D 0%, #1a1a1a 100%); }
+        .hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15); }
+        input:focus, select:focus { outline: none; }
+        input[readonly], input[disabled] { background-color: #f9fafb; cursor: not-allowed; }
+        body, html { overflow-x: hidden; max-width: 100%; }
+        .swal2-popup { font-size: 1rem; font-family: var(--font-family, 'Inter', sans-serif); border-radius: 1.5rem; }
+        .swal2-html-container { text-align: left; line-height: 1.8; }
+        .swal2-title { font-size: 1.5rem; padding: 1rem 1rem 0.5rem; }
+        .swal2-actions { gap: 0.5rem; }
+        @@media (max-width: 1024px) { .card-dark.sticky { position: relative; top: 0; } }
+    </style>
+    
+    <script>
+        let isConfirmed = false;
+        
+        function calculateTotals() {
+            let tuition = parseFloat(document.getElementById("TuitionFee").value) || 0;
+            let admission = parseFloat(document.getElementById("AdmissionFee").value) || 0;
+            let prevDues = parseFloat(document.getElementById("PreviousDues").value) || 0;
+            let misc = parseFloat(document.getElementById("MiscallaneousCharges").value) || 0;
+            
+            let deductionEl = document.getElementById("salaryDeduction");
+            let deduction = deductionEl ? (parseFloat(deductionEl.value) || 0) : 0;
+            
+            let cash = parseFloat(document.getElementById("CashPaid").value) || 0;
+            let online = parseFloat(document.getElementById("OnlinePaid").value) || 0;
+
+            // Calculate base total
+            let baseTotal = (tuition + admission + misc - deduction) + prevDues;
+            
+            // Check if this is an existing bill
+            let isExisting = document.getElementById("isExistingBill")?.value === "true";
+            let alreadyPaid = parseFloat(document.getElementById("alreadyPaidAmount")?.value) || 0;
+            
+            // For existing bills, subtract already paid amount from total payable
+            let totalPayable = isExisting ? (baseTotal - alreadyPaid) : baseTotal;
+            
+            // Update hidden input for backend
+            document.getElementById("totalpayable").value = totalPayable;
+            
+            let totalPaid = cash + online;
+            let dues = totalPayable - totalPaid;
+
+            document.getElementById("totalPayable").innerText = '₨' + totalPayable.toLocaleString();
+            document.getElementById("totalPaid").innerText = '₨' + totalPaid.toLocaleString();
+
+            if (dues < 0) {
+                document.getElementById("duesLabel").innerText = 'Advance';
+                document.getElementById("dues").innerText = '₨' + Math.abs(dues).toLocaleString();
+                document.getElementById("dues").className = "text-2xl font-bold text-blue-400";
+            } else {
+                document.getElementById("duesLabel").innerText = 'Remaining';
+                document.getElementById("dues").innerText = '₨' + dues.toLocaleString();
+                document.getElementById("dues").className = dues > 0 ? "text-2xl font-bold text-red-400" : "text-2xl font-bold text-[#4CAF50]";
+            }
+        }
+
+        document.querySelectorAll("#TuitionFee, #AdmissionFee, #PreviousDues, #MiscallaneousCharges, #CashPaid, #OnlinePaid").forEach(el => {
+            if (el) el.addEventListener("input", calculateTotals);
+        });
+
+        // Editable Deduction Logic
+        const editableDeduction = document.getElementById("editableDeduction");
+        if (editableDeduction) {
+            const maxSalary = parseFloat(editableDeduction.getAttribute("max")) || 0;
+            editableDeduction.addEventListener("input", function() {
+                let deductionValue = parseFloat(this.value) || 0;
+                const errorDiv = document.getElementById("deductionError");
+                
+                if (deductionValue > maxSalary) {
+                    errorDiv.textContent = `Deduction cannot exceed remaining salary (₨${maxSalary.toLocaleString()})`;
+                    errorDiv.classList.remove("hidden");
+                    this.value = maxSalary;
+                    deductionValue = maxSalary;
+                } else {
+                    errorDiv.classList.add("hidden");
+                }
+                
+                const salaryDeductionEl = document.getElementById("salaryDeduction");
+                const salaryDeductionAmountEl = document.getElementById("salaryDeductionAmount");
+                if (salaryDeductionEl) salaryDeductionEl.value = deductionValue;
+                if (salaryDeductionAmountEl) salaryDeductionAmountEl.value = deductionValue;
+                
+                calculateTotals();
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            calculateTotals();
+            
+            document.getElementById("billingForm").addEventListener("submit", function(e) {
+                if (isConfirmed) return true;
+                
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                
+                // Get values
+                let totalPayable = parseFloat(document.getElementById("totalPayable").innerText.replace(/[₨,]/g, '')) || 0;
+                let cash = parseFloat(document.getElementById("CashPaid").value) || 0;
+                let online = parseFloat(document.getElementById("OnlinePaid").value) || 0;
+                let totalPaid = cash + online;
+                let account = document.getElementById("OnlineAccount").value;
+                
+                // Validation 1: Check if paying more than payable
+                if (totalPaid > totalPayable) {
+                    Swal.fire({ 
+                        icon: 'error', 
+                        title: 'Payment Exceeds Bill', 
+                        text: `Total payment (₨${totalPaid.toLocaleString()}) cannot exceed Total Payable (₨${totalPayable.toLocaleString()}).`, 
+                        confirmButtonColor: '#FFD700', 
+                        confirmButtonText: 'OK' 
+                    });
+                    return false;
+                }
+                
+                // Validation 2: Online payment requires account
+                if (online > 0 && (!account || account === "0")) {
+                    Swal.fire({ 
+                        icon: 'warning', 
+                        title: 'Account Required', 
+                        text: 'Please select a Bank Account for Online Payment.', 
+                        confirmButtonColor: '#FFD700', 
+                        confirmButtonText: 'OK' 
+                    });
+                    document.getElementById("OnlineAccount").focus();
+                    return false;
+                }
+
+                // Prepare confirmation message
+                let difference = totalPaid - totalPayable;
+                let confirmMessage = '', iconType = 'question';
+
+                if (difference > 0) {
+                    confirmMessage = `<div style="text-align: left;"><p><strong>Total Payable:</strong> <span style="float: right;">₨${totalPayable.toLocaleString()}</span></p><p><strong>Total Paid:</strong> <span style="float: right;">₨${totalPaid.toLocaleString()}</span></p><hr style="margin: 10px 0;"><p><strong style="color: #3b82f6;">Advance Amount:</strong> <span style="color: #3b82f6; float: right; font-weight: bold;">₨${Math.abs(difference).toLocaleString()}</span></p><p style="margin-top: 15px; color: #f97316;"><strong>⚠️ Paying MORE than required.</strong></p></div>`;
+                    iconType = 'info';
+                } else if (difference < 0) {
+                    confirmMessage = `<div style="text-align: left;"><p><strong>Total Payable:</strong> <span style="float: right;">₨${totalPayable.toLocaleString()}</span></p><p><strong>Total Paid:</strong> <span style="float: right;">₨${totalPaid.toLocaleString()}</span></p><hr style="margin: 10px 0;"><p><strong style="color: #ef4444;">Remaining Dues:</strong> <span style="color: #ef4444; float: right; font-weight: bold;">₨${Math.abs(difference).toLocaleString()}</span></p><p style="margin-top: 15px; color: #f97316;"><strong>⚠️ Paying LESS than required.</strong></p></div>`;
+                    iconType = 'warning';
+                } else {
+                    confirmMessage = `<div style="text-align: left;"><p><strong>Total Payable:</strong> <span style="float: right;">₨${totalPayable.toLocaleString()}</span></p><p><strong>Total Paid:</strong> <span style="float: right;">₨${totalPaid.toLocaleString()}</span></p><hr style="margin: 10px 0;"><p style="margin-top: 15px; color: #10b981;"><strong>✓ Payment amount matches exactly.</strong></p></div>`;
+                    iconType = 'success';
+                }
+
+                const formEl = this;
+                Swal.fire({ 
+                    title: 'Confirm Payment', 
+                    html: confirmMessage, 
+                    icon: iconType, 
+                    showCancelButton: true, 
+                    confirmButtonColor: '#FFD700', 
+                    cancelButtonColor: '#6B7280', 
+                    confirmButtonText: '<i class="fas fa-check"></i> Confirm', 
+                    cancelButtonText: 'Cancel', 
+                    allowOutsideClick: false, 
+                    width: '450px' 
+                }).then((result) => {
+                    if (result.isConfirmed) { 
+                        isConfirmed = true; 
+                        formEl.submit(); 
+                    }
+                });
+                return false;
+            });
+        });
+    </script>
+}

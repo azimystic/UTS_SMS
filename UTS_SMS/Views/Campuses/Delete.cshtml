@@ -1,0 +1,92 @@
+﻿@model Campus
+
+@{
+    ViewData["Title"] = "Delete Campus";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-primary-800">🏫 Delete Campus</h1>
+            <p class="text-neutral-600 mt-2">Remove this campus from the system</p>
+        </div>
+
+        <!-- Warning Alert -->
+        <div class="bg-error-light border-l-4 border-error text-error p-4 rounded-xl mb-6">
+            <div class="flex items-center">
+                <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+                <div>
+                    <p class="font-semibold">Warning: This action cannot be undone</p>
+                    <p class="text-sm mt-1">This will permanently delete the campus and related data.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Campus Details -->
+        <div class="bg-white rounded-2xl shadow-sms-xl p-6 mb-6">
+            <h2 class="text-xl font-semibold text-primary-800 mb-4">Campus Details</h2>
+
+            <div class="space-y-4">
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span class="font-medium text-neutral-600">Name:</span>
+                    <span class="text-primary-800">@Model.Name</span>
+                </div>
+
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span class="font-medium text-neutral-600">Code:</span>
+                    <span class="text-primary-800">@Model.Code</span>
+                </div>
+
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span class="font-medium text-neutral-600">Phone:</span>
+                    <span class="text-primary-800">@Model.Phone</span>
+                </div>
+
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span class="font-medium text-neutral-600">Email:</span>
+                    <span class="text-primary-800">@Model.Email</span>
+                </div>
+
+                <div class="flex justify-between items-center py-2">
+                    <span class="font-medium text-neutral-600">Address:</span>
+                    <span class="text-primary-800 max-w-xs break-words text-right">@Model.Address</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation Form -->
+        <div class="bg-white rounded-2xl shadow-sms-xl p-6">
+            <h3 class="text-lg font-semibold text-primary-800 mb-4">Confirm Deletion</h3>
+            <p class="text-neutral-600 mb-6">Are you sure you want to delete this campus? All associated classes and data will be affected.</p>
+
+            <form asp-action="Delete" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+
+                <div class="flex space-x-4">
+                    <button type="submit" class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium py-3 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-sms-lg flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                        Delete Campus
+                    </button>
+                    <a asp-action="Index" class="bg-neutral-100 hover:bg-primary-100 text-primary-800 font-medium py-3 px-8 rounded-xl transition-all duration-300 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,0 +1,188 @@
+﻿@model SMS.ViewModels.DailyTransactionsViewModel
+
+@{
+    ViewData["Title"] = "Daily Transactions";
+}
+
+<div class="min-h-screen   p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="bg-white shadow-sm rounded-lg mb-6">
+            <div class="px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-primary-800">
+                    <i class="fas fa-receipt mr-2 text-primary"></i>
+                    Daily Transactions Report
+                </h1>
+                <div class="flex items-center space-x-4">
+                    @if (Model.GradeGroups.Any())
+                    {
+                        <a href="@Url.Action("PrintTransactions", new { date = Model.SelectedDate.ToString("yyyy-MM-dd") })"
+                           target="_blank"
+                           class="bg-primary hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center">
+                            <i class="fas fa-print mr-2"></i> Print Report
+                        </a>
+                    }
+                </div>
+            </div>
+        </header>
+
+        <!-- Date Filter -->
+        <div class="bg-white rounded-xl shadow-sms-md p-6 mb-6">
+            <h2 class="text-lg font-semibold text-primary-800 mb-4">Select Date</h2>
+            <form method="get" class="flex items-end gap-4">
+                <div class="flex-1 max-w-xs">
+                    <label class="block text-sm font-medium text-neutral-700 mb-1">Transaction Date</label>
+                    <input type="date" 
+                           name="date" 
+                           value="@Model.SelectedDate.ToString("yyyy-MM-dd")" 
+                           class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-primary focus:border-primary">
+                </div>
+                <button type="submit" class="bg-gradient-primary hover:bg-primary-700 text-white px-6 py-2 rounded-lg">
+                    <i class="fas fa-search mr-2"></i> Search
+                </button>
+            </form>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-xl shadow-sms-md p-4">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center mr-4">
+                        <i class="fas fa-receipt text-primary-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-neutral-600">Total Transactions</p>
+                        <p class="text-2xl font-bold text-primary-800">@Model.TotalTransactions</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sms-md p-4">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-success-light rounded-xl flex items-center justify-center mr-4">
+                        <i class="fas fa-money-bill-wave text-success text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-neutral-600">Total Amount</p>
+                        <p class="text-2xl font-bold text-success">₨@Model.GrandTotal.ToString("N0")</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sms-md p-4">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center mr-4">
+                        <i class="fas fa-coins text-yellow-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-neutral-600">Cash Received</p>
+                        <p class="text-2xl font-bold text-yellow-700">₨@Model.TotalCash.ToString("N0")</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sms-md p-4">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mr-4">
+                        <i class="fas fa-credit-card text-indigo-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-neutral-600">Online Received</p>
+                        <p class="text-2xl font-bold text-indigo-700">₨@Model.TotalOnline.ToString("N0")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions by Grade -->
+        @if (Model.GradeGroups.Any())
+        {
+            @foreach (var gradeGroup in Model.GradeGroups)
+            {
+                <div class="bg-white rounded-xl shadow-sms-md mb-6 overflow-hidden">
+                    <!-- Grade Header -->
+                    <div class="bg-gradient-primary from-primary-600 to-primary-700 text-white px-6 py-4">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-semibold text-white ">
+                                <i class="fas fa-graduation-cap mr-2"></i>
+                                @(gradeGroup.ClassObj?.Name ?? "Unknown Class")
+                            </h3>
+                            <div class="flex space-x-4 text-sm">
+                                <span><i class="fas fa-receipt mr-1"></i> @gradeGroup.Transactions.Count transactions</span>
+                                <span><i class="fas fa-money-bill mr-1"></i> ₨@gradeGroup.TotalAmount.ToString("N0")</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Students Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-neutral-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-neutral-600 uppercase">Student</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-neutral-600 uppercase">Father Name</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-neutral-600 uppercase">Section</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-neutral-600 uppercase">Receipt #</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-neutral-600 uppercase">Time</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-neutral-600 uppercase">Month/Year</th>
+                                    <th class="px-4 py-3 text-right text-xs font-semibold text-neutral-600 uppercase">Cash</th>
+                                    <th class="px-4 py-3 text-right text-xs font-semibold text-neutral-600 uppercase">Online</th>
+                                    <th class="px-4 py-3 text-right text-xs font-semibold text-neutral-600 uppercase">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-neutral-200">
+                                @foreach (var studentGroup in gradeGroup.StudentGroups)
+                                {
+                                    var isFirst = true;
+                                    var rowCount = studentGroup.Transactions.Count;
+
+                                    @foreach (var transaction in studentGroup.Transactions)
+                                    {
+                                        <tr class="hover:bg-neutral-50 @(isFirst && rowCount > 1 ? "bg-blue-50" : "")">
+                                            @if (isFirst)
+                                            {
+                                                <td rowspan="@rowCount" class="px-4 py-3 font-medium text-primary-800 border-l-4 border-primary-500">
+                                                    @studentGroup.Student?.StudentName
+                                                    @if (rowCount > 1)
+                                                    {
+                                                        <span class="ml-2 px-2 py-1 bg-primary-100 text-primary-700 text-xs rounded-full">
+                                                            @rowCount payments
+                                                        </span>
+                                                    }
+                                                </td>
+                                                <td rowspan="@rowCount" class="px-4 py-3 text-neutral-600">@studentGroup.Student?.FatherName</td>
+                                                <td rowspan="@rowCount" class="px-4 py-3 text-neutral-600">@studentGroup.Student?.SectionObj?.Name</td>
+                                            }
+                                            <td class="px-4 py-3 text-neutral-600">#@transaction.Id.ToString("000000")</td>
+                                            <td class="px-4 py-3 text-neutral-600">@transaction.PaymentDate.ToString("hh:mm tt")</td>
+                                            <td class="px-4 py-3 text-neutral-600">
+                                                @(new DateTime(transaction.BillingMaster.ForYear, transaction.BillingMaster.ForMonth, 1).ToString("MMM yyyy"))
+                                            </td>
+                                            <td class="px-4 py-3 text-right text-neutral-600">₨@transaction.CashPaid.ToString("N0")</td>
+                                            <td class="px-4 py-3 text-right text-neutral-600">₨@transaction.OnlinePaid.ToString("N0")</td>
+                                            <td class="px-4 py-3 text-right font-semibold text-success">₨@transaction.AmountPaid.ToString("N0")</td>
+                                        </tr>
+                                        isFirst = false;
+                                    }
+                                }
+                            </tbody>
+                            <tfoot class="bg-neutral-100">
+                                <tr>
+                                    <td colspan="6" class="px-4 py-3 font-semibold text-primary-800">Grade Total</td>
+                                    <td class="px-4 py-3 text-right font-semibold text-yellow-700">₨@gradeGroup.TotalCash.ToString("N0")</td>
+                                    <td class="px-4 py-3 text-right font-semibold text-indigo-700">₨@gradeGroup.TotalOnline.ToString("N0")</td>
+                                    <td class="px-4 py-3 text-right font-bold text-success">₨@gradeGroup.TotalAmount.ToString("N0")</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="bg-white rounded-xl shadow-sms-md p-12 text-center">
+                <i class="fas fa-inbox text-6xl text-neutral-300 mb-4"></i>
+                <h3 class="text-xl font-semibold text-neutral-600 mb-2">No Transactions Found</h3>
+                <p class="text-neutral-500">No transactions were recorded on @Model.SelectedDate.ToString("dd MMMM yyyy")</p>
+            </div>
+        }
+    </div>
+</div>

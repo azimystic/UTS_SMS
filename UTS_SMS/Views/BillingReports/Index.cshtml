@@ -1,0 +1,600 @@
+﻿@model IEnumerable<SMS.ViewModels.BillingReportViewModel>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing Reports Dashboard</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" /> 
+    <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" asp-append-version="true" />
+    <script src="~/js/jquery.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#10b981',
+                        dark: '#1f2937',
+                        light: '#f9fafb'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .status-badge {
+            @@apply px-3 py-1 rounded-full text-xs font-semibold;
+        }
+        .status-paid {
+            @@apply bg-success-light text-success;
+        }
+        .status-partial {
+            @@apply bg-warning-light text-yellow-800;
+        }
+        .status-notpaid {
+            @@apply bg-error-light text-error;
+        }
+        .status-advance {
+            @@apply bg-primary-100 text-primary-800;
+        }
+        .status-notprocessed {
+            @@apply bg-neutral-100 text-primary-800;
+        }
+        .print-only {
+            display: none;
+        }
+        @@media print {
+            .no-print {
+                display: none;
+            }
+            .print-only {
+                display: block;
+            }
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+        @@media (max-width: 767px) {
+            .min-h-screen {
+                overflow-x: hidden;
+            }
+            .mobile-card {
+                @@apply bg-white rounded-lg shadow-sms-md mb-4 p-4;
+            }
+            .mobile-grid {
+                @@apply grid grid-cols-2 gap-3;
+            }
+        }
+        
+        /* Table improvements */
+        .overflow-x-auto {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        table.table-fixed {
+            table-layout: fixed;
+            width: 100%;
+        }
+        
+        .truncate {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* Ensure table doesn't cause horizontal scroll on smaller screens */
+        @@media (min-width: 768px) and (max-width: 1280px) {
+            table.table-fixed th:nth-child(1),
+            table.table-fixed td:nth-child(1) {
+                width: 200px !important;
+            }
+            
+            table.table-fixed th:nth-child(2),
+            table.table-fixed td:nth-child(2),
+            table.table-fixed th:nth-child(3),
+            table.table-fixed td:nth-child(3) {
+                width: 100px !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-neutral-50">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm">
+            <div class="px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-primary-800">
+                    <i class="fas fa-file-invoice-dollar mr-2 text-primary"></i>
+                    Billing Reports
+                </h1>
+                <div class="flex items-center space-x-4">
+                    <div class="bg-primary hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center no-print">
+                        <a href="@Url.Action("PrintReport", new { 
+        startDate = ViewBag.StartDate, 
+        endDate = ViewBag.EndDate, 
+        campusFilter = ViewBag.CampusFilter,
+        classFilter = ViewBag.ClassFilter, 
+        sectionFilter = ViewBag.SectionFilter, 
+        statusFilter = ViewBag.StatusFilter 
+    })" 
+   target="_blank" 
+   rel="noopener noreferrer">
+    <i class="fas fa-print mr-2"></i> Print Report
+</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Filters Section -->
+            <div class="bg-white rounded-xl shadow-sms-md p-6 mb-8 no-print">
+                <h2 class="text-lg font-semibold text-primary-800 mb-4">Filter Reports</h2>
+                <form id="filtersForm" method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Month & Year</label>
+                        <input type="month" id="monthPicker"
+                               value="@(ViewBag.StartDate != null ? ((DateTime)ViewBag.StartDate).ToString("yyyy-MM") : "")"
+                               max="@DateTime.Now.ToString("yyyy-MM")"
+                               class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-primary focus:border-primary" />
+                    </div>
+                    
+                    @if (ViewBag.Campuses != null && ((IEnumerable<Campus>)ViewBag.Campuses).Any())
+                    {
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">Campus</label>
+                            <select name="campusFilter" id="campusFilter" class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-primary focus:border-primary">
+                                <option value="0">All Campuses</option>
+                                @foreach (var campus in ViewBag.Campuses)
+                                {
+                                    <option value="@campus.Id" selected="@(ViewBag.CampusFilter == campus.Id)">@campus.Name</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                   
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Class</label>
+                        @* Class filter dropdown *@
+                        <select name="classFilter" id="classFilter" 
+                                class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-primary focus:border-primary">
+                            <option value="0">All Classes</option>
+                            @if (ViewBag.Classes != null)
+                            {
+                                foreach (var cls in ViewBag.Classes)
+                                {
+                                    <option value="@cls.Id" selected="@(ViewBag.ClassFilter == cls.Id)">
+                                        @cls.Name
+                                    </option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Section</label>
+                        @* Section filter dropdown *@
+                        <select name="sectionFilter" id="sectionFilter" 
+                                class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-primary focus:border-primary">
+                            <option value="0">All Sections</option>
+                            @if (ViewBag.Sections != null)
+                            {
+                                foreach (var sec in ViewBag.Sections)
+                                {
+                                    <option value="@sec.Id" selected="@(ViewBag.SectionFilter == sec.Id)">
+                                        @sec.Name
+                                    </option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Status</label>
+                        <select name="statusFilter" class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-primary focus:border-primary">
+                            <option value="All" selected="@(ViewBag.StatusFilter == "All")">All Status</option>
+                            <option value="Paid" selected="@(ViewBag.StatusFilter == "Paid")">Paid</option>
+                            <option value="Advance" selected="@(ViewBag.StatusFilter == "Advance")">Advance</option>
+                            <option value="NotPaid" selected="@(ViewBag.StatusFilter == "NotPaid")">Not Paid</option>
+                        </select>
+                    </div>
+                    
+                   
+                    
+                    <div style="display:none">
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Start Date</label>
+                        <input type="date" name="startDate" id="startDateHidden" value="@ViewBag.StartDate?.ToString("yyyy-MM-dd")" class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-primary focus:border-primary">
+                    </div>
+                    <div style="display:none">
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">End Date</label>
+                        <input type="date" name="endDate" id="endDateHidden" value="@ViewBag.EndDate?.ToString("yyyy-MM-dd")" class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-primary focus:border-primary">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Sort By</label>
+                        <select name="sortBy" class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-primary focus:border-primary">
+                            <option value="Name" selected="@(ViewBag.SortBy == "Name")">Student Name</option>
+                            <option value="Class" selected="@(ViewBag.SortBy == "Class")">Class</option>
+                            <option value="Section" selected="@(ViewBag.SortBy == "Section")">Section</option>
+                            <option value="Status" selected="@(ViewBag.SortBy == "Status")">Status</option>
+                            <option value="Balance" selected="@(ViewBag.SortBy == "Balance")">Balance</option>
+                        </select>
+                    </div>
+                     <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Search</label>
+                        <input type="text" name="searchString" value="@ViewBag.SearchString" 
+                               placeholder="Name, Father CNIC, Student CNIC"
+                               class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-primary focus:border-primary">
+                    </div>
+                    <div class="md:col-span-4 flex justify-end space-x-3 pt-4">
+                        <button type="submit" class="bg-primary hover:bg-primary-700 text-white px-6 py-2 rounded-lg flex items-center">
+                            <i class="fas fa-filter mr-2"></i> Apply Filters
+                        </button>
+                        <a href="@Url.Action("Index")" class="bg-gray-300 hover:bg-gray-400 text-primary-800 px-6 py-2 rounded-lg flex items-center">
+                            <i class="fas fa-sync mr-2"></i> Reset
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 no-print">
+                <div class="bg-white rounded-xl shadow-sms-md p-6 flex items-center">
+                    <div class="rounded-full bg-primary-100 p-3 mr-4">
+                        <i class="fas fa-users text-primary-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-neutral-600">Total Students</p>
+                        <h3 class="text-2xl font-bold text-primary-800">@Model.Count()</h3>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sms-md p-6 flex items-center">
+                    <div class="rounded-full bg-success-light p-3 mr-4">
+                        <i class="fas fa-check-circle text-success text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-neutral-600">Paid</p>
+                        <h3 class="text-2xl font-bold text-primary-800">@Model.Count(s => s.Status == "Paid")</h3>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sms-md p-6 flex items-center">
+                    <div class="rounded-full bg-primary-100 p-3 mr-4">
+                        <i class="fas fa-arrow-up text-primary-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-neutral-600">Advance</p>
+                        <h3 class="text-2xl font-bold text-primary-800">@Model.Count(s => s.Status == "Advance")</h3>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sms-md p-6 flex items-center">
+                    <div class="rounded-full bg-error-light p-3 mr-4">
+                        <i class="fas fa-times-circle text-error text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-neutral-600">Not Paid</p>
+                        <h3 class="text-2xl font-bold text-primary-800">@Model.Count(s => s.Status == "NotPaid")</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile View -->
+            <div class="block md:hidden">
+                @foreach (var item in Model)
+                {
+                    <div class="mobile-card">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex items-center space-x-3">
+                                @if (!string.IsNullOrEmpty(item.Student.ProfilePicture))
+                                {
+                                    <img src="@item.Student.ProfilePicture" alt="@item.Student.StudentName" 
+                                         class="h-12 w-12 rounded-full object-cover border-2 border-primary-200">
+                                }
+                                else
+                                {
+                                    <div class="flex-shrink-0 h-12 w-12 bg-primary-100 rounded-full flex items-center justify-center border-2 border-primary-200">
+                                        <span class="font-medium text-primary-800 text-lg">@item.Student.StudentName.Substring(0, 1)</span>
+                                    </div>
+                                }
+                                <div>
+                                    <h3 class="font-bold text-primary-800">@item.Student.StudentName</h3>
+                                    <p class="text-sm text-neutral-600">@item.Student.FatherName</p>
+                                    <p class="text-xs text-neutral-500 mt-1">@item.Student.Campus?.Name</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-medium">@item.Student.ClassObj?.Name</p>
+                                <p class="text-xs text-neutral-600">@item.Student.SectionObj?.Name</p>
+                            </div>
+                        </div>
+
+                        <div class="mobile-grid mb-3 text-sm">
+                            <div>
+                                <p class="text-neutral-600">Payable:</p>
+                                <p class="font-medium">@item.TotalPayable.ToString("N2")</p>
+                            </div>
+                            <div>
+                                <p class="text-neutral-600">Paid:</p>
+                                <p class="font-medium">@item.TotalPaid.ToString("N2")</p>
+                            </div>
+                            <div>
+                                <p class="text-neutral-600">Balance:</p>
+                                @if (item.Balance < 0)
+                                {
+                                    <p class="font-medium text-primary-600">
+                                        @Math.Abs(item.Balance).ToString("N2") (Advance)
+                                    </p>
+                                }
+                                else
+                                {
+                                    <p class="font-medium @(item.Balance > 0 ? "text-error" : "text-success")">
+                                        @item.Balance.ToString("N2")
+                                    </p>
+                                }
+                            </div>
+                            <div>
+                                <p class="text-neutral-600">Status:</p>
+                                @if (item.Status == "Paid")
+                                {
+                                    <span class="status-badge status-paid">Paid</span>
+                                }
+                                else if (item.Status == "Advance")
+                                {
+                                    <span class="status-badge status-advance">Advance</span>
+                                }
+                                else if (item.Status == "NotPaid")
+                                {
+                                    <span class="status-badge status-notpaid">Not Paid</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge status-notprocessed">Not Processed</span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end no-print">
+                            <a href="@Url.Action("Details", new { id = item.Student.Id, startDate = ViewBag.StartDate, endDate = ViewBag.EndDate })" class="text-primary hover:text-primary-800 text-sm">
+                                <i class="fas fa-eye mr-1"></i> View Details
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Desktop Table -->
+            <div class="hidden md:block bg-white rounded-xl shadow-sms-md overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full table-fixed">
+                        <thead class="bg-neutral-50">
+                            <tr>
+                                <th class="w-64 px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Student</th>
+                                <th class="w-32 px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Campus</th>
+                                <th class="w-32 px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Class/Section</th>
+                                <th class="w-28 px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Payable</th>
+                                <th class="w-28 px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Paid</th>
+                                <th class="w-32 px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Balance</th>
+                                <th class="w-28 px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
+                                <th class="w-24 px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider no-print">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-primary-100">
+                            @foreach (var item in Model)
+                            {
+                                <tr class="hover:bg-neutral-50 transition-colors duration-150">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            @if (!string.IsNullOrEmpty(item.Student.ProfilePicture))
+                                            {
+                                                <img src="~/@item.Student.ProfilePicture" alt="@item.Student.StudentName" 
+                                                     class="flex-shrink-0 h-10 w-10 rounded-full object-cover">
+                                            }
+                                            else
+                                            {
+                                                <div class="flex-shrink-0 h-10 w-10 bg-primary-100 rounded-full flex items-center justify-center">
+                                                    <span class="font-medium text-primary-800">@item.Student.StudentName.Substring(0, 1)</span>
+                                                </div>
+                                            }
+                                            <div class="ml-4 min-w-0 flex-1">
+                                                <div class="text-sm font-medium text-primary-800 truncate" title="@item.Student.StudentName">@item.Student.StudentName</div>
+                                                <div class="text-sm text-neutral-500 truncate" title="@item.Student.FatherName">@item.Student.FatherName</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-neutral-500">
+                                        <div class="truncate" title="@item.Student.Campus?.Name">
+                                            @item.Student.Campus?.Name
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm text-primary-800 truncate" title="@item.Student.ClassObj?.Name">@item.Student.ClassObj?.Name</div>
+                                        <div class="text-sm text-neutral-500 truncate" title="@item.Student.SectionObj?.Name">@item.Student.SectionObj?.Name</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-primary-800">
+                                        @item.TotalPayable.ToString("N0")
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-primary-800">
+                                        @item.TotalPaid.ToString("N0")
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        @if (item.Balance < 0)
+                                        {
+                                            <span class="text-primary-600">
+                                                @Math.Abs(item.Balance).ToString("N0")
+                                                <span class="text-xs block">(Advance)</span>
+                                            </span>
+                                        }
+                                        else if (item.Balance > 0)
+                                        {
+                                            <span class="text-error">@item.Balance.ToString("N0")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-success">@item.Balance.ToString("N0")</span>
+                                        }
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        @if (item.Status == "Paid")
+                                        {
+                                            <span class="status-badge status-paid">Paid</span>
+                                        }
+                                        else if (item.Status == "Advance")
+                                        {
+                                            <span class="status-badge status-advance">Advance</span>
+                                        }
+                                        else if (item.Status == "NotPaid")
+                                        {
+                                            <span class="status-badge status-notpaid">Not Paid</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-badge status-notprocessed">Not Processed</span>
+                                        }
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium no-print">
+                                        <a href="@Url.Action("Details", new { id = item.Student.Id, startDate = ViewBag.StartDate, endDate = ViewBag.EndDate })" class="text-primary hover:text-primary-800 mr-3">
+                                            <i class="fas fa-eye mr-1"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Print Header (only shows when printing) -->
+            <div class="print-only mt-8">
+                <div class="text-center mb-6">
+                    <h1 class="text-2xl font-bold">Billing Report</h1>
+                    <p class="text-neutral-600">@ViewBag.StartDate?.ToString("MMM dd, yyyy") to @ViewBag.EndDate?.ToString("MMM dd, yyyy")</p>
+                    <p class="text-neutral-600">Generated on: @DateTime.Now.ToString("MMM dd, yyyy hh:mm tt")</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Function to set hidden date fields from month picker
+            function setMonthDates(monthValue) {
+                if (!monthValue) return;
+                
+                // Convert YYYY-MM → YYYY-MM-01 for start
+                let startDate = monthValue + "-01";
+                
+                // Compute end of month
+                let parts = monthValue.split('-');
+                let year = parseInt(parts[0], 10);
+                let month = parseInt(parts[1], 10);
+                
+                // Get last day of month (JS Date with day 0 gives last day of previous month)
+                let lastDay = new Date(year, month, 0).getDate();
+                let endDate = year + "-" + (month < 10 ? '0' + month : month) + "-" + (lastDay < 10 ? '0' + lastDay : lastDay);
+
+                // Set hidden field values
+                $('#startDateHidden').val(startDate);
+                $('#endDateHidden').val(endDate);
+                
+                console.log('Set dates - Start:', startDate, 'End:', endDate); // Debug log
+            }
+
+            // Initialize month picker
+            var monthPickerEl = document.getElementById("monthPicker");
+            if (monthPickerEl) {
+                // Set hidden fields from initial month picker value
+                if (monthPickerEl.value) {
+                    setMonthDates(monthPickerEl.value);
+                }
+
+                // Update hidden fields when month picker changes
+                monthPickerEl.addEventListener("change", function () {
+                    if (this.value) {
+                        setMonthDates(this.value);
+                    }
+                });
+            }
+
+            // Ensure hidden fields are set before form submit
+            $('#filtersForm').on('submit', function(e) {
+                var mp = document.getElementById('monthPicker');
+                if (mp && mp.value) {
+                    setMonthDates(mp.value);
+                    console.log('Form submit - Start:', $('#startDateHidden').val(), 'End:', $('#endDateHidden').val()); // Debug log
+                }
+            });
+
+            // Campus filter change - load classes and auto-submit
+            $('#campusFilter').change(function() {
+                var campusId = $(this).val();
+                
+                // Clear class and section dropdowns
+                $('#classFilter').empty().append($('<option>', { value: '0', text: 'All Classes' }));
+                $('#sectionFilter').empty().append($('<option>', { value: '0', text: 'All Sections' }));
+                
+                if (campusId && campusId !== '0') {
+                    // Load classes for selected campus
+                    $.get('/BillingReports/GetClassesByCampus', { campusId: campusId }, function(data) {
+                        $.each(data, function(index, item) {
+                            $('#classFilter').append($('<option>', { 
+                                value: item.id, 
+                                text: item.name 
+                            }));
+                        });
+                    });
+                }
+                
+                // Auto-submit form
+                $(this).closest('form').submit();
+            });
+
+            // Class filter change - load sections and auto-submit
+            $('#classFilter').change(function() {
+                var classId = $(this).val();
+                
+                // Clear section dropdown
+                $('#sectionFilter').empty().append($('<option>', { value: '0', text: 'All Sections' }));
+                
+                if (classId && classId !== '0') {
+                    // Load sections for selected class
+                    $.get('/BillingReports/GetSectionsByClass', { classId: classId }, function(data) {
+                        $.each(data, function(index, item) {
+                            $('#sectionFilter').append($('<option>', { 
+                                value: item.id, 
+                                text: item.name 
+                            }));
+                        });
+                    });
+                }
+                
+                // Auto-submit form
+                $(this).closest('form').submit();
+            });
+
+            // Section filter change - auto-submit
+            $('#sectionFilter').change(function() {
+                $(this).closest('form').submit();
+            });
+
+            // Set initial dropdown values from ViewBag
+            var selectedCampus = '@ViewBag.CampusFilter';
+            var selectedClass = '@ViewBag.ClassFilter';
+            var selectedSection = '@ViewBag.SectionFilter';
+            
+            if (selectedCampus && selectedCampus !== '0') {
+                $('#campusFilter').val(selectedCampus);
+            }
+            if (selectedClass && selectedClass !== '0') {
+                $('#classFilter').val(selectedClass);
+            }
+            if (selectedSection && selectedSection !== '0') {
+                $('#sectionFilter').val(selectedSection);
+            }
+        });
+    </script>
+ 
+</body>
+</html>

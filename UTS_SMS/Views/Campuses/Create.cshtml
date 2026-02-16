@@ -1,0 +1,117 @@
+﻿@model Campus
+
+@{
+    ViewData["Title"] = "Create Campus";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-primary-800">🏫 Create Campus</h1>
+            <p class="text-neutral-600 mt-2">Add a new campus or branch location</p>
+        </div>
+
+        <!-- Form -->
+        <div class="bg-white rounded-2xl shadow-sms-xl p-6">
+            <form asp-action="Create" class="space-y-6">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="bg-error-light border-l-4 border-error text-error p-4 rounded-lg"></div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Name -->
+                    <div>
+                        <label asp-for="Name" class="block text-sm font-medium text-neutral-700 mb-2"></label>
+                        <input asp-for="Name" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300" />
+                        <span asp-validation-for="Name" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Code -->
+                    <div>
+                        <label asp-for="Code" class="block text-sm font-medium text-neutral-700 mb-2"></label>
+                        <input asp-for="Code" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300" />
+                        <span asp-validation-for="Code" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Phone -->
+                    <div>
+                        <label asp-for="Phone" class="block text-sm font-medium text-neutral-700 mb-2"></label>
+                        <input asp-for="Phone" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300" />
+                        <span asp-validation-for="Phone" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label asp-for="Email" class="block text-sm font-medium text-neutral-700 mb-2"></label>
+                        <input asp-for="Email" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300" />
+                        <span asp-validation-for="Email" class="text-error text-sm"></span>
+                    </div>
+                    <div>
+                        <label asp-for="StartTime" class="block text-sm font-medium text-neutral-700 mb-1"></label>
+                        <input asp-for="StartTime" type="time" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" />
+                        <span asp-validation-for="StartTime" class="text-error text-sm mt-1"></span>
+                    </div>
+                    <div>
+                        <label asp-for="EndTime" class="block text-sm font-medium text-neutral-700 mb-1"></label>
+                        <input asp-for="EndTime" type="time" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" />
+                        <span asp-validation-for="EndTime" class="text-error text-sm mt-1"></span>
+                    </div>
+                    <!-- Email -->
+                    <div>
+                        <label asp-for="Longitudes" class="block text-sm font-medium text-neutral-700 mb-2"></label>
+                        <input asp-for="Longitudes" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300" />
+                        <span asp-validation-for="Longitudes" class="text-error text-sm"></span>
+                    </div>
+                    <!-- Email -->
+                    <div>
+                        <label asp-for="Latitudes" class="block text-sm font-medium text-neutral-700 mb-2"></label>
+                        <input asp-for="Latitudes" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300" />
+                        <span asp-validation-for="Latitudes" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Address -->
+                    <div class="md:col-span-2">
+                        <label asp-for="Address" class="block text-sm font-medium text-neutral-700 mb-2"></label>
+                        <textarea asp-for="Address" rows="3" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300"></textarea>
+                        <span asp-validation-for="Address" class="text-error text-sm"></span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-1">Logo</label>
+                        <div class="relative">
+                            <input type="file" id="Logo" name="Logo" class="opacity-0 absolute inset-0 w-full h-full cursor-pointer">
+                            <div class="flex items-center justify-between px-4 py-2 border border-primary-200 rounded-md bg-white">
+                                <span class="text-neutral-500" id="LogoLabel">Choose file</span>
+                                <svg class="w-5 h-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex space-x-4 pt-6">
+                    <button type="submit" class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium py-3 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-sms-lg flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Create Campus
+                    </button>
+                    <a asp-action="Index" class="bg-neutral-100 hover:bg-primary-100 text-primary-800 font-medium py-3 px-8 rounded-xl transition-all duration-300 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,0 +1,485 @@
+﻿@model SMS.Models.BillingTransaction
+@{
+    ViewData["Title"] = "Fee Receipt";
+    Layout = null;
+    var alreadyPaid = (decimal)ViewBag.AlreadyPaid;
+    var printTime = (DateTime)ViewBag.PrintTime;
+    var netPayable = Model.BillingMaster.TotalPayable - alreadyPaid;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fee Receipt - @Model.BillingMaster.Student.StudentName</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" /> 
+    <style>
+        /* A6 Format: 4.1 x 5.8 inches */
+        @@page {
+            size: A6 portrait;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            font-size: 9px;
+            line-height: 1.2;
+        }
+
+        .receipt-container {
+            width: 105mm;
+            height: 148mm;
+            position: relative;
+            padding: 8mm;
+            box-sizing: border-box;
+            background: white;
+        }
+
+        /* Watermark styling */
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 48px;
+            font-weight: bold;
+            color: red;
+            opacity: 0.15;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .content {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 4px;
+            margin-bottom: 6px;
+        }
+
+        .header img {
+            height: 24px;
+            width: 24px;
+            object-fit: contain;
+            margin-bottom: 2px;
+        }
+
+        .header h1 {
+            font-size: 14px;
+            font-weight: bold;
+            color: #2563eb;
+            margin: 2px 0;
+        }
+
+        .header p {
+            font-size: 7px;
+            color: #666;
+            margin: 1px 0;
+        }
+
+        .header h2 {
+            font-size: 11px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-top: 3px;
+        }
+
+        /* Grid layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            margin-bottom: 5px;
+        }
+
+        .section {
+            margin-bottom: 5px;
+        }
+
+        .section-title {
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 3px;
+            font-size: 9px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 1px;
+        }
+
+        .info-box {
+            background: #f9fafb;
+            padding: 4px;
+            border-radius: 3px;
+            margin-bottom: 5px;
+        }
+
+        .fee-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+            font-size: 8px;
+        }
+
+        .fee-row.bold {
+            font-weight: bold;
+            border-top: 1px solid #d1d5db;
+            padding-top: 2px;
+            margin-top: 2px;
+        }
+
+        .fee-row.success {
+            color: #059669;
+        }
+
+        .fee-row.error {
+            color: #dc2626;
+        }
+
+        .fee-row.primary {
+            color: #2563eb;
+        }
+
+        .payment-box {
+            background: #d1fae5;
+            padding: 4px;
+            border-radius: 3px;
+            margin-bottom: 5px;
+        }
+
+        .extra-charge-item {
+            padding-left: 8px;
+            margin: 2px 0;
+            border-left: 2px solid #bfdbfe;
+            font-size: 7px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 1px 3px;
+            border-radius: 2px;
+            font-size: 6px;
+            font-weight: 600;
+        }
+
+        .badge-fine { background: #fee2e2; color: #991b1b; }
+        .badge-monthly { background: #fed7aa; color: #9a3412; }
+        .badge-once { background: #dbeafe; color: #1e40af; }
+        .badge-lifetime { background: #e9d5ff; color: #6b21a8; }
+
+        /* Footer */
+        .footer {
+            border-top: 1px solid #d1d5db;
+            padding-top: 4px;
+            margin-top: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            font-size: 7px;
+        }
+
+        .signature {
+            text-align: center;
+        }
+
+        .signature-line {
+            border-top: 1px solid #666;
+            width: 60px;
+            margin-bottom: 2px;
+        }
+
+        @@media print {
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            @@page {
+                margin: 0;
+            }
+        }
+
+        /* Zigzag tear-off effect */
+        .zigzag {
+            position: relative;
+        }
+
+        .zigzag:after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -6px;
+            height: 6px;
+            background: linear-gradient(-45deg, white 4px, transparent 0), 
+                        linear-gradient(45deg, white 4px, transparent 0);
+            background-repeat: repeat-x;
+            background-size: 8px 8px;
+        }
+
+        strong {
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    @{
+        decimal remaining;
+        if (alreadyPaid > 0)
+        {
+            remaining = netPayable - Model.AmountPaid;
+        }
+        else
+        {
+            remaining = Model.BillingMaster.TotalPayable - Model.AmountPaid;
+        }
+    }
+
+    <div class="receipt-container zigzag">
+        @if (remaining <= 0)
+        {
+            <div class="watermark">PAID</div>
+        }
+
+        <div class="content">
+            <!-- Header -->
+            <div class="header">
+                @if (!string.IsNullOrEmpty(Model.Campus.Logo))
+                {
+                    <img src="@Url.Content($"~/{Model.Campus.Logo}")" alt="@Model.Campus.Name Logo" />
+                }
+                <h1>@Model.Campus.Name</h1>
+                <p>@Model.Campus.Address</p>
+                @if (!string.IsNullOrEmpty(Model.Campus.Phone))
+                {
+                    <p>Phone: @Model.Campus.Phone</p>
+                }
+                <h2>FEE RECEIPT</h2>
+            </div>
+
+            <!-- Receipt Info -->
+            <div class="grid-2" style="font-size: 8px;">
+                <div>
+                    <div><strong>Receipt:</strong> #@Model.Id.ToString("000000")</div>
+                    <div><strong>Date:</strong> @Model.PaymentDate.ToString("dd MMM yyyy")</div>
+                    <div><strong>Time:</strong> @Model.PaymentDate.ToString("hh:mm tt")</div>
+                </div>
+                <div>
+                    <div><strong>Month:</strong> @(new DateTime(Model.BillingMaster.ForYear, Model.BillingMaster.ForMonth, 1).ToString("MMM yyyy"))</div>
+                    <div><strong>Received By:</strong> @Model.ReceivedBy</div>
+                </div>
+            </div>
+
+            <!-- Student Details -->
+            <div class="section">
+                <div class="section-title">Student Details</div>
+                <div class="info-box">
+                    <div class="grid-2" style="font-size: 8px;">
+                        <div>
+                            <div><strong>Name:</strong> @Model.BillingMaster.Student.StudentName</div>
+                            <div><strong>Class:</strong> @Model.BillingMaster.Student.ClassObj?.Name</div>
+                            <div><strong>Section:</strong> @Model.BillingMaster.Student.SectionObj?.Name</div>
+                        </div>
+                        <div>
+                            <div><strong>Father:</strong> @Model.BillingMaster.Student.FatherName</div>
+                            <div><strong>Phone:</strong> @Model.BillingMaster.Student.FatherPhone</div>
+                            <div><strong>Gender:</strong> @Model.BillingMaster.Student.Gender</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fee Details -->
+            <div class="section">
+                <div class="section-title">Fee Details</div>
+                <div class="fee-row">
+                    <span>Tuition Fee:</span>
+                    <span>₨@Model.BillingMaster.TuitionFee.ToString("N0")</span>
+                </div>
+                @if (Model.BillingMaster.AdmissionFee > 0)
+                {
+                    <div class="fee-row">
+                        <span>Admission Fee:</span>
+                        <span>₨@Model.BillingMaster.AdmissionFee.ToString("N0")</span>
+                    </div>
+                }
+                @{
+                    var extraChargesTotal = (decimal)(ViewBag.ExtraChargesTotal ?? 0m);
+                    var extraChargeItems = ViewBag.ExtraChargeItems as List<dynamic>;
+                }
+                
+                @if (Model.BillingMaster.MiscallaneousCharges > 0)
+                {
+                    @if (extraChargeItems != null && extraChargeItems.Any())
+                    {
+                        <div class="fee-row" style="margin-bottom: 1px;">
+                            <span><strong>Extra Charges:</strong></span>
+                            <span><strong>₨@Model.BillingMaster.MiscallaneousCharges.ToString("N0")</strong></span>
+                        </div>
+                        @foreach (var item in extraChargeItems)
+                        {
+                            <div class="extra-charge-item">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span>
+                                        • @item.ChargeName
+                                        @if (item.Type == "Fine")
+                                        {
+                                            <span class="badge badge-fine">Fine</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge @(item.Category == "MonthlyCharges" ? "badge-monthly" : item.Category == "OncePerClass" ? "badge-once" : "badge-lifetime")">
+                                                @(item.Category == "MonthlyCharges" ? "Mon" : item.Category == "OncePerClass" ? "Once" : "Life")
+                                            </span>
+                                        }
+                                    </span>
+                                    <span>₨@((decimal)item.Amount).ToString("N0")</span>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="fee-row">
+                            <span>Extra Charges:</span>
+                            <span>₨@Model.BillingMaster.MiscallaneousCharges.ToString("N0")</span>
+                        </div>
+                    }
+                }
+                @if (Model.BillingMaster.Fine > 0)
+                {
+                    <div class="fee-row">
+                        <span>Fine:</span>
+                        <span>₨@Model.BillingMaster.Fine.ToString("N0")</span>
+                    </div>
+                }
+                @if (Model.BillingMaster.PreviousDues > 0)
+                {
+                    <div class="fee-row">
+                        <span>Previous Dues:</span>
+                        <span>₨@Model.BillingMaster.PreviousDues.ToString("N0")</span>
+                    </div>
+                }
+                <div class="fee-row bold">
+                    <span>Total Payable:</span>
+                    <span>₨@Model.BillingMaster.TotalPayable.ToString("N0")</span>
+                </div>
+
+                @if (alreadyPaid > 0)
+                {
+                    <div class="fee-row primary" style="font-size: 8px;">
+                        <span>Already Paid:</span>
+                        <span>-₨@alreadyPaid.ToString("N0")</span>
+                    </div>
+                    <div class="fee-row bold">
+                        <span>Net Payable:</span>
+                        <span>₨@netPayable.ToString("N0")</span>
+                    </div>
+                }
+            </div>
+
+            <!-- Payment Details -->
+            <div class="section">
+                <div class="section-title">Payment Details</div>
+                <div class="payment-box">
+                    <div class="fee-row success bold">
+                        <span>Amount Paid:</span>
+                        <span>₨@Model.AmountPaid.ToString("N0")</span>
+                    </div>
+                    @if (Model.CashPaid > 0)
+                    {
+                        <div class="fee-row">
+                            <span>Cash:</span>
+                            <span>₨@Model.CashPaid.ToString("N0")</span>
+                        </div>
+                    }
+                    @if (Model.OnlinePaid > 0)
+                    {
+                        <div class="fee-row">
+                            <span>Online:</span>
+                            <span>₨@Model.OnlinePaid.ToString("N0")</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.TransactionReference))
+                    {
+                        <div class="fee-row" style="font-size: 7px;">
+                            <span>Ref:</span>
+                            <span>@Model.TransactionReference</span>
+                        </div>
+                    }
+                    @{
+                        string remainingLabel;
+                        string remainingClass;
+
+                        if (remaining > 0)
+                        {
+                            remainingLabel = "Dues";
+                            remainingClass = "error";
+                        }
+                        else if (remaining < 0)
+                        {
+                            remainingLabel = "Advance";
+                            remainingClass = "primary";
+                        }
+                        else
+                        {
+                            remainingLabel = "Clear";
+                            remainingClass = "success";
+                        }
+                    }
+                    <div class="fee-row bold @remainingClass">
+                        <span>@remainingLabel:</span>
+                        <span>₨@Math.Abs(remaining).ToString("N0")</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <div style="color: #6b7280;">
+                    <div>Computer generated receipt</div>
+                    <div>Printed: @printTime.ToString("dd MMM yy hh:mm tt")</div>
+                </div>
+                <div class="signature">
+                    <div class="signature-line"></div>
+                    <div style="color: #6b7280;">Authorized Sign</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="no-print" style="text-align: center; margin-top: 10px;">
+        <button onclick="window.print()" style="background: #2563eb; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; margin-right: 8px;">
+            Print Receipt
+        </button>
+        <button onclick="window.close()" style="background: #4b5563; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;">
+            Close
+        </button>
+    </div>
+
+    <script>
+        window.onload = function () {
+            setTimeout(function () {
+                window.print();
+            }, 500);
+        };
+    </script>
+</body>
+</html>

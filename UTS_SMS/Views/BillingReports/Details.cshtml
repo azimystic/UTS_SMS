@@ -1,0 +1,299 @@
+﻿@model SMS.ViewModels.BillingDetailReportViewModel
+
+@{
+    ViewData["Title"] = "Student Billing Details";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div>
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-primary-800 tracking-tight">Student Billing Details</h1>
+            </div>
+            <div class="flex space-x-3 mt-4 md:mt-0">
+                <a asp-action="Index" class="bg-primary-100 hover:bg-primary-200 text-primary-800 px-5 py-2.5 rounded-xl shadow-sms-md hover:shadow-sms-lg transition-all duration-300 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Back to Reports
+                </a>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-2xl shadow-sms-lg p-6 transform hover:scale-105 transition-all duration-300">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-neutral-600">Total Payable</h3>
+                        <p class="text-2xl font-bold text-primary-800">₨@Model.TotalPayable.ToString("N0")</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sms-lg p-6 transform hover:scale-105 transition-all duration-300">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-success-light rounded-xl flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-neutral-600">Total Paid</h3>
+                        <p class="text-2xl font-bold text-primary-800">₨@Model.TotalPaid.ToString("N0")</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sms-lg p-6 transform hover:scale-105 transition-all duration-300">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-error-light rounded-xl flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6 @(Model.Balance >= 0 ? "text-error" : "text-primary-600")"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-neutral-600">
+                            @(Model.Balance >= 0 ? "Dues" : "Advance")
+                        </h3>
+                        <p class="text-2xl font-bold @(Model.Balance >= 0 ? "text-error" : "text-primary-600")">
+                            ₨@Math.Abs(Model.Balance).ToString("N0")
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="bg-white rounded-2xl shadow-sms-lg p-6 transform hover:scale-105 transition-all duration-300">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-neutral-600">Records</h3>
+                        <p class="text-2xl font-bold text-primary-800">@Model.BillingRecords.Count</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column - Billing Records -->
+            <div class="lg:col-span-2">
+                @foreach (var billing in Model.BillingRecords)
+                {
+                    var totalPayable = billing.TuitionFee + billing.AdmissionFee + billing.Fine + billing.PreviousDues + billing.MiscallaneousCharges;
+                    var totalPaid = billing.Transactions.Sum(t => t.AmountPaid);
+                    var balance = totalPayable - totalPaid;
+
+                    <div class="bg-white rounded-2xl shadow-sms-lg p-6 mb-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold text-primary-800">
+                                @(new DateTime(billing.ForYear, billing.ForMonth, 1).ToString("MMMM yyyy"))
+                            </h3>
+                            <span class="px-3 py-1 text-sm font-medium @(balance == 0 ? "bg-success-light text-success" : totalPaid > 0 ? "bg-warning-light text-yellow-800" : "bg-error-light text-error") rounded-full">
+                                @(balance == 0 ? "Paid" : totalPaid > 0 ? "Partial" : "Unpaid")
+                            </span>
+                        </div>
+
+                        <!-- Fee Breakdown -->
+                        <div class="space-y-3 mb-4">
+                            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                <span class="text-neutral-600">Tuition Fee</span>
+                                <span class="font-medium">₨@billing.TuitionFee.ToString("N0")</span>
+                            </div>
+
+                            @if (billing.AdmissionFee > 0)
+                            {
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-neutral-600">Admission Fee</span>
+                                    <span class="font-medium text-primary-600">₨@billing.AdmissionFee.ToString("N0")</span>
+                                </div>
+                            }
+                            @if (billing.MiscallaneousCharges > 0)
+                            {
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-neutral-600">Extra Charges</span>
+                                    <span class="font-medium text-primary-600">₨@billing.MiscallaneousCharges.ToString("N0")</span>
+                                </div>
+                                   <div class="ml-4 space-y-1">
+                                        @{
+                                            var billingExtraCharges = ViewBag.BillingExtraCharges as Dictionary<int, List<dynamic>>;
+                                            var extraCharges = billingExtraCharges != null && billingExtraCharges.ContainsKey(billing.Id) 
+                                                ? billingExtraCharges[billing.Id] 
+                                                : new List<dynamic>();
+                                        }
+                                        @foreach (var charge in extraCharges)
+                                        {
+                                            <div class="flex justify-between items-center text-sm">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-neutral-600">@charge.ChargeName</span>
+                                                    <span class="px-2 py-0.5 text-xs rounded-full @(charge.Type == "Fine" ? "bg-red-100 text-red-700" : charge.Category == "MonthlyCharges" ? "bg-orange-100 text-orange-700" : charge.Category == "OncePerClass" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700")">
+                                                        @(charge.Type == "Fine" ? "Fine/Charge" : charge.Category == "MonthlyCharges" ? "Monthly" : charge.Category == "OncePerClass" ? "Once/Class" : "Lifetime")
+                                                    </span>
+                                                </div>
+                                                <span class="text-neutral-700">₨@((decimal)charge.Amount)</span>
+                                            </div>
+                                        }
+                                    </div>
+                                
+                            }
+
+                            @if (billing.Fine > 0)
+                            {
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-neutral-600">Fine</span>
+                                    <span class="font-medium text-error">₨@billing.Fine.ToString("N0")</span>
+                                </div>
+                            }
+
+                            @if (billing.PreviousDues != 0)
+                            {
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-neutral-600">Previous Dues</span>
+                                    <span class="font-medium text-error">₨@billing.PreviousDues.ToString("N0")</span>
+                                </div>
+                            }
+
+                            <div class="flex justify-between items-center py-2 font-bold text-lg border-t border-primary-100">
+                                <span class="text-primary-800">Total Payable</span>
+                                <span class="text-primary-600">₨@totalPayable.ToString("N0")</span>
+                            </div>
+
+                            <div class="flex justify-between items-center py-2 font-bold">
+                                <span class="text-primary-800">Amount Paid</span>
+                                <span class="text-success">₨@totalPaid.ToString("N0")</span>
+                            </div>
+
+                            <div class="flex justify-between items-center py-2 font-bold">
+                                <span class="text-primary-800">@(balance >= 0 ? "Dues" : "Advance")</span>
+                                <span class="@(balance >= 0 ? "text-error" : "text-primary-600")">
+                                    ₨@Math.Abs(balance).ToString("N0")
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Transactions -->
+                        @if (billing.Transactions.Any())
+                        {
+                            <div class="border-t border-primary-100 pt-4">
+                                <h4 class="font-semibold text-primary-800 mb-3">Payment Transactions</h4>
+                                <div class="space-y-2">
+                                    @foreach (var transaction in billing.Transactions.OrderByDescending(t => t.PaymentDate))
+                                    {
+                                        <div class="flex justify-between items-center bg-neutral-50 p-3 rounded-lg">
+                                            <div>
+                                                <div class="text-sm font-medium">@transaction.PaymentDate.ToString("dd MMM yyyy")</div>
+                                                <div class="text-xs text-neutral-500">
+                                                    @if (transaction.CashPaid > 0 && transaction.OnlinePaid > 0)
+                                                    {
+                                                        <span>Mixed Payment</span>
+                                                    }
+                                                    else if (transaction.CashPaid > 0)
+                                                    {
+                                                        <span>Cash</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>Online</span>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(transaction.TransactionReference))
+                                                    {
+                                                        <span> - @transaction.TransactionReference</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="font-semibold text-success">₨@transaction.AmountPaid.ToString("N0")</span>
+                                                <a asp-action="TransactionReceipt" asp-route-id="@transaction.Id" target="_blank"
+                                                   class="text-primary-600 hover:text-primary-800 text-sm flex items-center">
+                                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                                                    </svg>
+                                                    Print
+                                                </a>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Remarks -->
+                        @if (!string.IsNullOrEmpty(billing.RemarksPreviousDues)
+                                            && billing.RemarksPreviousDues != "No previous dues record found")
+                        {
+                            <div class="mt-4 text-sm text-neutral-600">
+                                <strong>Previous Dues Remark:</strong> @billing.RemarksPreviousDues
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(billing.Remarks))
+                        {
+                            <div class="mt-2 text-sm text-neutral-600">
+                                <strong>Remarks:</strong> @billing.Remarks
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+
+            <!-- Right Column - Student Info -->
+            <div class="space-y-8">
+                <!-- Student Information -->
+                <div class="bg-white rounded-2xl shadow-sms-lg p-6">
+                    <h2 class="text-xl font-semibold text-primary-800 mb-4">Student Information</h2>
+
+                    <div class="flex items-center mb-4">
+                        <div class="w-16 h-16 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-xl mr-4">
+                            @Model.Student.StudentName.Substring(0, 1)
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-primary-800">@Model.Student.StudentName</h3>
+                            <p class="text-sm text-neutral-600">@Model.Student.ClassObj?.Name - @Model.Student.SectionObj?.Name</p>
+                            <p class="text-sm text-neutral-600">@Model.Student.Campus?.Name</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-neutral-600">Student CNIC:</span>
+                            <span class="font-medium">@Model.Student.StudentCNIC</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neutral-600">Father Name:</span>
+                            <span class="font-medium">@Model.Student.FatherName</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neutral-600">Father CNIC:</span>
+                            <span class="font-medium">@Model.Student.FatherCNIC</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neutral-600">Father Phone:</span>
+                            <span class="font-medium">@Model.Student.FatherPhone</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neutral-600">Gender:</span>
+                            <span class="font-medium">@Model.Student.Gender</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neutral-600">Address:</span>
+                            <span class="font-medium">@Model.Student.HomeAddress</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

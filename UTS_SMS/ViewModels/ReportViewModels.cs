@@ -1,4 +1,4 @@
-using SMS.Models;
+using UTS_SMS.Models;
 using System.ComponentModel.DataAnnotations;
 
 namespace SMS.ViewModels
