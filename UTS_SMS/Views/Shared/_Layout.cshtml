@@ -1,19 +1,17 @@
 ﻿@using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
 @using UTS_SMS
-@using SMS.Services
+@using UTS_SMS.Services
 @inject UserManager<UTS_SMS.Models.ApplicationUser> UserManager
 @inject ApplicationDbContext Context
-@inject MenuService MenuService
-
+ 
 @{
     var currentUser = await UserManager.GetUserAsync(User);
     int? studentId = null;
     
     // Get user roles for menu filtering
     var userRoles = currentUser != null ? await UserManager.GetRolesAsync(currentUser) : new List<string>();
-    var appMenus = await MenuService.GetMenusForUserAsync(userRoles);
-
+ 
     if (currentUser != null && User.IsInRole("Student"))
     {
         studentId = currentUser.StudentId;
