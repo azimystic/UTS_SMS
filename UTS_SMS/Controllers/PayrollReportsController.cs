@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
- using SMS.Models;
+ using UTS_SMS.Models;
 using SMS.ViewModels;
 
 namespace SMS.Controllers

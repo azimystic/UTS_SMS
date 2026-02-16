@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
-using SMS.Models;
+using UTS_SMS.Models;
 using System.Linq;
 using System.Threading.Tasks;
 
