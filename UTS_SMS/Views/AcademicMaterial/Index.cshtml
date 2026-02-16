@@ -1,0 +1,59 @@
+@model IEnumerable<SMS.Models.Class>
+
+@{
+    ViewData["Title"] = "Academic Material - Classes";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-primary-800">📚 Academic Material</h1>
+                <p class="text-neutral-600 mt-2">Manage chapters, questions, and study materials</p>
+            </div>
+        </div>
+
+        <!-- Success Message -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="bg-success-light border-l-4 border-success text-success p-4 mb-6 rounded-xl">
+                @TempData["SuccessMessage"]
+            </div>
+        }
+
+        <!-- Classes Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @foreach (var classItem in Model)
+            {
+                <a href="@Url.Action("Subjects", new { id = classItem.Id })" class="block">
+                    <div class="bg-white rounded-2xl shadow-sms-xl p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xl font-bold text-primary-700">@classItem.Name</h3>
+                            <span class="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-sm">@classItem.Campus?.Name</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(classItem.GradeLevel))
+                        {
+                            <p class="text-neutral-600 text-sm">Grade: @classItem.GradeLevel</p>
+                        }
+                        <div class="mt-4 flex items-center text-primary-600">
+                            <span class="text-sm font-medium">View Subjects</span>
+                            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+            }
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="bg-white rounded-2xl shadow-sms-xl p-12 text-center">
+                <div class="text-6xl mb-4">📚</div>
+                <h3 class="text-xl font-semibold text-neutral-700 mb-2">No Classes Available</h3>
+                <p class="text-neutral-600">No classes are assigned to you at the moment.</p>
+            </div>
+        }
+    </div>
+</div>

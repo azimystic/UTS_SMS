@@ -1,0 +1,58 @@
+@model IEnumerable<SMS.Models.Subject>
+
+@{
+    ViewData["Title"] = "Subjects";
+    var classEntity = ViewBag.Class as SMS.Models.Class;
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-primary-800">📖 Subjects - @classEntity.Name</h1>
+                <p class="text-neutral-600 mt-2">Select a subject to manage chapters</p>
+            </div>
+            <a href="@Url.Action("Index")" class="mt-4 md:mt-0 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 px-4 py-2 rounded-lg">
+                ← Back to Classes
+            </a>
+        </div>
+
+        <!-- Subjects Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @foreach (var subject in Model)
+            {
+                <a href="@Url.Action("Chapters", new { id = subject.Id, classId = classEntity.Id })" class="block">
+                    <div class="bg-white rounded-2xl shadow-sms-xl p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xl font-bold text-primary-700">@subject.Name</h3>
+                            @if (!string.IsNullOrEmpty(subject.Code))
+                            {
+                                <span class="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-sm">@subject.Code</span>
+                            }
+                        </div>
+                        @if (!string.IsNullOrEmpty(subject.Description))
+                        {
+                            <p class="text-neutral-600 text-sm mb-4">@subject.Description</p>
+                        }
+                        <div class="mt-4 flex items-center text-primary-600">
+                            <span class="text-sm font-medium">View Chapters</span>
+                            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+            }
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="bg-white rounded-2xl shadow-sms-xl p-12 text-center">
+                <div class="text-6xl mb-4">📖</div>
+                <h3 class="text-xl font-semibold text-neutral-700 mb-2">No Subjects Available</h3>
+                <p class="text-neutral-600">No subjects are assigned for this class.</p>
+            </div>
+        }
+    </div>
+</div>

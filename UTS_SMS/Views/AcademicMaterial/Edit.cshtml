@@ -1,0 +1,340 @@
+@model SMS.ViewModels.AcademicMaterialViewModel
+
+@{
+    ViewData["Title"] = Model.ChapterId.HasValue ? "Edit Chapter" : "Create Chapter";
+    var classId = ViewBag.ClassId;
+    var isEdit = Model.ChapterId.HasValue;
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-primary-800">@(isEdit ? "✏️ Edit" : "➕ Create") Chapter</h1>
+                <p class="text-neutral-600 mt-2">@Model.Subject?.Name</p>
+            </div>
+            <a href="@Url.Action("Chapters", new { id = Model.SubjectId, classId = classId })" class="mt-4 md:mt-0 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 px-4 py-2 rounded-lg">
+                ← Back
+            </a>
+        </div>
+
+        <!-- Form -->
+        <form method="post" enctype="multipart/form-data" id="chapterForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="ChapterId" />
+            <input type="hidden" asp-for="SubjectId" />
+            <input type="hidden" name="classId" value="@classId" />
+
+            <!-- Chapter Information -->
+            <div class="bg-white rounded-2xl shadow-sms-xl p-6 mb-6">
+                <h2 class="text-xl font-bold text-primary-700 mb-4">📖 Chapter Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label asp-for="ChapterName" class="block text-sm font-medium text-neutral-700 mb-2">Chapter Name *</label>
+                        <input asp-for="ChapterName" class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500" />
+                        <span asp-validation-for="ChapterName" class="text-red-500 text-sm"></span>
+                    </div>
+                    <div>
+                        <label asp-for="ChapterNumber" class="block text-sm font-medium text-neutral-700 mb-2">Chapter Number *</label>
+                        <input asp-for="ChapterNumber" type="number" class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500" />
+                        <span asp-validation-for="ChapterNumber" class="text-red-500 text-sm"></span>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <label asp-for="ChapterDescription" class="block text-sm font-medium text-neutral-700 mb-2">Description</label>
+                    <textarea asp-for="ChapterDescription" rows="3" class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500"></textarea>
+                    <span asp-validation-for="ChapterDescription" class="text-red-500 text-sm"></span>
+                </div>
+            </div>
+
+            <!-- Questions -->
+            <div class="bg-white rounded-2xl shadow-sms-xl p-6 mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-primary-700">❓ Questions</h2>
+                    <div class="space-x-2">
+                        <button type="button" onclick="addQuestion('ShortQuestion')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-sm">
+                            + Short Q
+                        </button>
+                        <button type="button" onclick="addQuestion('LongQuestion')" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm">
+                            + Long Q
+                        </button>
+                        <button type="button" onclick="addQuestion('MCQ')" class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded-lg text-sm">
+                            + MCQ
+                        </button>
+                    </div>
+                </div>
+                <div id="questionsContainer">
+                    @for (int i = 0; i < Model.Questions.Count; i++)
+                    {
+                        var question = Model.Questions[i];
+                        <div class="question-item border border-primary-200 rounded-lg p-4 mb-4" data-type="@question.Type">
+                            <input type="hidden" name="Questions[@i].Id" value="@question.Id" />
+                            <input type="hidden" name="Questions[@i].Type" value="@question.Type" />
+                            <input type="hidden" name="Questions[@i].DisplayOrder" value="@question.DisplayOrder" class="question-order" />
+                            <input type="hidden" name="Questions[@i].IsDeleted" value="false" class="question-deleted" />
+                            
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-sm font-semibold">@question.Type</span>
+                                <button type="button" onclick="removeQuestion(this)" class="text-red-500 hover:text-red-700 text-sm">
+                                    🗑️ Remove
+                                </button>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="block text-sm font-medium text-neutral-700 mb-2">Question Text *</label>
+                                <textarea name="Questions[@i].QuestionText" rows="2" class="w-full px-4 py-2 border border-primary-200 rounded-lg" required>@question.QuestionText</textarea>
+                            </div>
+                            
+                            @if (question.Type == SMS.Models.QuestionType.MCQ)
+                            {
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                                    <div>
+                                        <label class="block text-sm font-medium text-neutral-700 mb-2">Option A *</label>
+                                        <input name="Questions[@i].OptionA" value="@question.OptionA" class="w-full px-4 py-2 border border-primary-200 rounded-lg" required />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-neutral-700 mb-2">Option B *</label>
+                                        <input name="Questions[@i].OptionB" value="@question.OptionB" class="w-full px-4 py-2 border border-primary-200 rounded-lg" required />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-neutral-700 mb-2">Option C *</label>
+                                        <input name="Questions[@i].OptionC" value="@question.OptionC" class="w-full px-4 py-2 border border-primary-200 rounded-lg" required />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-neutral-700 mb-2">Option D *</label>
+                                        <input name="Questions[@i].OptionD" value="@question.OptionD" class="w-full px-4 py-2 border border-primary-200 rounded-lg" required />
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="block text-sm font-medium text-neutral-700 mb-2">Correct Option *</label>
+                                    <select name="Questions[@i].CorrectOption" class="w-full px-4 py-2 border border-primary-200 rounded-lg" required>
+                                        <option value="">Select correct option</option>
+                                        <option value="A" selected="@(question.CorrectOption == "A")">A</option>
+                                        <option value="B" selected="@(question.CorrectOption == "B")">B</option>
+                                        <option value="C" selected="@(question.CorrectOption == "C")">C</option>
+                                        <option value="D" selected="@(question.CorrectOption == "D")">D</option>
+                                    </select>
+                                </div>
+                            }
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-neutral-700 mb-2">Answer @(question.Type != SMS.Models.QuestionType.MCQ ? "" : "(Optional explanation)")</label>
+                                <textarea name="Questions[@i].Answer" rows="3" class="w-full px-4 py-2 border border-primary-200 rounded-lg">@question.Answer</textarea>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Materials -->
+            <div class="bg-white rounded-2xl shadow-sms-xl p-6 mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-primary-700">📎 Materials (Notes, PDFs, Images, Books)</h2>
+                    <button type="button" onclick="addMaterial()" class="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg text-sm">
+                        + Add Material
+                    </button>
+                </div>
+                
+                @if (isEdit && Model.ExistingMaterials.Any())
+                {
+                    <div class="mb-4">
+                        <h3 class="text-sm font-semibold text-neutral-700 mb-2">Existing Materials:</h3>
+                        <div class="space-y-2">
+                            @foreach (var material in Model.ExistingMaterials)
+                            {
+                                <div class="flex items-center justify-between bg-neutral-50 p-3 rounded-lg">
+                                    <div>
+                                        <span class="bg-primary-100 text-primary-700 px-2 py-1 rounded text-xs mr-2">@material.Type</span>
+                                        <span class="font-medium">@material.Heading</span>
+                                        @if (!string.IsNullOrEmpty(material.OriginalFileName))
+                                        {
+                                            <span class="text-sm text-neutral-600 ml-2">(@material.OriginalFileName)</span>
+                                        }
+                                    </div>
+                                    <button type="button" onclick="deleteMaterial(@material.Id)" class="text-red-500 hover:text-red-700">
+                                        🗑️
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                
+                <div id="materialsContainer"></div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="flex justify-end space-x-4">
+                <a href="@Url.Action("Chapters", new { id = Model.SubjectId, classId = classId })" class="bg-neutral-200 hover:bg-neutral-300 text-neutral-700 px-6 py-3 rounded-lg">
+                    Cancel
+                </a>
+                <button type="submit" class="bg-gradient-primary hover:bg-primary-700 text-white px-6 py-3 rounded-lg">
+                    @(isEdit ? "💾 Update" : "➕ Create") Chapter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        let sectionIndex = @Model.Sections.Count;
+        let questionIndex = @Model.Questions.Count;
+        let materialIndex = 0;
+
+        function addQuestion(type) {
+            const container = document.getElementById('questionsContainer');
+            let optionsHtml = '';
+            
+            if (type === 'MCQ') {
+                optionsHtml = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-2">Option A *</label>
+                            <input name="Questions[${questionIndex}].OptionA" class="w-full px-4 py-2 border border-primary-200 rounded-lg" required />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-2">Option B *</label>
+                            <input name="Questions[${questionIndex}].OptionB" class="w-full px-4 py-2 border border-primary-200 rounded-lg" required />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-2">Option C *</label>
+                            <input name="Questions[${questionIndex}].OptionC" class="w-full px-4 py-2 border border-primary-200 rounded-lg" required />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-2">Option D *</label>
+                            <input name="Questions[${questionIndex}].OptionD" class="w-full px-4 py-2 border border-primary-200 rounded-lg" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">Correct Option *</label>
+                        <select name="Questions[${questionIndex}].CorrectOption" class="w-full px-4 py-2 border border-primary-200 rounded-lg" required>
+                            <option value="">Select correct option</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                        </select>
+                    </div>
+                `;
+            }
+            
+            const html = `
+                <div class="question-item border border-primary-200 rounded-lg p-4 mb-4" data-type="${type}">
+                    <input type="hidden" name="Questions[${questionIndex}].Type" value="${type}" />
+                    <input type="hidden" name="Questions[${questionIndex}].DisplayOrder" value="${questionIndex + 1}" class="question-order" />
+                    <input type="hidden" name="Questions[${questionIndex}].IsDeleted" value="false" class="question-deleted" />
+                    
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-sm font-semibold">${type}</span>
+                        <button type="button" onclick="removeQuestion(this)" class="text-red-500 hover:text-red-700 text-sm">
+                            🗑️ Remove
+                        </button>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">Question Text *</label>
+                        <textarea name="Questions[${questionIndex}].QuestionText" rows="2" class="w-full px-4 py-2 border border-primary-200 rounded-lg" required></textarea>
+                    </div>
+                    
+                    ${optionsHtml}
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">Answer ${type !== 'MCQ' ? '' : '(Optional explanation)'}</label>
+                        <textarea name="Questions[${questionIndex}].Answer" rows="3" class="w-full px-4 py-2 border border-primary-200 rounded-lg"></textarea>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+            questionIndex++;
+        }
+
+        function removeQuestion(button) {
+            const item = button.closest('.question-item');
+            const deletedInput = item.querySelector('.question-deleted');
+            if (deletedInput && item.querySelector('input[name*=".Id"]')?.value) {
+                deletedInput.value = 'true';
+                item.style.display = 'none';
+            } else {
+                item.remove();
+            }
+        }
+
+        function addMaterial() {
+            const container = document.getElementById('materialsContainer');
+            const html = `
+                <div class="material-item border border-primary-200 rounded-lg p-4 mb-4">
+                    <input type="hidden" name="Materials[${materialIndex}].DisplayOrder" value="${materialIndex + 1}" />
+                    <input type="hidden" name="Materials[${materialIndex}].IsDeleted" value="false" class="material-deleted" />
+                    
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="font-semibold text-neutral-700">Material #${materialIndex + 1}</h4>
+                        <button type="button" onclick="removeMaterial(this)" class="text-red-500 hover:text-red-700 text-sm">
+                            🗑️ Remove
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-2">Type *</label>
+                            <select name="Materials[${materialIndex}].Type" class="w-full px-4 py-2 border border-primary-200 rounded-lg" required>
+                                <option value="Notes">Notes</option>
+                                <option value="Book">Book</option>
+                                <option value="Image">Image</option>
+                                <option value="PDF">PDF</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">Heading *</label>
+                        <input name="Materials[${materialIndex}].Heading" class="w-full px-4 py-2 border border-primary-200 rounded-lg" required />
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">Description</label>
+                        <textarea name="Materials[${materialIndex}].Description" rows="2" class="w-full px-4 py-2 border border-primary-200 rounded-lg"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">File *</label>
+                        <input type="file" name="materialFiles" class="w-full px-4 py-2 border border-primary-200 rounded-lg" required />
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+            materialIndex++;
+        }
+
+        function removeMaterial(button) {
+            const item = button.closest('.material-item');
+            item.remove();
+        }
+
+        async function deleteMaterial(id) {
+            if (!confirm('Are you sure you want to delete this material?')) return;
+            
+            const response = await fetch('@Url.Action("DeleteMaterial")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: JSON.stringify(id)
+            });
+            
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Failed to delete material');
+            }
+        }
+
+        // Initialize section selects on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateSectionSelects();
+        });
+    </script>
+}

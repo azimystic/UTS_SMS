@@ -1,0 +1,97 @@
+@model SMS.Models.AcademicCalendar
+
+@{
+    ViewData["Title"] = "Edit Holiday";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="max-w-3xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="px-4 py-6 sm:px-0">
+        <div class="border-4 border-dashed border-primary-100 rounded-lg p-8">
+            
+            <!-- Header -->
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-primary-800">Edit Holiday</h1>
+                <p class="mt-2 text-sm text-neutral-600">Edit holiday information</p>
+            </div>
+
+            <!-- Navigation -->
+            <div class="mb-6">
+                <a asp-action="Index" asp-route-year="@Model.Date.Year" asp-route-month="@Model.Date.Month" class="inline-flex items-center px-4 py-2 border border-primary-200 text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    ← Back to Calendar
+                </a>
+            </div>
+
+            <!-- Form -->
+            <form asp-action="Edit" method="post" class="space-y-6">
+                <input asp-for="Id" type="hidden" />
+                <div asp-validation-summary="ModelOnly" class="text-error"></div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Holiday Name -->
+                    <div class="md:col-span-2">
+                        <label asp-for="HolidayName" class="block text-sm font-medium text-neutral-700">Holiday Name</label>
+                        <input asp-for="HolidayName" class="mt-1 block w-full rounded-md border-primary-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Enter holiday name">
+                        <span asp-validation-for="HolidayName" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Date -->
+                    <div>
+                        <label asp-for="Date" class="block text-sm font-medium text-neutral-700">Date</label>
+                        <input asp-for="Date" type="date" class="mt-1 block w-full rounded-md border-primary-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <span asp-validation-for="Date" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Holiday Type -->
+                    <div>
+                        <label asp-for="HolidayType" class="block text-sm font-medium text-neutral-700">Holiday Type</label>
+                        <select asp-for="HolidayType" asp-items="ViewBag.HolidayTypes" class="mt-1 block w-full rounded-md border-primary-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <option value="">Select type</option>
+                        </select>
+                        <span asp-validation-for="HolidayType" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Campus -->
+                    <div class="md:col-span-2">
+                        <label asp-for="CampusId" class="block text-sm font-medium text-neutral-700">Campus</label>
+                        <select asp-for="CampusId" asp-items="ViewBag.CampusId" class="mt-1 block w-full rounded-md border-primary-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <option value="">Select campus</option>
+                        </select>
+                        <span asp-validation-for="CampusId" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="md:col-span-2">
+                        <label asp-for="Description" class="block text-sm font-medium text-neutral-700">Description (Optional)</label>
+                        <textarea asp-for="Description" rows="3" class="mt-1 block w-full rounded-md border-primary-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Enter holiday description"></textarea>
+                        <span asp-validation-for="Description" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Is Active -->
+                    <div class="md:col-span-2">
+                        <div class="flex items-center">
+                            <input asp-for="IsActive" type="checkbox" class="h-4 w-4 text-info focus:ring-indigo-500 border-primary-200 rounded">
+                            <label asp-for="IsActive" class="ml-2 block text-sm text-primary-800">Active</label>
+                        </div>
+                        <span asp-validation-for="IsActive" class="text-error text-sm"></span>
+                    </div>
+                </div>
+
+                <!-- Submit Buttons -->
+                <div class="flex justify-end space-x-3">
+                    <a asp-action="Index" asp-route-year="@Model.Date.Year" asp-route-month="@Model.Date.Month" class="inline-flex items-center px-4 py-2 border border-primary-200 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Cancel
+                    </a>
+                    <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Update Holiday
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

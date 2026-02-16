@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using SMS.Models;
+using UTS_SMS.Models;
 using UTS_SMS;
 
 var builder = WebApplication.CreateBuilder(args);
