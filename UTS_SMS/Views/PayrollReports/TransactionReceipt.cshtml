@@ -1,0 +1,465 @@
+﻿@model SMS.ViewModels.PayrollReceiptViewModel
+@{
+    ViewData["Title"] = "Payroll Receipt";
+    Layout = null;
+
+    var payroll = Model.Master;
+
+    var alreadyPaid = payroll.Transactions
+        .Where(t => t.PaymentDate < Model.Transactions.Min(x => x.PaymentDate))
+        .Sum(t => t.AmountPaid);
+
+    var totalPayable = payroll.BasicSalary + payroll.Allowances + payroll.Bonus + payroll.PreviousBalance - payroll.Deductions - payroll.AttendanceDeduction;
+    var netPayable = totalPayable - alreadyPaid;
+    var totalPaidNow = Model.Transactions.Sum(t => t.AmountPaid);
+    var remaining = netPayable - totalPaidNow;
+
+    string remainingLabel;
+    string remainingClass;
+
+    if (remaining > 0)
+    {
+        remainingLabel = "Dues";
+        remainingClass = "error";
+    }
+    else if (remaining < 0)
+    {
+        remainingLabel = "Advance";
+        remainingClass = "primary";
+    }
+    else
+    {
+        remainingLabel = "Clear";
+        remainingClass = "success";
+    }
+
+    var printTime = DateTime.Now;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Payroll Receipt - @payroll.Employee.FullName</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" /> 
+    <style>
+        /* A6 Format: 4.1 x 5.8 inches */
+        @@page {
+            size: A6 portrait;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            font-size: 9px;
+            line-height: 1.2;
+        }
+
+        .receipt-container {
+            width: 105mm;
+            height: 148mm;
+            position: relative;
+            padding: 8mm;
+            box-sizing: border-box;
+            background: white;
+        }
+
+        /* Watermark styling */
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 48px;
+            font-weight: bold;
+            color: red;
+            opacity: 0.15;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .content {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 4px;
+            margin-bottom: 6px;
+        }
+
+        .header img {
+            height: 24px;
+            width: 24px;
+            object-fit: contain;
+            margin-bottom: 2px;
+        }
+
+        .header h1 {
+            font-size: 14px;
+            font-weight: bold;
+            color: #2563eb;
+            margin: 2px 0;
+        }
+
+        .header p {
+            font-size: 7px;
+            color: #666;
+            margin: 1px 0;
+        }
+
+        .header h2 {
+            font-size: 11px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-top: 3px;
+        }
+
+        /* Grid layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            margin-bottom: 5px;
+        }
+
+        .section {
+            margin-bottom: 5px;
+        }
+
+        .section-title {
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 3px;
+            font-size: 9px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 1px;
+        }
+
+        .info-box {
+            background: #f9fafb;
+            padding: 4px;
+            border-radius: 3px;
+            margin-bottom: 5px;
+        }
+
+        .fee-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+            font-size: 8px;
+        }
+
+        .fee-row.bold {
+            font-weight: bold;
+            border-top: 1px solid #d1d5db;
+            padding-top: 2px;
+            margin-top: 2px;
+        }
+
+        .fee-row.success {
+            color: #059669;
+        }
+
+        .fee-row.error {
+            color: #dc2626;
+        }
+
+        .fee-row.primary {
+            color: #2563eb;
+        }
+
+        .payment-box {
+            background: #fef3c7;
+            padding: 4px;
+            border-radius: 3px;
+            margin-bottom: 5px;
+        }
+
+        /* Transaction table */
+        .transaction-table {
+            width: 100%;
+            font-size: 7px;
+            border-collapse: collapse;
+            margin-bottom: 3px;
+        }
+
+        .transaction-table th,
+        .transaction-table td {
+            padding: 2px;
+            border: 1px solid #d1d5db;
+            text-align: left;
+        }
+
+        .transaction-table th {
+            background: #f3f4f6;
+            font-weight: bold;
+        }
+
+        .transaction-table tfoot td {
+            font-weight: bold;
+            background: #f9fafb;
+        }
+
+        /* Footer */
+        .footer {
+            border-top: 1px solid #d1d5db;
+            padding-top: 4px;
+            margin-top: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            font-size: 7px;
+        }
+
+        .signature {
+            text-align: center;
+        }
+
+        .signature-line {
+            border-top: 1px solid #666;
+            width: 60px;
+            margin-bottom: 2px;
+        }
+
+        @@media print {
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            @@page {
+                margin: 0;
+            }
+        }
+
+        /* Zigzag tear-off effect */
+        .zigzag {
+            position: relative;
+        }
+
+        .zigzag:after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -6px;
+            height: 6px;
+            background: linear-gradient(-45deg, white 4px, transparent 0), 
+                        linear-gradient(45deg, white 4px, transparent 0);
+            background-repeat: repeat-x;
+            background-size: 8px 8px;
+        }
+
+        strong {
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt-container zigzag">
+        @if (remaining <= 0)
+        {
+            <div class="watermark">PAID</div>
+        }
+
+        <div class="content">
+            <!-- Header -->
+            <div class="header">
+                @if (!string.IsNullOrEmpty(payroll.Campus.Logo))
+                {
+                    <img src="@Url.Content($"~/{payroll.Campus.Logo}")" alt="@payroll.Campus.Name Logo" />
+                }
+                <h1>@payroll.Campus.Name</h1>
+                <p>@payroll.Campus.Address</p>
+                @if (!string.IsNullOrEmpty(payroll.Campus.Phone))
+                {
+                    <p>Phone: @payroll.Campus.Phone</p>
+                }
+                <h2>PAYROLL RECEIPT</h2>
+            </div>
+
+            <!-- Receipt Info -->
+            <div class="grid-2" style="font-size: 8px;">
+                <div>
+                    <div><strong>Receipt:</strong> #@Model.Master.Id.ToString("000000")</div>
+                    <div><strong>Date:</strong> @Model.Transactions.First().PaymentDate.ToString("dd MMM yyyy")</div>
+                    <div><strong>Time:</strong> @Model.Transactions.First().PaymentDate.ToString("hh:mm tt")</div>
+                </div>
+                <div>
+                    <div><strong>Month:</strong> @(new DateTime(payroll.ForYear, payroll.ForMonth, 1).ToString("MMM yyyy"))</div>
+                    <div><strong>Received By:</strong> @Model.Transactions.First().ReceivedBy</div>
+                </div>
+            </div>
+
+            <!-- Employee Details -->
+            <div class="section">
+                <div class="section-title">Employee Details</div>
+                <div class="info-box">
+                    <div class="grid-2" style="font-size: 8px;">
+                        <div>
+                            <div><strong>Name:</strong> @payroll.Employee.FullName</div>
+                            <div><strong>CNIC:</strong> @payroll.Employee.CNIC</div>
+                            <div><strong>Role:</strong> @payroll.Employee.Role</div>
+                        </div>
+                        <div>
+                            <div><strong>Campus:</strong> @payroll.Campus.Name</div>
+                            <div><strong>Emp ID:</strong> @payroll.Employee.Id</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payroll Summary -->
+            <div class="section">
+                <div class="section-title">Payroll Summary</div>
+                <div class="fee-row">
+                    <span>Basic Salary:</span>
+                    <span>₨@payroll.BasicSalary.ToString("N0")</span>
+                </div>
+                @if (payroll.Allowances > 0)
+                {
+                    <div class="fee-row">
+                        <span>Allowances:</span>
+                        <span>₨@payroll.Allowances.ToString("N0")</span>
+                    </div>
+                }
+                @if (payroll.Bonus > 0)
+                {
+                    <div class="fee-row">
+                        <span>Bonus:</span>
+                        <span>₨@payroll.Bonus.ToString("N0")</span>
+                    </div>
+                }
+                @if (payroll.PreviousBalance != 0)
+                {
+                    <div class="fee-row @(payroll.PreviousBalance > 0 ? "error" : "primary")">
+                        <span>Previous Balance:</span>
+                        <span>
+                            @(payroll.PreviousBalance > 0 ? "₨" + payroll.PreviousBalance.ToString("N0") : "-₨" + Math.Abs(payroll.PreviousBalance).ToString("N0"))
+                        </span>
+                    </div>
+                }
+                @if (payroll.Deductions > 0)
+                {
+                    <div class="fee-row">
+                        <span>Deductions:</span>
+                        <span>-₨@payroll.Deductions.ToString("N0")</span>
+                    </div>
+                }
+                @if (payroll.AttendanceDeduction > 0)
+                {
+                    <div class="fee-row">
+                        <span>Attendance Deduction:</span>
+                        <span>-₨@payroll.AttendanceDeduction.ToString("N0")</span>
+                    </div>
+                }
+                <div class="fee-row bold">
+                    <span>Total Payable:</span>
+                    <span>₨@totalPayable.ToString("N0")</span>
+                </div>
+
+                @if (alreadyPaid > 0)
+                {
+                    <div class="fee-row primary" style="font-size: 8px;">
+                        <span>Already Paid:</span>
+                        <span>-₨@alreadyPaid.ToString("N0")</span>
+                    </div>
+                    <div class="fee-row bold">
+                        <span>Net Payable:</span>
+                        <span>₨@netPayable.ToString("N0")</span>
+                    </div>
+                }
+            </div>
+
+            <!-- Transaction History -->
+            <div class="section">
+                <div class="section-title">Transaction History</div>
+                <div class="payment-box">
+                    <table class="transaction-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 15%; text-align: center;">#</th>
+                                <th style="width: 50%;">Date</th>
+                                <th style="width: 35%; text-align: right;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int count = 1;
+                                foreach (var t in Model.Transactions.OrderBy(t => t.PaymentDate))
+                                {
+                                    <tr>
+                                        <td style="text-align: center;">@count</td>
+                                        <td>@t.PaymentDate.ToString("dd MMM yy HH:mm")</td>
+                                        <td style="text-align: right;">₨@t.AmountPaid.ToString("N0")</td>
+                                    </tr>
+                                    count++;
+                                }
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="2" style="text-align: right;">Total Paid:</td>
+                                <td style="text-align: right;">₨@Model.Transactions.Sum(x => x.AmountPaid).ToString("N0")</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Remaining Balance -->
+            <div class="fee-row bold @remainingClass" style="margin-top: 3px;">
+                <span>@remainingLabel:</span>
+                <span>₨@Math.Abs(remaining).ToString("N0")</span>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <div style="color: #6b7280;">
+                    <div>Computer generated receipt</div>
+                    <div>Printed: @printTime.ToString("dd MMM yy hh:mm tt")</div>
+                </div>
+                <div class="signature">
+                    <div class="signature-line"></div>
+                    <div style="color: #6b7280;">Authorized Sign</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="no-print" style="text-align: center; margin-top: 10px;">
+        <button onclick="window.print()" style="background: #2563eb; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; margin-right: 8px;">
+            Print Receipt
+        </button>
+        <button onclick="window.close()" style="background: #4b5563; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;">
+            Close
+        </button>
+    </div>
+
+    <script>
+        window.onload = function () {
+            setTimeout(function () {
+                window.print();
+            }, 500);
+        };
+    </script>
+</body>
+</html>

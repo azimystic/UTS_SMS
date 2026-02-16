@@ -1,0 +1,387 @@
+﻿@model SMS.ViewModels.PayrollDetailReportViewModel
+
+@{
+    ViewData["Title"] = "Employee Payroll Details";
+}
+
+<style>
+    /* Full-width print-friendly CSS for reports */
+    @@media print {
+        .container, .max-w-6xl, .mx-auto {
+            width: 100% !important;
+            max-width: none !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            padding-left: 8px !important;
+            padding-right: 8px !important;
+        }
+        .bg-gradient-subtle {
+            background: white !important;
+        }
+    }
+</style>
+
+<div class="min-h-screen bg-gradient-subtle p-2 md:p-4">
+    <div class="w-full mx-auto px-1 md:px-2">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-primary-800 tracking-tight">💼 Employee Payroll Details</h1>
+                <p class="text-neutral-600 mt-2 text-sm md:text-base">@Model.Employee.FullName</p>
+            </div>
+            <div class="flex space-x-3 mt-4 md:mt-0">
+                <a asp-action="Index" class="bg-primary-100 hover:bg-primary-200 text-primary-800 px-5 py-2.5 rounded-xl shadow-sms-md hover:shadow-sms-lg transition-all duration-300 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Back to Reports
+                </a>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-2xl shadow-sms-lg p-6 transform hover:scale-105 transition-all duration-300">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-neutral-600">Total Payable</h3>
+                        <p class="text-2xl font-bold text-primary-800">₨@Model.TotalPayable.ToString("N0")</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sms-lg p-6 transform hover:scale-105 transition-all duration-300">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-success-light rounded-xl flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-neutral-600">Total Paid</h3>
+                        <p class="text-2xl font-bold text-primary-800">₨@Model.TotalPaid.ToString("N0")</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sms-lg p-6 transform hover:scale-105 transition-all duration-300">
+                <div class="flex items-center">
+                    <div class="w-12 h-12
+                    @(Model.Balance < 0 ? "bg-primary-100" :
+                                               Model.Balance > 0 ? "bg-error-light" : "bg-success-light")
+                    rounded-xl flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6
+                        @(Model.Balance < 0 ? "text-primary-600" :
+                                                       Model.Balance > 0 ? "text-error" : "text-success")"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-neutral-600">
+                            @(Model.Balance < 0 ? "Advance" :
+                                                        Model.Balance > 0 ? "Dues" : "Cleared")
+                        </h3>
+                        <p class="text-2xl font-bold
+                      @(Model.Balance < 0 ? "text-primary-600" :
+                                                   Model.Balance > 0 ? "text-error" : "text-success")">
+                            ₨@Math.Abs(Model.Balance).ToString("N0")
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="bg-white rounded-2xl shadow-sms-lg p-6 transform hover:scale-105 transition-all duration-300">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mr-4">
+                        <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-neutral-600">Records</h3>
+                        <p class="text-2xl font-bold text-primary-800">@Model.PayrollRecords.Count</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column - Payroll Records -->
+            <div class="lg:col-span-2">
+                
+                @foreach (var payroll in Model.PayrollRecords)
+                {
+                    <div class="bg-white rounded-2xl shadow-sms-lg p-6 mb-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold text-primary-800">
+                                @(new DateTime(payroll.ForYear, payroll.ForMonth, 1).ToString("MMMM yyyy"))
+                            </h3>
+                            <span class="px-3 py-1 text-sm font-medium @(payroll.Balance == 0 ? "bg-success-light text-success" : payroll.AmountPaid > 0 ? "bg-warning-light text-yellow-800" : "bg-error-light text-error") rounded-full">
+                                @(payroll.Balance == 0 ? "Paid" : payroll.AmountPaid > 0 ? "Partial" : "Unpaid")
+                            </span>
+                        </div>
+
+                        <!-- Salary Breakdown -->
+                        <div class="space-y-3 mb-4">
+                            <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                <span class="text-neutral-600">Basic Salary</span>
+                                <span class="font-medium">₨@payroll.BasicSalary.ToString("N0")</span>
+                            </div>
+
+                            @if (payroll.Allowances > 0)
+                            {
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-neutral-600">Allowances</span>
+                                    <span class="font-medium text-primary-600">₨@payroll.Allowances.ToString("N0")</span>
+                                </div>
+                            }
+
+                            @if (payroll.Bonus > 0)
+                            {
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-neutral-600">Bonus</span>
+                                    <span class="font-medium text-success">₨@payroll.Bonus.ToString("N0")</span>
+                                </div>
+                            }
+
+                            @if (payroll.PreviousBalance > 0)
+                            {
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-neutral-600">Previous Balance</span>
+                                    <span class="font-medium text-primary-600">₨@payroll.PreviousBalance.ToString("N0")</span>
+                                </div>
+                            }
+
+                            @if (payroll.Deductions > 0)
+                            {
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-neutral-600">Deductions</span>
+                                    <span class="font-medium text-error">-₨@payroll.Deductions.ToString("N0")</span>
+                                </div>
+                            }
+
+                            @if (payroll.AttendanceDeduction > 0)
+                            {
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <span class="text-neutral-600">Attendance Deduction</span>
+                                    <span class="font-medium text-error">-₨@payroll.AttendanceDeduction.ToString("N0")</span>
+                                </div>
+                            }
+
+                            <div class="flex justify-between items-center py-2 font-bold text-lg border-t border-primary-100">
+                                <span class="text-primary-800">Net Salary</span>
+                                <span class="text-primary-600">₨@payroll.NetSalary.ToString("N0")</span>
+                            </div>
+
+                            <div class="flex justify-between items-center py-2 font-bold">
+                                <span class="text-primary-800">Amount Paid</span>
+                                <span class="text-success">₨@payroll.AmountPaid.ToString("N0")</span>
+                            </div>
+
+                            <div class="flex justify-between items-center py-2 font-bold">
+                                <span class="text-primary-800">Balance</span>
+                                <span class="@(payroll.Balance == 0 ? "text-success" : "text-error")">₨@Math.Abs(payroll.Balance).ToString("N0")</span>
+                            </div>
+                        </div>
+
+                        <!-- Payment Status -->
+                        @if (payroll.IsApproved)
+                        {
+                            <div class="bg-success-light border border-green-200 rounded-lg p-3 mb-4">
+                                <div class="flex items-center">
+                                    <svg class="w-5 h-5 text-success mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <div>
+                                        <p class="text-success font-medium">Approved</p>
+                                        <p class="text-success text-sm">By @payroll.ApprovedBy on @payroll.ApprovedDate?.ToString("dd MMM yyyy")</p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Transactions -->
+                        @if (payroll.Transactions.Any())
+                        {
+                            <div class="border-t border-primary-100 pt-4">
+                                <h4 class="font-semibold text-primary-800 mb-3">Payment Transactions</h4>
+                                <div class="space-y-2">
+                                    @foreach (var transaction in payroll.Transactions.OrderByDescending(t => t.PaymentDate))
+                                    {
+                                        <div class="flex justify-between items-center bg-neutral-50 p-3 rounded-lg">
+                                            <div>
+                                                <div class="text-sm font-medium">@transaction.PaymentDate.ToString("dd MMM yyyy")</div>
+                                                <div class="text-xs text-neutral-500">
+                                                    @if (transaction.CashPaid > 0 && transaction.OnlinePaid > 0)
+                                                    {
+                                                        <span>Mixed Payment (Cash: ₨@transaction.CashPaid.ToString("N0"), Online: ₨@transaction.OnlinePaid.ToString("N0"))</span>
+                                                    }
+                                                    else if (transaction.CashPaid > 0)
+                                                    {
+                                                        <span>Cash Payment</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>Online Payment</span>
+                                                        @if (transaction.Account != null)
+                                                        {
+                                                            <span> - @transaction.Account.AccountTitle</span>
+                                                        }
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(transaction.TransactionReference))
+                                                    {
+                                                        <br>
+                                        
+                                                        <span>Ref: @transaction.TransactionReference</span>
+                                                    }
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(transaction.ReceivedBy))
+                                                {
+                                                    <div class="text-xs text-neutral-400">Received by: @transaction.ReceivedBy</div>
+                                                }
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="font-semibold text-success">₨@transaction.AmountPaid.ToString("N0")</span>
+                                                
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Remarks -->
+                        @if (!string.IsNullOrEmpty(payroll.Remarks))
+                        {
+                            <div class="border-t border-primary-100 pt-4 mt-4">
+                                <h4 class="font-semibold text-primary-800 mb-2">Remarks</h4>
+                                <p class="text-neutral-600 text-sm">@payroll.Remarks</p>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Right Column - Employee Info -->
+            <div class="space-y-8">
+                <!-- Employee Information -->
+                <div class="bg-white rounded-2xl shadow-sms-lg p-6">
+                    <h2 class="text-xl font-semibold text-primary-800 mb-4">Employee Information</h2>
+
+                    <div class="flex items-center mb-4">
+                        @if (!string.IsNullOrEmpty(Model.Employee.ProfilePicture))
+                        {
+                            <img src="@Model.Employee.ProfilePicture" alt="Profile" class="w-16 h-16 rounded-full mr-4 object-cover">
+                        }
+                        else
+                        {
+                            <div class="w-16 h-16 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-xl mr-4">
+                                @Model.Employee.FullName.Substring(0, 1)
+                            </div>
+                        }
+                        <div>
+                            <h3 class="text-lg font-semibold text-primary-800">@Model.Employee.FullName</h3>
+                            <p class="text-sm text-neutral-600">@Model.Employee.Role</p>
+                            <p class="text-sm text-neutral-600">@Model.Employee.Campus?.Name</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-neutral-600">Employee ID:</span>
+                            <span class="font-medium">@Model.Employee.Id</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neutral-600">CNIC:</span>
+                            <span class="font-medium">@Model.Employee.CNIC</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neutral-600">Phone:</span>
+                            <span class="font-medium">@Model.Employee.PhoneNumber</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neutral-600">Date of Birth:</span>
+                            <span class="font-medium">@Model.Employee.DateOfBirth.ToString("dd MMM yyyy")</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neutral-600">Gender:</span>
+                            <span class="font-medium">@Model.Employee.Gender</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neutral-600">Joining Date:</span>
+                            <span class="font-medium">@Model.Employee.JoiningDate.ToString("dd MMM yyyy")</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neutral-600">On Time:</span>
+                            <span class="font-medium">@(Model.Employee.OnTime?.ToString("hh\\:mm") ?? "Not set")</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neutral-600">Off Time:</span>
+                            <span class="font-medium">@(Model.Employee.OffTime?.ToString("hh\\:mm") ?? "Not set")</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neutral-600">Late Time Flexibility:</span>
+                            <span class="font-medium">₨@Model.Employee.LateTimeFlexibility.ToString("N0")</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neutral-600">Address:</span>
+                            <span class="font-medium">@Model.Employee.Address</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Education Information -->
+                @if (!string.IsNullOrEmpty(Model.Employee.EducationLevel))
+                {
+                    <div class="bg-white rounded-2xl shadow-sms-lg p-6">
+                        <h2 class="text-xl font-semibold text-primary-800 mb-4">Education Information</h2>
+                        <div class="space-y-3 text-sm">
+                            @if (!string.IsNullOrEmpty(Model.Employee.EducationLevel))
+                            {
+                                <div class="flex justify-between">
+                                    <span class="text-neutral-600">Education Level:</span>
+                                    <span class="font-medium">@Model.Employee.EducationLevel</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.Employee.Degree))
+                            {
+                                <div class="flex justify-between">
+                                    <span class="text-neutral-600">Degree:</span>
+                                    <span class="font-medium">@Model.Employee.Degree</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.Employee.MajorSubject))
+                            {
+                                <div class="flex justify-between">
+                                    <span class="text-neutral-600">Major Subject:</span>
+                                    <span class="font-medium">@Model.Employee.MajorSubject</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.Employee.University))
+                            {
+                                <div class="flex justify-between">
+                                    <span class="text-neutral-600">University:</span>
+                                    <span class="font-medium">@Model.Employee.University</span>
+                                </div>
+                            }
+                            @if (Model.Employee.CGPA.HasValue)
+                            {
+                                <div class="flex justify-between">
+                                    <span class="text-neutral-600">CGPA:</span>
+                                    <span class="font-medium">@Model.Employee.CGPA.Value.ToString("0.00")</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

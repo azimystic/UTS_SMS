@@ -1,0 +1,245 @@
+@model SMS.Models.Timetable
+
+@{
+    ViewData["Title"] = "Student Timetable";
+    var student = ViewBag.Student as Student;
+    var dayNames = new[] { "", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+    var timeSlots = new List<string>();
+    
+    // Generate time slots if timetable exists
+    if (Model != null)
+    {
+        var startTime = Model.StartTime;
+        var lectureDuration = Model.LectureDuration;
+        var breakDuration = Model.BreakDuration;
+        var breakAfterPeriod = Model.BreakAfterPeriod;
+        var currentTime = startTime;
+        
+        // Zero period if exists
+        if (Model.ZeroPeriodStartTime.HasValue)
+        {
+            timeSlots.Add($"{Model.ZeroPeriodStartTime.Value:HH:mm} - {Model.ZeroPeriodStartTime.Value.AddMinutes(Model.ZeroPeriodDuration):HH:mm}");
+        }
+        
+        for (int i = 1; i <= Model.NumberOfLectures; i++)
+        {
+            var endTime = currentTime.AddMinutes(lectureDuration);
+            timeSlots.Add($"{currentTime:HH:mm} - {endTime:HH:mm}");
+            currentTime = endTime;
+            
+            // Add break time
+            if (i == breakAfterPeriod && breakDuration > 0)
+            {
+                var breakEnd = currentTime.AddMinutes(breakDuration);
+                timeSlots.Add($"BREAK ({currentTime:HH:mm} - {breakEnd:HH:mm})");
+                currentTime = breakEnd;
+            }
+        }
+    }
+}
+
+<div class="min-h-screen bg-neutral-50 p-3 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-primary-800">📅 Student Timetable</h1>
+                <p class="text-neutral-600 mt-1">
+                    @student?.StudentName - @student?.ClassObj?.Name @student?.SectionObj?.Name
+                </p>
+            </div>
+            
+            <div class="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-2 mt-4 md:mt-0">
+                <a asp-action="StudentDetails" asp-route-id="@student?.Id" 
+                   class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm transition-colors flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Back to Dashboard
+                </a>
+                <a asp-action="AcademicCalendar" asp-route-studentId="@student?.Id" 
+                   class="bg-gradient-primary hover:bg-primary-700 text-white px-4 py-2 rounded-md text-sm transition-colors flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    Academic Calendar
+                </a>
+            </div>
+        </div>
+
+        @if (Model != null && Model.TimetableSlots.Any())
+        {
+            <!-- Timetable Info -->
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                        <span class="text-neutral-600">Start Time:</span>
+                        <span class="font-medium ml-2">@Model.StartTime.ToString("HH:mm")</span>
+                    </div>
+                    <div>
+                        <span class="text-neutral-600">Lecture Duration:</span>
+                        <span class="font-medium ml-2">@Model.LectureDuration minutes</span>
+                    </div>
+                    <div>
+                        <span class="text-neutral-600">Break Duration:</span>
+                        <span class="font-medium ml-2">@Model.BreakDuration minutes</span>
+                    </div>
+                    <div>
+                        <span class="text-neutral-600">Total Lectures:</span>
+                        <span class="font-medium ml-2">@Model.NumberOfLectures</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timetable -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-full">
+                        <thead class="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-sm font-medium">Time</th>
+                                @for (int day = 1; day <= 7; day++)
+                                {
+                                    <th class="px-4 py-3 text-center text-sm font-medium min-w-32">@dayNames[day]</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-primary-100">
+                            @{
+                                var periods = Model.TimetableSlots
+                                    .Where(ts => !ts.IsBreak)
+                                    .GroupBy(ts => ts.PeriodNumber)
+                                    .OrderBy(g => g.Key)
+                                    .ToList();
+                            }
+
+                            @foreach (var periodGroup in periods)
+                            {
+                                var periodNumber = periodGroup.Key;
+                                var periodSlots = periodGroup.OrderBy(ts => ts.DayOfWeek).ToList();
+                                
+                                <tr class="hover:bg-neutral-50">
+                                    <td class="px-4 py-3 text-sm font-medium text-primary-800 bg-neutral-50">
+                                        @if (periodNumber == 0)
+                                        {
+                                            <div>Zero Period</div>
+                                            @if (Model.ZeroPeriodStartTime.HasValue)
+                                            {
+                                                <div class="text-xs text-neutral-600">
+                                                    @Model.ZeroPeriodStartTime.Value.ToString("HH:mm") - 
+                                                    @Model.ZeroPeriodStartTime.Value.AddMinutes(Model.ZeroPeriodDuration).ToString("HH:mm")
+                                                </div>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <div>Period @periodNumber</div>
+                                            var startTime = Model.StartTime.AddMinutes((periodNumber - 1) * (Model.LectureDuration + (periodNumber > Model.BreakAfterPeriod ? Model.BreakDuration : 0)));
+                                            var endTime = startTime.AddMinutes(Model.LectureDuration);
+                                            <div class="text-xs text-neutral-600">
+                                                @startTime.ToString("HH:mm") - @endTime.ToString("HH:mm")
+                                            </div>
+                                        }
+                                    </td>
+                                    
+                                    @for (int day = 1; day <= 7; day++)
+                                    {
+                                        var slot = periodSlots.FirstOrDefault(ts => ts.DayOfWeek == day);
+                                        <td class="px-2 py-3 text-center">
+                                            @if (slot != null && slot.TeacherAssignment != null)
+                                            {
+                                                <div class="bg-primary-50 border border-blue-200 rounded-lg p-2 hover:bg-primary-100 transition-colors">
+                                                    <div class="font-medium text-sm text-primary-800">
+                                                        @slot.TeacherAssignment.Subject?.Name
+                                                    </div>
+                                                    <div class="text-xs text-primary-600 mt-1">
+                                                        @slot.TeacherAssignment.Teacher?.FullName
+                                                    </div>
+                                                </div>
+                                            }
+                                            else if (slot != null && !string.IsNullOrEmpty(slot.CustomTitle))
+                                            {
+                                                <div class="bg-neutral-50 border border-primary-100 rounded-lg p-2">
+                                                    <div class="text-sm text-neutral-600">@slot.CustomTitle</div>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="text-neutral-400 text-sm">-</div>
+                                            }
+                                        </td>
+                                    }
+                                </tr>
+                                
+                                <!-- Break row -->
+                                @if (periodNumber == Model.BreakAfterPeriod && Model.BreakDuration > 0)
+                                {
+                                    <tr class="bg-warning-light">
+                                        <td class="px-4 py-2 text-sm font-medium text-yellow-800 bg-warning-light">
+                                            <div>Break</div>
+                                            <div class="text-xs text-accent-600">@Model.BreakDuration minutes</div>
+                                        </td>
+                                        @for (int day = 1; day <= 7; day++)
+                                        {
+                                            <td class="px-2 py-2 text-center">
+                                                <div class="bg-warning-light border border-yellow-200 rounded-lg p-2">
+                                                    <div class="text-sm text-yellow-700">☕ Break</div>
+                                                </div>
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="mt-6 bg-white rounded-lg shadow-sm p-4">
+                <h3 class="text-lg font-medium text-primary-800 mb-3">Legend</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-primary-100 border border-blue-200 rounded mr-2"></div>
+                        <span class="text-sm text-neutral-700">Regular Subject</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-warning-light border border-yellow-200 rounded mr-2"></div>
+                        <span class="text-sm text-neutral-700">Break Time</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-neutral-50 border border-primary-100 rounded mr-2"></div>
+                        <span class="text-sm text-neutral-700">Free/Custom Period</span>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- No Timetable -->
+            <div class="bg-white rounded-lg shadow-sm p-12 text-center">
+                <svg class="w-24 h-24 text-neutral-400 mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <h3 class="text-xl font-medium text-primary-800 mb-2">No Timetable Available</h3>
+                <p class="text-neutral-500 mb-6">
+                    No timetable has been created for @student?.ClassObj?.Name @student?.SectionObj?.Name yet.
+                </p>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Print functionality
+        function printTimetable() {
+            window.print();
+        }
+        
+        // Make timetable responsive on small screens
+        window.addEventListener('resize', function() {
+            // Could add responsive table handling here if needed
+        });
+    </script>
+}

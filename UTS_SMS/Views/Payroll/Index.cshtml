@@ -1,0 +1,197 @@
+﻿@model List<SMS.ViewModels.EmployeePayrollViewModel>
+
+@{
+    ViewData["Title"] = "Payroll Management";
+    var searchString = ViewData["CurrentFilter"] as string;
+    var roleFilter = ViewData["RoleFilter"] as string;
+    var forMonth = ViewData["ForMonth"] as int? ?? DateTime.Now.Month;
+    var forYear = ViewData["ForYear"] as int? ?? DateTime.Now.Year;
+    var monthName = new DateTime(forYear, forMonth, 1).ToString("MMMM");
+}
+
+<div class="min-h-screen bg-neutral-50 p-3 md:p-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-primary-800 mb-1">Payroll Management</h1>
+            <p class="text-neutral-600 text-sm">@monthName @forYear</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" class="bg-white p-3 md:p-4 rounded-xl shadow-sms-md mb-4 md:mb-6 transition-all duration-300 hover:shadow-sms-lg border border-primary-100">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-3 md:gap-4">
+            <div>
+                <label class="block text-sm font-medium text-primary-800 mb-1">Search</label>
+                <input type="text" name="searchString" value="@searchString"
+                       class="w-full px-3 py-2 border-2 border-primary-100 rounded-md focus:ring-2 focus:ring-primary-400 focus:border-primary-400 bg-primary-50 text-primary-800 text-sm transition-all"
+                       placeholder="Name, CNIC, Phone" />
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-primary-800 mb-1">Role</label>
+                <select name="roleFilter" class="w-full px-3 py-2 border-2 border-primary-100 rounded-md focus:ring-2 focus:ring-primary-400 focus:border-primary-400 bg-primary-50 text-primary-800 text-sm transition-all">
+                    <option value="">All Roles</option>
+                    @foreach (var role in ViewBag.Roles)
+                    {
+                        <option value="@role" selected="@(role == roleFilter)">@role</option>
+                    }
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-primary-800 mb-1">Month</label>
+                <select name="forMonth" class="w-full px-3 py-2 border-2 border-primary-100 rounded-md focus:ring-2 focus:ring-primary-400 focus:border-primary-400 bg-primary-50 text-primary-800 text-sm transition-all">
+                    @{
+                        var currentMonth = DateTime.Now.Month;
+                        var currentYear = DateTime.Now.Year;
+                        int selectedYear = (forYear != 0) ? forYear : currentYear;
+
+                        // Only show months up to the previous month for current year
+                        var maxMonth = (selectedYear == currentYear) ? currentMonth - 1 : 12;
+
+                        for (int m = 1; m <= maxMonth; m++)
+                        {
+                            <option value="@m" selected="@(m == forMonth)">@(new DateTime(2000, m, 1).ToString("MMMM"))</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-primary-800 mb-1">Year</label>
+                <select name="forYear" class="w-full px-3 py-2 border-2 border-primary-100 rounded-md focus:ring-2 focus:ring-primary-400 focus:border-primary-400 bg-primary-50 text-primary-800 text-sm transition-all">
+                    @foreach (var year in ViewBag.AvailableYears)
+                    {
+                        <option value="@year" selected="@(year == forYear)">@year</option>
+                    }
+                </select>
+            </div>
+
+            <div class="flex items-end">
+                <button type="submit" class="w-full bg-gradient-primary hover:shadow-sms-lg text-white px-4 py-2 rounded-md transition-all duration-300 text-sm flex items-center justify-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    Apply
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Payroll List -->
+    <div class="bg-white rounded-xl shadow-sms-md overflow-hidden transition-all duration-300 hover:shadow-sms-lg border border-primary-100">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-primary-100">
+                <thead class="bg-gradient-dark text-white">
+                    <tr>
+                        <th scope="col" class="px-4 md:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Employee</th>
+                        <th scope="col" class="px-4 md:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Role</th>
+                        <th scope="col" class="px-4 md:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Campus</th>
+                        <th scope="col" class="px-4 md:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
+                        <th scope="col" class="px-4 md:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Balance</th>
+                        <th scope="col" class="px-4 md:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Salary Deductions</th>
+                        <th scope="col" class="px-4 md:px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-primary-100">
+                    @foreach (var item in Model)
+                    {
+                        <tr class="@(item.RowColor == "bg-red-100" ? "bg-red-50" : item.RowColor == "bg-green-100" ? "bg-green-50" : item.RowColor == "bg-yellow-100" ? "bg-yellow-50" : "hover:bg-primary-50") transition-colors duration-150">
+                            <td class="px-4 md:px-6 py-4">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 bg-gradient-to-r from-primary-500 to-accent-500 rounded-full flex items-center justify-center text-white font-semibold text-xs mr-2 flex-shrink-0">
+                                        @item.Employee.FullName.Substring(0, 1)
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-medium text-primary-800">@item.Employee.FullName</div>
+                                        <div class="text-xs text-neutral-600">@item.Employee.CNIC</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-4 md:px-6 py-4 text-sm text-neutral-700">
+                                <div>@item.Employee.Role</div>
+                                @if (item.Employee.Role == "Teacher")
+                                {
+                                    <div class="text-xs text-neutral-500">@item.TeacherAssignmentsCount Classes</div>
+                                }
+                            </td>
+                            <td class="px-4 md:px-6 py-4 text-sm text-neutral-700">@item.Employee.Campus?.Name</td>
+                            <td class="px-4 md:px-6 py-4">
+                                @if (item.PayrollMaster == null)
+                                {
+                                    <span class="px-2 py-1 text-xs font-semibold bg-error-light text-error rounded-full">Not Processed</span>
+                                }
+                                else if (item.PayrollMaster.Balance == 0)
+                                {
+                                    <span class="px-2 py-1 text-xs font-semibold bg-success-light text-success rounded-full">Paid</span>
+                                }
+                                else if (item.PayrollMaster.Balance > 0)
+                                {
+                                    <span class="px-2 py-1 text-xs font-semibold bg-warning-light text-yellow-800 rounded-full">Partial</span>
+                                }
+                                else
+                                {
+                                    <span class="px-2 py-1 text-xs font-semibold bg-primary-100 text-primary-800 rounded-full">Advance</span>
+                                }
+                            </td>
+                            <td class="px-4 md:px-6 py-4 text-sm font-semibold">
+                                @if (item.PayrollMaster != null)
+                                {
+                                    <span class="@(item.PayrollMaster.Balance == 0 ? "text-success" : item.PayrollMaster.Balance > 0 ? "text-accent-600" : "text-primary-600")">
+                                        ₨@Math.Abs(item.PayrollMaster.Balance).ToString("N0")
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-neutral-400">-</span>
+                                }
+                            </td>
+                            <td class="px-4 md:px-6 py-4 text-sm font-semibold">
+                                @if (item.SalaryDeductionsTotal > 0)
+                                {
+                                    <span class="text-error flex items-center" title="Total salary deductions for this month">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                                        </svg>
+                                        ₨@item.SalaryDeductionsTotal.ToString("N0")
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-neutral-400">-</span>
+                                }
+                            </td>
+                            <td class="px-4 md:px-6 py-4 text-sm">
+                                <div class="flex space-x-2">
+                                    @if (item.CanProcess)
+                                    {
+                                        <a asp-action="Create" asp-route-id="@item.Employee.Id" asp-route-forMonth="@forMonth" asp-route-forYear="@forYear"
+                                           class="text-primary-600 hover:text-primary-800 transition-colors duration-200 flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                            </svg>
+                                            Process
+                                        </a>
+                                    }
+
+                                    @if (item.PayrollMaster != null)
+                                    {
+                                        <a asp-controller="PayrollReports" asp-action="Details" asp-route-id="@item.Employee.Id"
+                                           class="text-success hover:text-success-dark transition-colors duration-200 flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                            </svg>
+                                            Details
+                                        </a>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

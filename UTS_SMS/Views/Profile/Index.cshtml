@@ -1,0 +1,685 @@
+﻿@model SMS.ViewModels.ProfileViewModel
+
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<style>
+    .gradient-bg {
+        background: linear-gradient(180deg, #F5F1E8 0%, #E8E4D9 50%, #FFFEF9 100%);
+        min-height: 100vh;
+    }
+    
+    .glassmorphism {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .card-dark {
+        background: linear-gradient(135deg, #2D2D2D 0%, #1a1a1a 100%);
+    }
+    
+    .hover-lift {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .hover-lift:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15);
+    }
+    
+    .gold-gradient {
+        background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    }
+    
+    .profile-avatar-ring {
+        border: 4px solid #FFD700;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+</style>
+
+<div class="gradient-bg p-2 sm:p-4">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header Section -->
+        <div class="glassmorphism rounded-3xl shadow-lg p-4 sm:p-6 mb-4 hover-lift">
+            <h1 class="text-3xl sm:text-4xl font-bold text-[#2D2D2D] mb-2 flex items-center">
+                <div class="w-12 h-12 rounded-xl bg-[#FFD700]/20 flex items-center justify-center mr-4">
+                    <i class="fas fa-user-circle text-2xl text-[#2D2D2D]"></i>
+                </div>
+                My Profile
+            </h1>
+            <p class="text-gray-600 ml-16">Manage your personal information and settings</p>
+        </div>
+
+        <!-- Success/Error Messages -->
+        <div id="message-container" class="hidden mb-6">
+            <div id="message-content" class="glassmorphism rounded-2xl p-4"></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column - Avatar & Quick Info -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Profile Card (Dark Theme) -->
+                <div class="card-dark rounded-3xl shadow-lg p-6 hover-lift">
+                    <!-- Avatar Section -->
+                    <div class="text-center mb-6">
+                        <div class="relative inline-block">
+                            @if (!string.IsNullOrEmpty(Model.AvatarUrl))
+                            {
+                                <img id="avatar-preview" 
+                                     src="@Model.AvatarUrl" 
+                                     alt="@Model.FullName" 
+                                     class="w-28 h-28 rounded-2xl object-cover profile-avatar-ring mx-auto"
+                                     onerror="this.onerror=null; this.src='/images/default-avatar.png';" />
+                            }
+                            else
+                            {
+                                <div id="avatar-preview" class="w-28 h-28 rounded-2xl bg-[#FFD700]/20 flex items-center justify-center profile-avatar-ring mx-auto">
+                                    <span class="text-[#FFD700] text-4xl font-bold">@(Model.FullName?.Substring(0, 1).ToUpper() ?? "U")</span>
+                                </div>
+                            }
+                            
+                            <!-- Camera Icon Overlay -->
+                            <label for="avatar-upload" class="absolute -bottom-2 -right-2 gold-gradient hover:opacity-90 text-[#2D2D2D] rounded-xl p-2.5 cursor-pointer shadow-lg transition-all duration-300 hover:scale-110">
+                                <i class="fas fa-camera text-sm"></i>
+                                <input type="file" id="avatar-upload" name="avatarFile" accept="image/*" class="hidden" onchange="handleAvatarUpload(event)" />
+                            </label>
+                        </div>
+                        
+                        <h2 class="text-xl font-bold text-white mt-4">@Model.FullName</h2>
+                        <p class="text-[#FFD700] text-sm font-medium">@Model.Role</p>
+                        
+                        <!-- Avatar Actions -->
+                        @if (!string.IsNullOrEmpty(Model.AvatarUrl))
+                        {
+                            <button type="button" 
+                                    onclick="deleteAvatar()" 
+                                    class="mt-4 text-red-400 hover:text-red-300 text-sm font-medium transition-colors">
+                                <i class="fas fa-trash-alt mr-1"></i>
+                                Remove Avatar
+                            </button>
+                        }
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="flex items-center p-3 bg-gray-700/50 rounded-xl">
+                            <i class="fas fa-envelope text-[#FFD700] w-6"></i>
+                            <span class="text-gray-300 text-sm ml-2 truncate">@Model.Email</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.PhoneNumber))
+                        {
+                            <div class="flex items-center p-3 bg-gray-700/50 rounded-xl">
+                                <i class="fas fa-phone text-[#FFD700] w-6"></i>
+                                <span class="text-gray-300 text-sm ml-2">@Model.PhoneNumber</span>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Address))
+                        {
+                            <div class="flex items-start p-3 bg-gray-700/50 rounded-xl">
+                                <i class="fas fa-map-marker-alt text-[#FFD700] w-6 mt-0.5"></i>
+                                <span class="text-gray-300 text-sm ml-2">@Model.Address</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Additional Info Card -->
+                @if (Model.StudentId.HasValue || Model.EmployeeId.HasValue)
+                {
+                    <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                        <h3 class="text-lg font-bold text-[#2D2D2D] mb-4 flex items-center">
+                            <div class="w-8 h-8 rounded-lg bg-[#FFD700]/20 flex items-center justify-center mr-2">
+                                <i class="fas fa-id-badge text-[#2D2D2D]"></i>
+                            </div>
+                            Account Details
+                        </h3>
+                        <div class="space-y-2">
+                            @if (Model.StudentId.HasValue)
+                            {
+                                <div class="flex justify-between p-3 bg-gray-50 rounded-xl">
+                                    <span class="text-sm text-gray-600">Student ID:</span>
+                                    <span class="text-sm font-bold text-[#2D2D2D]">@Model.StudentId</span>
+                                </div>
+                                @if (Model.StudentDetails != null)
+                                {
+                                    <div class="flex justify-between p-3 bg-gray-50 rounded-xl">
+                                        <span class="text-sm text-gray-600">Class:</span>
+                                        <span class="text-sm font-bold text-[#2D2D2D]">@Model.StudentDetails.ClassObj?.Name</span>
+                                    </div>
+                                    <div class="flex justify-between p-3 bg-gray-50 rounded-xl">
+                                        <span class="text-sm text-gray-600">Section:</span>
+                                        <span class="text-sm font-bold text-[#2D2D2D]">@Model.StudentDetails.SectionObj?.Name</span>
+                                    </div>
+                                }
+                            }
+                            else if (Model.EmployeeId.HasValue)
+                            {
+                                <div class="flex justify-between p-3 bg-gray-50 rounded-xl">
+                                    <span class="text-sm text-gray-600">Employee ID:</span>
+                                    <span class="text-sm font-bold text-[#2D2D2D]">@Model.EmployeeId</span>
+                                </div>
+                                @if (Model.EmployeeDetails != null)
+                                {
+                                    <div class="flex justify-between p-3 bg-gray-50 rounded-xl">
+                                        <span class="text-sm text-gray-600">Department:</span>
+                                        <span class="text-sm font-bold text-[#2D2D2D]">@Model.EmployeeDetails.Role</span>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Right Column - Editable Information -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Personal Information Card -->
+                <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                    <h3 class="text-xl font-bold text-[#2D2D2D] mb-6 flex items-center border-b border-gray-200 pb-4">
+                        <div class="w-10 h-10 rounded-xl bg-[#FFD700]/20 flex items-center justify-center mr-3">
+                            <i class="fas fa-user-edit text-[#2D2D2D]"></i>
+                        </div>
+                        Personal Information
+                    </h3>
+                    
+                    <form id="profile-form">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Full Name -->
+                            <div>
+                                <label for="fullName" class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-user text-[#FFD700] mr-1"></i>
+                                    Full Name
+                                </label>
+                                <input type="text" 
+                                       id="fullName" 
+                                       name="fullName" 
+                                       value="@Model.FullName" 
+                                       class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-[#FFD700] transition-all duration-300 bg-white/80"
+                                       required />
+                            </div>
+
+                            <!-- Phone Number -->
+                            <div>
+                                <label for="phoneNumber" class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-phone text-[#FFD700] mr-1"></i>
+                                    Phone Number
+                                </label>
+                                <input type="tel" 
+                                       id="phoneNumber" 
+                                       name="phoneNumber" 
+                                       value="@Model.PhoneNumber" 
+                                       class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-[#FFD700] transition-all duration-300 bg-white/80"
+                                       placeholder="03XX-XXXXXXX" />
+                            </div>
+
+                            <!-- Address -->
+                            <div class="md:col-span-2">
+                                <label for="address" class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-map-marker-alt text-[#FFD700] mr-1"></i>
+                                    Address
+                                </label>
+                                <textarea id="address" 
+                                          name="address" 
+                                          rows="3" 
+                                          class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-[#FFD700] transition-all duration-300 bg-white/80"
+                                          placeholder="Enter your complete address">@Model.Address</textarea>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="md:col-span-2">
+                                <button type="submit" 
+                                        id="update-profile-btn"
+                                        class="gold-gradient hover:opacity-90 text-[#2D2D2D] font-bold py-3 px-6 rounded-xl transition-all duration-300 flex items-center shadow-lg hover:shadow-xl">
+                                    <i class="fas fa-save mr-2"></i>
+                                    <span id="update-profile-text">Update Information</span>
+                                    <i class="fas fa-spinner fa-spin ml-2 hidden" id="update-profile-spinner"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Change Password Card -->
+                <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                    <h3 class="text-xl font-bold text-[#2D2D2D] mb-6 flex items-center border-b border-gray-200 pb-4">
+                        <div class="w-10 h-10 rounded-xl bg-[#2D2D2D] flex items-center justify-center mr-3">
+                            <i class="fas fa-lock text-[#FFD700]"></i>
+                        </div>
+                        Change Password
+                    </h3>
+                    
+                    <form id="password-form">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="grid grid-cols-1 gap-6">
+                            <!-- Current Password -->
+                            <div>
+                                <label for="currentPassword" class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-key text-[#FFD700] mr-1"></i>
+                                    Current Password
+                                </label>
+                                <div class="relative">
+                                    <input type="password" 
+                                           id="currentPassword" 
+                                           name="currentPassword" 
+                                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-[#FFD700] transition-all duration-300 pr-12 bg-white/80"
+                                           required />
+                                    <button type="button" 
+                                            onclick="togglePassword('currentPassword')"
+                                            class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-[#FFD700] transition-colors">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- New Password -->
+                            <div>
+                                <label for="newPassword" class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-lock text-[#FFD700] mr-1"></i>
+                                    New Password
+                                </label>
+                                <div class="relative">
+                                    <input type="password" 
+                                           id="newPassword" 
+                                           name="newPassword" 
+                                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-[#FFD700] transition-all duration-300 pr-12 bg-white/80"
+                                           required />
+                                    <button type="button" 
+                                            onclick="togglePassword('newPassword')"
+                                            class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-[#FFD700] transition-colors">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">
+                                    Password must be at least 6 characters with uppercase, lowercase, number, and special character
+                                </p>
+                            </div>
+
+                            <!-- Confirm Password -->
+                            <div>
+                                <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-check-circle text-[#FFD700] mr-1"></i>
+                                    Confirm New Password
+                                </label>
+                                <div class="relative">
+                                    <input type="password" 
+                                           id="confirmPassword" 
+                                           name="confirmPassword" 
+                                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FFD700] focus:border-[#FFD700] transition-all duration-300 pr-12 bg-white/80"
+                                           required />
+                                    <button type="button" 
+                                            onclick="togglePassword('confirmPassword')"
+                                            class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-[#FFD700] transition-colors">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div>
+                                <button type="submit" 
+                                        id="change-password-btn"
+                                        class="bg-[#2D2D2D] hover:bg-[#1a1a1a] text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 flex items-center shadow-lg hover:shadow-xl">
+                                    <i class="fas fa-shield-alt mr-2 text-[#FFD700]"></i>
+                                    <span id="change-password-text">Change Password</span>
+                                    <i class="fas fa-spinner fa-spin ml-2 hidden" id="change-password-spinner"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Document Upload Card (For Students and Teachers) -->
+                @if (Model.Role == "Student" || Model.Role == "Teacher")
+                {
+                    <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                        <h3 class="text-xl font-bold text-[#2D2D2D] mb-6 flex items-center border-b border-gray-200 pb-4">
+                            <div class="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center mr-3">
+                                <i class="fas fa-file-upload text-primary-600"></i>
+                            </div>
+                            My Documents
+                        </h3>
+
+                        <!-- Upload Section -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-cloud-upload-alt text-primary-500 mr-1"></i>
+                                Upload New Document
+                            </label>
+                            <div class="flex items-center space-x-3">
+                                <input type="file" 
+                                       id="document-upload" 
+                                       accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" 
+                                       class="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-400 focus:border-primary-400 transition-all duration-300 bg-white/80"
+                                       onchange="handleDocumentUpload(event)" />
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">
+                                Accepted formats: PDF, Word, Images (max 10MB)
+                            </p>
+                        </div>
+
+                        <!-- Documents List -->
+                        <div id="documents-list" class="space-y-3">
+                            <!-- Documents will be loaded here -->
+                        </div>
+
+                        <!-- Empty State -->
+                        <div id="documents-empty" class="text-center py-8 text-gray-500">
+                            <i class="fas fa-folder-open text-4xl mb-3"></i>
+                            <p>No documents uploaded yet</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Show message function
+        function showMessage(message, isSuccess) {
+            const container = document.getElementById('message-container');
+            const content = document.getElementById('message-content');
+            
+            container.classList.remove('hidden');
+            content.className = isSuccess 
+                ? 'glassmorphism rounded-2xl p-4 bg-green-50 text-green-800 border border-green-200' 
+                : 'glassmorphism rounded-2xl p-4 bg-red-50 text-red-800 border border-red-200';
+            content.innerHTML = `<i class="fas ${isSuccess ? 'fa-check-circle text-green-500' : 'fa-exclamation-circle text-red-500'} mr-2"></i>${message}`;
+            
+            // Scroll to top to show message
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                container.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Toggle password visibility
+        function togglePassword(fieldId) {
+            const field = document.getElementById(fieldId);
+            const icon = event.currentTarget.querySelector('i');
+            
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                field.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Handle avatar upload
+        async function handleAvatarUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            if (!allowedTypes.includes(file.type)) {
+                showMessage('Please select a valid image file (jpg, jpeg, png, gif)', false);
+                return;
+            }
+
+            // Validate file size (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showMessage('File size must be less than 5MB', false);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('avatarFile', file);
+            
+            // Add anti-forgery token
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            formData.append('__RequestVerificationToken', token);
+
+            try {
+                const response = await fetch('@Url.Action("UploadAvatar", "Profile")', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update avatar preview
+                    const avatarPreview = document.getElementById('avatar-preview');
+                    if (result.avatarUrl) {
+                        if (avatarPreview.tagName === 'IMG') {
+                            avatarPreview.src = result.avatarUrl + '?t=' + new Date().getTime();
+                        } else {
+                            // Replace div with img
+                            const img = document.createElement('img');
+                            img.id = 'avatar-preview';
+                            img.src = result.avatarUrl + '?t=' + new Date().getTime();
+                            img.alt = '@Model.FullName';
+                            img.className = 'w-32 h-32 rounded-full object-cover border-4 border-primary-200 shadow-lg mx-auto';
+                            avatarPreview.parentNode.replaceChild(img, avatarPreview);
+                        }
+                    }
+                    showMessage(result.message, true);
+                    
+                    // Reload page after 1 second to show delete button
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showMessage(result.message, false);
+                }
+            } catch (error) {
+                showMessage('Error uploading avatar: ' + error.message, false);
+            }
+        }
+
+        // Delete avatar
+        async function deleteAvatar() {
+            if (!confirm('Are you sure you want to remove your avatar?')) {
+                return;
+            }
+
+            const formData = new FormData();
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            formData.append('__RequestVerificationToken', token);
+
+            try {
+                const response = await fetch('@Url.Action("DeleteAvatar", "Profile")', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(result.message, true);
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showMessage(result.message, false);
+                }
+            } catch (error) {
+                showMessage('Error deleting avatar: ' + error.message, false);
+            }
+        }
+
+        // Update profile form
+        document.getElementById('profile-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('update-profile-btn');
+            const btnText = document.getElementById('update-profile-text');
+            const spinner = document.getElementById('update-profile-spinner');
+            
+            btn.disabled = true;
+            btnText.textContent = 'Updating...';
+            spinner.classList.remove('hidden');
+            
+            const formData = new FormData(this);
+            
+            try {
+                const response = await fetch('@Url.Action("UpdateBasicInfo", "Profile")', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                showMessage(result.message, result.success);
+                
+                if (result.success) {
+                    setTimeout(() => location.reload(), 1500);
+                }
+            } catch (error) {
+                showMessage('Error updating profile: ' + error.message, false);
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Update Information';
+                spinner.classList.add('hidden');
+            }
+        });
+
+        // Change password form
+        document.getElementById('password-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (newPassword !== confirmPassword) {
+                showMessage('New passwords do not match', false);
+                return;
+            }
+            
+            const btn = document.getElementById('change-password-btn');
+            const btnText = document.getElementById('change-password-text');
+            const spinner = document.getElementById('change-password-spinner');
+            
+            btn.disabled = true;
+            btnText.textContent = 'Changing...';
+            spinner.classList.remove('hidden');
+            
+            const formData = new FormData(this);
+            
+            try {
+                const response = await fetch('@Url.Action("ChangePassword", "Profile")', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                showMessage(result.message, result.success);
+                
+                if (result.success) {
+                    this.reset();
+                }
+            } catch (error) {
+                showMessage('Error changing password: ' + error.message, false);
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Change Password';
+                spinner.classList.add('hidden');
+            }
+        });
+
+        // Document upload functionality
+        async function handleDocumentUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validate file type
+            const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/jpg', 'image/png'];
+            if (!allowedTypes.includes(file.type)) {
+                showMessage('Please select a valid document file (PDF, Word, or Image)', false);
+                event.target.value = '';
+                return;
+            }
+
+            // Validate file size (10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                showMessage('File size must be less than 10MB', false);
+                event.target.value = '';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('documentFile', file);
+            
+            // Add anti-forgery token
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            formData.append('__RequestVerificationToken', token);
+
+            try {
+                const response = await fetch('@Url.Action("UploadDocument", "Profile")', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(result.message, true);
+                    loadDocuments();
+                    event.target.value = '';
+                } else {
+                    showMessage(result.message, false);
+                    event.target.value = '';
+                }
+            } catch (error) {
+                showMessage('Error uploading document: ' + error.message, false);
+                event.target.value = '';
+            }
+        }
+
+        // Load documents list
+        async function loadDocuments() {
+            // This is a placeholder - in a real implementation, you would fetch the list from the server
+            // For now, we'll just show the empty state
+            const emptyState = document.getElementById('documents-empty');
+            if (emptyState) {
+                emptyState.style.display = 'block';
+            }
+        }
+
+        // Delete document
+        async function deleteDocument(fileUrl) {
+            if (!confirm('Are you sure you want to delete this document?')) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('fileUrl', fileUrl);
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            formData.append('__RequestVerificationToken', token);
+
+            try {
+                const response = await fetch('@Url.Action("DeleteDocument", "Profile")', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(result.message, true);
+                    loadDocuments();
+                } else {
+                    showMessage(result.message, false);
+                }
+            } catch (error) {
+                showMessage('Error deleting document: ' + error.message, false);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            @if (Model.Role == "Student" || Model.Role == "Teacher")
+            {
+                <text>loadDocuments();</text>
+            }
+        });
+    </script>
+}

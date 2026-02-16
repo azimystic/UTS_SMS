@@ -1,0 +1,247 @@
+@model List<SMS.Models.AcademicCalendar>
+
+@{
+    ViewData["Title"] = "Academic Calendar";
+    var student = ViewBag.Student as Student;
+    var familyStudents = ViewBag.FamilyStudents as List<Student>;
+    var selectedYear = (int)ViewBag.SelectedYear;
+    var selectedMonth = (int)ViewBag.SelectedMonth;
+    var monthName = (string)ViewBag.MonthName;
+    
+    // Generate calendar days
+    var firstDayOfMonth = new DateTime(selectedYear, selectedMonth, 1);
+    var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+    var startOfWeek = firstDayOfMonth.AddDays(-(int)firstDayOfMonth.DayOfWeek + 1); // Start from Monday
+    var endOfWeek = lastDayOfMonth.AddDays(7 - (int)lastDayOfMonth.DayOfWeek);
+    
+    var calendarDays = new List<DateTime>();
+    for (var day = startOfWeek; day <= endOfWeek; day = day.AddDays(1))
+    {
+        calendarDays.Add(day);
+    }
+    
+    var holidaysByDate = Model.GroupBy(h => h.Date.Date).ToDictionary(g => g.Key, g => g.ToList());
+}
+
+<div class="min-h-screen bg-neutral-50 p-3 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-primary-800">📅 Academic Calendar</h1>
+                <p class="text-neutral-600 mt-1">@monthName - @student?.ClassObj?.Name @student?.SectionObj?.Name</p>
+            </div>
+            
+            <div class="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-2 mt-4 lg:mt-0">
+                <!-- Student Selector -->
+                @if (familyStudents?.Count > 1)
+                {
+                    <form method="get" class="flex items-center space-x-2">
+                        <input type="hidden" name="year" value="@selectedYear" />
+                        <input type="hidden" name="month" value="@selectedMonth" />
+                        <select name="studentId" onchange="this.form.submit()" 
+                                class="px-3 py-2 border border-primary-200 rounded-md text-sm">
+                            @foreach (var s in familyStudents)
+                            {
+                                <option value="@s.Id" selected="@(s.Id == student?.Id)">
+                                    @s.StudentName (@s.ClassObj?.Name @s.SectionObj?.Name)
+                                </option>
+                            }
+                        </select>
+                    </form>
+                }
+                
+                <!-- Month/Year Selector -->
+                <form method="get" class="flex items-center space-x-2">
+                    <input type="hidden" name="studentId" value="@student?.Id" />
+                    <select name="month" class="px-3 py-2 border border-primary-200 rounded-md text-sm">
+                        @for (int i = 1; i <= 12; i++)
+                        {
+                            <option value="@i" selected="@(i == selectedMonth)">@(new DateTime(2023, i, 1).ToString("MMMM"))</option>
+                        }
+                    </select>
+                    <select name="year" class="px-3 py-2 border border-primary-200 rounded-md text-sm">
+                        @for (int y = DateTime.Now.Year - 1; y <= DateTime.Now.Year + 2; y++)
+                        {
+                            <option value="@y" selected="@(y == selectedYear)">@y</option>
+                        }
+                    </select>
+                    <button type="submit" class="bg-gradient-primary hover:bg-primary-700 text-white px-4 py-2 rounded-md text-sm transition-colors">Update</button>
+                </form>
+                
+                <div class="flex space-x-2">
+                    <a asp-action="StudentTimetable" asp-route-id="@student?.Id" 
+                       class="bg-success hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm transition-colors flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Timetable
+                    </a>
+                    <a asp-action="StudentDetails" asp-route-id="@student?.Id" 
+                       class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm transition-colors flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex justify-between items-center mb-6 bg-white rounded-lg p-4 shadow-sm">
+            <a href="?studentId=@student?.Id&year=@(selectedMonth == 1 ? selectedYear - 1 : selectedYear)&month=@(selectedMonth == 1 ? 12 : selectedMonth - 1)" 
+               class="flex items-center text-primary-600 hover:text-primary-800 transition-colors">
+                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                Previous Month
+            </a>
+            
+            <h2 class="text-xl font-bold text-primary-800">@monthName</h2>
+            
+            <a href="?studentId=@student?.Id&year=@(selectedMonth == 12 ? selectedYear + 1 : selectedYear)&month=@(selectedMonth == 12 ? 1 : selectedMonth + 1)" 
+               class="flex items-center text-primary-600 hover:text-primary-800 transition-colors">
+                Next Month
+                <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </a>
+        </div>
+
+        <!-- Calendar -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
+            <!-- Calendar Header -->
+            <div class="grid grid-cols-7 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                @foreach (var dayName in new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" })
+                {
+                    <div class="p-3 text-center font-medium text-sm">@dayName</div>
+                }
+            </div>
+
+            <!-- Calendar Days -->
+            <div class="grid grid-cols-7 divide-x divide-y divide-primary-100">
+                @foreach (var day in calendarDays)
+                {
+                    var isCurrentMonth = day.Month == selectedMonth;
+                    var isToday = day.Date == DateTime.Today;
+                    var dayHolidays = holidaysByDate.ContainsKey(day.Date) ? holidaysByDate[day.Date] : new List<AcademicCalendar>();
+                    var isWeekend = day.DayOfWeek == DayOfWeek.Saturday || day.DayOfWeek == DayOfWeek.Sunday;
+                    
+                    <div class="min-h-24 p-2 @(isCurrentMonth ? "" : "bg-neutral-50") @(isToday ? "bg-primary-50" : "") @(isWeekend && isCurrentMonth ? "bg-neutral-100" : "")">
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="text-sm font-medium @(isCurrentMonth ? "text-primary-800" : "text-neutral-400") @(isToday ? "text-primary-600 font-bold" : "")">
+                                @day.Day
+                            </span>
+                            @if (isToday)
+                            {
+                                <span class="px-1 py-0.5 bg-primary-100 text-primary-800 text-xs rounded">Today</span>
+                            }
+                        </div>
+                        
+                        @if (dayHolidays.Any() && isCurrentMonth)
+                        {
+                            <div class="space-y-1">
+                                @foreach (var holiday in dayHolidays.Take(3))
+                                {
+                                    <div class="text-xs p-1 rounded @GetHolidayColorClass(holiday.HolidayType)" 
+                                         title="@holiday.HolidayName: @holiday.Description">
+                                        <div class="font-medium truncate">@holiday.HolidayName</div>
+                                        @if (!string.IsNullOrEmpty(holiday.HolidayType))
+                                        {
+                                            <div class="text-xs opacity-75">@holiday.HolidayType</div>
+                                        }
+                                    </div>
+                                }
+                                @if (dayHolidays.Count > 3)
+                                {
+                                    <div class="text-xs text-neutral-500">+@(dayHolidays.Count - 3) more</div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Holiday List for Current Month -->
+        @if (Model.Any())
+        {
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-primary-800 mb-4">Holidays & Events This Month</h3>
+                <div class="space-y-3">
+                    @foreach (var holiday in Model.OrderBy(h => h.Date))
+                    {
+                        <div class="flex items-start space-x-3 p-3 @GetHolidayColorClass(holiday.HolidayType) rounded-lg">
+                            <div class="flex-shrink-0">
+                                <div class="w-10 h-10 bg-white bg-opacity-30 rounded-lg flex items-center justify-center font-bold text-sm">
+                                    @holiday.Date.Day
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="font-medium">@holiday.HolidayName</h4>
+                                    <span class="text-xs opacity-75 ml-2">@holiday.Date.ToString("dddd, MMMM dd")</span>
+                                </div>
+                                @if (!string.IsNullOrEmpty(holiday.Description))
+                                {
+                                    <p class="text-sm opacity-90 mt-1">@holiday.Description</p>
+                                }
+                                <div class="flex items-center mt-1">
+                                    <span class="text-xs px-2 py-1 bg-white bg-opacity-30 rounded">@holiday.HolidayType</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="bg-white rounded-lg shadow-sm p-12 text-center">
+                <svg class="w-16 h-16 text-neutral-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <h3 class="text-lg font-medium text-primary-800 mb-2">No Events This Month</h3>
+                <p class="text-neutral-500">There are no holidays or events scheduled for @monthName.</p>
+            </div>
+        }
+
+        <!-- Legend -->
+        <div class="mt-6 bg-white rounded-lg shadow-sm p-4">
+            <h3 class="text-lg font-medium text-primary-800 mb-3">Holiday Types</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-red-200 rounded mr-2"></div>
+                    <span class="text-sm text-neutral-700">National Holiday</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-green-200 rounded mr-2"></div>
+                    <span class="text-sm text-neutral-700">Religious Holiday</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-blue-200 rounded mr-2"></div>
+                    <span class="text-sm text-neutral-700">Academic Event</span>
+                </div>
+                <div class="flex items-center">
+                    <div class="w-4 h-4 bg-yellow-200 rounded mr-2"></div>
+                    <span class="text-sm text-neutral-700">Local Holiday</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    public string GetHolidayColorClass(string holidayType)
+    {
+        return holidayType?.ToLower() switch
+        {
+            "national" => "bg-red-200 text-error",
+            "religious" => "bg-green-200 text-success",
+            "academic" => "bg-blue-200 text-primary-800",
+            "local" => "bg-yellow-200 text-yellow-800",
+            _ => "bg-primary-100 text-primary-800"
+        };
+    }
+}

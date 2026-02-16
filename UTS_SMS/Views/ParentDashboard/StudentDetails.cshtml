@@ -1,0 +1,775 @@
+@model SMS.Controllers.ParentDashboardController.ParentStudentDetailsViewModel
+
+@{
+    ViewData["Title"] = $"{Model.Student.StudentName} - Details";
+    
+    // Calculate attendance percentages
+    var totalDays = Model.AttendanceData.Sum(a => (int)a.Count);
+    var presentDays = Model.AttendanceData.FirstOrDefault(a => a.Status == "P")?.Count ?? 0;
+    var absentDays = Model.AttendanceData.FirstOrDefault(a => a.Status == "A")?.Count ?? 0;
+    var lateDays = Model.AttendanceData.FirstOrDefault(a => a.Status == "L")?.Count ?? 0;
+    var leaveDays = Model.AttendanceData.FirstOrDefault(a => a.Status == "Leave")?.Count ?? 0;
+    
+    var attendancePercentage = totalDays > 0 ? Math.Round((double)(presentDays + lateDays) / totalDays * 100, 1) : 0;
+    
+    // Calculate Namaz statistics
+    var totalNamazDays = Model.NamazAttendance.Count();
+    var namazPresentDays = Model.NamazAttendance.Count(na => na.Status == "WJ");
+    var namazPercentage = totalNamazDays > 0 ? Math.Round((double)namazPresentDays / totalNamazDays * 100, 1) : 0;
+}
+
+<div class="min-h-screen bg-neutral-50 p-3 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+            <div class="flex items-center">
+                <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-4">
+                    @if (!string.IsNullOrEmpty(Model.Student.ProfilePicture))
+                    {
+                        <img src="/@Model.Student.ProfilePicture" alt="@Model.Student.StudentName" class="w-16 h-16 rounded-full object-cover" />
+                    }
+                    else
+                    {
+                        <span class="text-2xl font-bold text-white">@Model.Student.StudentName.First()</span>
+                    }
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-primary-800">@Model.Student.StudentName</h1>
+                    <p class="text-neutral-600">@Model.Student.ClassObj?.Name - @Model.Student.SectionObj?.Name</p>
+                    <p class="text-sm text-neutral-500">Dashboard for @Model.StartDate.ToString("MMMM yyyy")</p>
+                </div>
+            </div>
+            
+            <div class="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-2 mt-4 md:mt-0">
+                <!-- Month/Year Selector -->
+                <form method="get" class="flex items-center space-x-2">
+                    <select name="month" class="px-3 py-2 border border-primary-200 rounded-md text-sm">
+                        @for (int i = 1; i <= 12; i++)
+                        {
+                            <option value="@i" selected="@(i == Model.SelectedMonth)">@(new DateTime(2023, i, 1).ToString("MMMM"))</option>
+                        }
+                    </select>
+                    <select name="year" class="px-3 py-2 border border-primary-200 rounded-md text-sm">
+                        @for (int y = DateTime.Now.Year - 2; y <= DateTime.Now.Year + 1; y++)
+                        {
+                            <option value="@y" selected="@(y == Model.SelectedYear)">@y</option>
+                        }
+                    </select>
+                    <button type="submit" class="bg-gradient-primary hover:bg-primary-700 text-white px-4 py-2 rounded-md text-sm transition-colors">Update</button>
+                </form>
+                
+                <a asp-action="Dashboard" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm transition-colors flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Back
+                </a>
+            </div>
+        </div>
+
+        <!-- Student Title/Position Display -->
+        @if (!string.IsNullOrEmpty(Model.Student.PersonalTitle) || Model.LatestExamResult != null)
+        {
+            <div class="bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-2xl shadow-sms-lg p-6 mb-8 text-white">
+                <div class="flex flex-col md:flex-row items-center justify-between">
+                    @if (!string.IsNullOrEmpty(Model.Student.PersonalTitle))
+                    {
+                        <div class="flex items-center mb-4 md:mb-0">
+                            <svg class="w-8 h-8 text-accent-100 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                            </svg>
+                            <div>
+                                <h2 class="text-xl font-bold">@Model.Student.PersonalTitle</h2>
+                                <p class="text-accent-100">Special Recognition</p>
+                            </div>
+                        </div>
+                    }
+                    
+                    @if (Model.LatestExamResult != null)
+                    {
+                        <div class="flex items-center">
+                            @{
+                                var percentage = (decimal)Model.LatestExamResult.Percentage;
+                                string icon = "💎"; // Default diamond
+                                string iconColor = "text-accent-100";
+                                
+                                if (percentage >= 90) { icon = "🥇"; iconColor = "text-yellow-300"; }
+                                else if (percentage >= 80) { icon = "🥈"; iconColor = "text-gray-300"; }
+                                else if (percentage >= 70) { icon = "🥉"; iconColor = "text-accent-600"; }
+                                else if (percentage >= 60) { icon = "💎"; iconColor = "text-accent-400"; }
+                            }
+                            <span class="text-2xl mr-3">@icon</span>
+                            <div>
+                                <h3 class="text-lg font-bold">Grade: @Model.LatestExamResult.Grade</h3>
+                                <p class="text-accent-100">@Model.LatestExamResult.ObtainedMarks/@Model.LatestExamResult.TotalMarks marks (@percentage%)</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Overview Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+            <!-- Attendance Summary -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-success-light rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-5">
+                        <dl>
+                            <dt class="text-sm font-medium text-neutral-500 truncate">Attendance</dt>
+                            <dd class="text-lg font-medium text-primary-800">@attendancePercentage%</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Namaz Attendance -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <span class="text-primary-600">🕌</span>
+                        </div>
+                    </div>
+                    <div class="ml-5">
+                        <dl>
+                            <dt class="text-sm font-medium text-neutral-500 truncate">Namaz</dt>
+                            <dd class="text-lg font-medium text-primary-800">@namazPercentage%</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fee Status -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-5">
+                        <dl>
+                            <dt class="text-sm font-medium text-neutral-500 truncate">Fee Status</dt>
+                            <dd class="text-lg font-medium text-primary-800">
+                                @if (Model.FeeRecord != null)
+                                {
+                                    var totalPaid = Model.FeeRecord.Transactions?.Sum(t => t.AmountPaid) ?? 0;
+                                    var balance = Model.FeeRecord.TotalAmountPayable - totalPaid;
+                                    var isAdvance = balance < 0;
+                                    var feeStatus = balance == 0 ? "Paid" : balance == Model.FeeRecord.TotalAmountPayable ? "Not Paid" : isAdvance ? "Advance" : "Partial";
+                                    
+                                    <span class="@(feeStatus == "Paid" ? "text-success" :
+                                                   feeStatus == "Advance" ? "text-primary-600" :
+                                                   feeStatus == "Partial" ? "text-accent-600" :
+                                                   "text-error")">@feeStatus</span>
+                                }
+                                else
+                                {
+                                    <span class="text-neutral-500">N/A</span>
+                                }
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Complaints -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 bg-error-light rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.865-.833-2.634 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-5">
+                        <dl>
+                            <dt class="text-sm font-medium text-neutral-500 truncate">Complaints</dt>
+                            <dd class="text-lg font-medium text-primary-800">@Model.ActiveComplaints.Count</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+            <!-- Attendance Chart -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-primary-800 mb-4">Daily Attendance</h3>
+                <div class="h-64">
+                    <canvas id="attendanceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Test Results Chart -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-primary-800 mb-4">Test Results</h3>
+                <div class="h-64">
+                    @if (Model.TestResults.Any())
+                    {
+                        <canvas id="testResultsChart"></canvas>
+                    }
+                    else
+                    {
+                        <div class="flex items-center justify-center h-full text-neutral-500">
+                            <div class="text-center">
+                                <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <p>No test results available</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Today's Diary Section -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-primary-800">Today's Diary (@DateTime.Today.ToString("MMM dd, yyyy"))</h3>
+                <a asp-action="DiaryDetails" asp-route-studentId="@Model.Student.Id" class="text-primary-600 hover:text-primary-800 text-sm font-medium">
+                    View All Entries
+                </a>
+            </div>
+            
+            @if (Model.TodayDiary.Any())
+            {
+                <div class="space-y-4">
+                    @foreach (var diary in Model.TodayDiary.Take(3))
+                    {
+                        <div class="border rounded-lg p-4 bg-neutral-50">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-medium text-primary-800">@diary.TeacherAssignment.Subject.Name</h4>
+                                <span class="text-xs text-neutral-500">@diary.Date.ToString("hh:mm tt")</span>
+                            </div>
+                            <p class="text-sm text-neutral-700 mb-2">@diary.LessonSummary</p>
+                            @if (!string.IsNullOrEmpty(diary.HomeworkGiven))
+                            {
+                                <p class="text-sm text-primary-600"><strong>Homework:</strong> @diary.HomeworkGiven</p>
+                            }
+                            
+                            @if (diary.DiaryImages != null && diary.DiaryImages.Any())
+                            {
+                                <div class="mt-3 border-t pt-3">
+                                    <h5 class="text-sm font-medium text-neutral-700 mb-2 flex items-center">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 2h12a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z"></path>
+                                        </svg>
+                                        Images (@diary.DiaryImages.Count)
+                                    </h5>
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach (var image in diary.DiaryImages.Take(3))
+                                        {
+                                            <div class="relative group">
+                                                <img src="/@image.ImagePath" 
+                                                     alt="@image.Description" 
+                                                     class="w-12 h-12 rounded-lg object-cover border cursor-pointer hover:opacity-80 transition-opacity"
+                                                     onclick="openImageModal('/@image.ImagePath', '@image.Description', @image.Id)" />
+                                                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 rounded-lg transition-all flex items-center justify-center">
+                                                    <svg class="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        }
+                                        @if (diary.DiaryImages.Count > 3)
+                                        {
+                                            <div class="w-12 h-12 rounded-lg bg-primary-100 flex items-center justify-center text-xs text-neutral-600 font-medium">
+                                                +@(diary.DiaryImages.Count - 3)
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="mt-2">
+                                        <a asp-action="DiaryDetails" asp-route-studentId="@Model.Student.Id" asp-route-date="@diary.Date.ToString("yyyy-MM-dd")" 
+                                           class="text-primary-600 hover:text-primary-800 text-xs font-medium">
+                                            View all images →
+                                        </a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-8 text-neutral-500">
+                    <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                    <p>No diary entries for today</p>
+                </div>
+            }
+        </div>
+
+        <!-- Fee Summary and Complaints -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Fee Summary -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-primary-800">Fee Summary</h3>
+                    @if (Model.FeeRecord != null)
+                    {
+                        <button onclick="toggleFeeDetails()" class="text-primary-600 hover:text-primary-800 text-sm font-medium">
+                            View Details
+                        </button>
+                    }
+                </div>
+                
+                @if (Model.FeeRecord != null)
+                {
+                    <!-- Fee Breakdown -->
+                    <div class="space-y-2 mb-4">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-neutral-600">Tuition Fee:</span>
+                            <span class="font-medium">Rs. @Model.FeeRecord.TuitionFee.ToString("N0")</span>
+                        </div>
+                        @if (Model.FeeRecord.AdmissionFee > 0)
+                        {
+                            <div class="flex justify-between text-sm">
+                                <span class="text-neutral-600">Admission Fee:</span>
+                                <span class="font-medium">Rs. @Model.FeeRecord.AdmissionFee.ToString("N0")</span>
+                            </div>
+                        }
+                        @if (Model.FeeRecord.MiscallaneousCharges > 0)
+                        {
+                            <div class="flex justify-between text-sm">
+                                <span class="text-neutral-600">Misc Charges:</span>
+                                <span class="font-medium">Rs. @Model.FeeRecord.MiscallaneousCharges.ToString("N0")</span>
+                            </div>
+                        }
+                        @if (Model.FeeRecord.PreviousDues > 0)
+                        {
+                            <div class="flex justify-between text-sm">
+                                <span class="text-neutral-600">Previous Dues:</span>
+                                <span class="font-medium text-error">Rs. @Model.FeeRecord.PreviousDues.ToString("N0")</span>
+                            </div>
+                        }
+                        @if (Model.FeeRecord.Fine > 0)
+                        {
+                            <div class="flex justify-between text-sm">
+                                <span class="text-neutral-600">Fine:</span>
+                                <span class="font-medium text-error">Rs. @Model.FeeRecord.Fine.ToString("N0")</span>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Totals -->
+                    <div class="space-y-2 border-t pt-3">
+                        <div class="flex justify-between">
+                            <span class="text-neutral-700 font-medium">Total Payable:</span>
+                            <span class="font-bold">Rs. @Model.FeeRecord.TotalAmountPayable.ToString("N0")</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-neutral-700">Amount Paid:</span>
+                            <span class="font-medium text-success">Rs. @(Model.FeeRecord.Transactions?.Sum(t => t.AmountPaid) ?? 0).ToString("N0")</span>
+                        </div>
+                        
+                        @{
+                            var totalPaid = Model.FeeRecord.Transactions?.Sum(t => t.AmountPaid) ?? 0;
+                            var balance = Model.FeeRecord.TotalAmountPayable - totalPaid;
+                            var isAdvance = balance < 0;
+                            var feeStatus = balance == 0 ? "Paid" : balance == Model.FeeRecord.TotalAmountPayable ? "Not Paid" : isAdvance ? "Advance" : "Partial";
+                        }
+                        
+                        <div class="flex justify-between border-t pt-2">
+                            @if (isAdvance)
+                            {
+                                <span class="text-neutral-700">Advance:</span>
+                                <span class="font-bold text-success">Rs. @Math.Abs(balance).ToString("N0")</span>
+                            }
+                            else
+                            {
+                                <span class="text-neutral-700">Balance:</span>
+                                <span class="font-bold text-error">Rs. @balance.ToString("N0")</span>
+                            }
+                        </div>
+                        
+                        <!-- Fee Status Badge -->
+                        <div class="flex justify-between items-center pt-2">
+                            <span class="text-neutral-700">Status:</span>
+                            <span class="px-2 py-1 rounded-full text-xs font-medium 
+                                @(feeStatus == "Paid" ? "bg-success-light text-success" :
+                                  feeStatus == "Advance" ? "bg-primary-100 text-primary-800" :
+                                  feeStatus == "Partial" ? "bg-warning-light text-yellow-800" :
+                                  "bg-error-light text-error")">
+                                @feeStatus
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Transaction History Button -->
+                    @if (Model.FeeRecord.Transactions != null && Model.FeeRecord.Transactions.Any())
+                    {
+                        <div class="mt-4 pt-3 border-t">
+                            <button onclick="toggleTransactionHistory()" class="w-full bg-neutral-50 hover:bg-neutral-100 text-neutral-700 px-4 py-2 rounded-md text-sm transition-colors flex items-center justify-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                View Transaction History (@Model.FeeRecord.Transactions.Count)
+                            </button>
+                        </div>
+                    }
+
+                    <!-- Detailed Fee Actions -->
+                    <div class="mt-4 pt-3 border-t">
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <button onclick="openFeeDetails()" class="flex-1 bg-gradient-primary hover:bg-primary-700 text-white px-3 py-2 rounded-md text-sm transition-colors flex items-center justify-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Fee Details
+                            </button>
+                            <button onclick="printFeeVoucher()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-md text-sm transition-colors flex items-center justify-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                                </svg>
+                                Print
+                            </button>
+                        </div>
+                    </div>
+                }
+                }
+                else
+                {
+                    <p class="text-neutral-500 text-center py-4">No fee records available</p>
+                }
+            </div>
+
+            <!-- Active Complaints -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-primary-800 mb-4">Active Complaints</h3>
+                @if (Model.ActiveComplaints.Any())
+                {
+                    <div class="space-y-3 max-h-48 overflow-y-auto">
+                        @foreach (var complaint in Model.ActiveComplaints.Take(5))
+                        {
+                            <div class="border rounded-lg p-3 bg-error-light">
+                                <div class="flex justify-between items-start mb-1">
+                                    <h4 class="font-medium text-sm text-primary-800">@complaint.ComplaintTitle</h4>
+                                    <span class="px-2 py-1 text-xs bg-error-light text-error rounded">@complaint.Status</span>
+                                </div>
+                                <p class="text-sm text-neutral-600">@complaint.ComplaintDescription</p>
+                                <p class="text-xs text-neutral-500 mt-1">@complaint.ComplaintDate.ToString("MMM dd, yyyy")</p>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-neutral-500">
+                        <svg class="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p>No active complaints</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Student Duties Section -->
+        @if (Model.StudentDuties.Any())
+        {
+            <div class="bg-white rounded-lg shadow-sm p-6 mt-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-primary-800">Assigned Duties</h3>
+                    <span class="text-sm text-neutral-500">@Model.StudentDuties.Count active duties</span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    @foreach (var dutyAssignment in Model.StudentDuties.Take(6))
+                    {
+                        <div class="border rounded-lg p-4 hover:shadow-sms-md transition-shadow">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-medium text-primary-800 text-sm">@dutyAssignment.AssignedDuty.DutyTitle</h4>
+                                <span class="px-2 py-1 text-xs rounded
+                                    @(dutyAssignment.AssignedDuty.Priority == "High" ? "bg-error-light text-error" :
+                                      dutyAssignment.AssignedDuty.Priority == "Medium" ? "bg-warning-light text-yellow-800" :
+                                      "bg-success-light text-success")">
+                                    @dutyAssignment.AssignedDuty.Priority
+                                </span>
+                            </div>
+                            
+                            @if (!string.IsNullOrEmpty(dutyAssignment.AssignedDuty.Description))
+                            {
+                                <p class="text-sm text-neutral-600 mb-2 line-clamp-2">@dutyAssignment.AssignedDuty.Description</p>
+                            }
+                            
+                            <div class="flex items-center justify-between text-xs text-neutral-500">
+                                <span>@(dutyAssignment.AssignedDuty.DutyType ?? "General")</span>
+                                <span>Due: @dutyAssignment.AssignedDuty.DueDate.ToString("MMM dd")</span>
+                            </div>
+                            
+                            <!-- Progress Bar -->
+                            <div class="mt-3">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-neutral-600">Progress</span>
+                                    <span class="font-medium">@dutyAssignment.ProgressPercentage%</span>
+                                </div>
+                                <div class="w-full bg-primary-100 rounded-full h-2">
+                                    <div class="bg-gradient-primary h-2 rounded-full transition-all" style="width: @dutyAssignment.ProgressPercentage%"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Status -->
+                            <div class="mt-2 flex items-center justify-between">
+                                <span class="px-2 py-1 text-xs bg-neutral-100 text-neutral-700 rounded">@dutyAssignment.Status</span>
+                                @if (dutyAssignment.CompletedDate.HasValue)
+                                {
+                                    <span class="text-xs text-success">Completed @dutyAssignment.CompletedDate.Value.ToString("MMM dd")</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+                
+                @if (Model.StudentDuties.Count > 6)
+                {
+                    <div class="mt-4 text-center">
+                        <button onclick="showAllDuties()" class="text-primary-600 hover:text-primary-800 text-sm font-medium">
+                            View All Duties (@Model.StudentDuties.Count)
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mt-6">
+            <h3 class="text-lg font-semibold text-primary-800 mb-4">Quick Actions</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <a asp-action="StudentTimetable" asp-route-id="@Model.Student.Id" 
+                   class="flex items-center p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-200 hover:from-green-100 hover:to-green-200 transition-all group">
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 bg-success rounded-lg flex items-center justify-center group-hover:bg-green-700 transition-colors">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <h4 class="font-medium text-primary-800">Timetable</h4>
+                        <p class="text-sm text-neutral-600">View weekly class schedule</p>
+                    </div>
+                </a>
+
+                <a asp-action="AcademicCalendar" asp-route-studentId="@Model.Student.Id" 
+                   class="flex items-center p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg border border-purple-200 hover:from-purple-100 hover:to-purple-200 transition-all group">
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center group-hover:bg-purple-700 transition-colors">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <h4 class="font-medium text-primary-800">Academic Calendar</h4>
+                        <p class="text-sm text-neutral-600">Holidays & events</p>
+                    </div>
+                </a>
+
+                <a asp-action="DiaryDetails" asp-route-studentId="@Model.Student.Id" 
+                   class="flex items-center p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200 hover:from-blue-100 hover:to-blue-200 transition-all group">
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center group-hover:bg-primary-700 transition-colors">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="ml-4">
+                        <h4 class="font-medium text-primary-800">Diary Details</h4>
+                        <p class="text-sm text-neutral-600">Daily diary entries</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Modal -->
+<div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg max-w-4xl max-h-full overflow-hidden">
+        <div class="flex justify-between items-center p-4 border-b">
+            <h3 id="modalImageTitle" class="text-lg font-semibold text-primary-800">Image</h3>
+            <div class="flex items-center space-x-2">
+                <a id="downloadImageLink" href="#" 
+                   class="bg-gradient-primary hover:bg-primary-700 text-white px-3 py-1 rounded text-sm flex items-center transition-colors">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Download
+                </a>
+                <button onclick="closeImageModal()" class="text-neutral-400 hover:text-neutral-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="p-4">
+            <img id="modalImage" src="" alt="" class="max-w-full max-h-96 mx-auto rounded" />
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/chartjs/chart.min.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Attendance Pie Chart
+            const attendanceCtx = document.getElementById('attendanceChart');
+            if (attendanceCtx) {
+                new Chart(attendanceCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Present', 'Absent', 'Late', 'Leave'],
+                        datasets: [{
+                            data: [@presentDays, @absentDays, @lateDays, @leaveDays],
+                            backgroundColor: [
+                                'rgba(16, 185, 129, 0.8)',
+                                'rgba(239, 68, 68, 0.8)',
+                                'rgba(245, 158, 11, 0.8)',
+                                'rgba(156, 163, 175, 0.8)'
+                            ],
+                            borderColor: [
+                                'rgb(16, 185, 129)',
+                                'rgb(239, 68, 68)',
+                                'rgb(245, 158, 11)',
+                                'rgb(156, 163, 175)'
+                            ],
+                            borderWidth: 2,
+                            hoverOffset: 15
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: {
+                                        size: 12
+                                    },
+                                    usePointStyle: true,
+                                    padding: 20
+                                }
+                            }
+                        },
+                        animation: {
+                            animateScale: true,
+                            animateRotate: true,
+                            duration: 1000
+                        }
+                    }
+                });
+            }
+
+            // Test Results Chart
+            const testCtx = document.getElementById('testResultsChart');
+            if (testCtx && @Model.TestResults.Any().ToString().ToLower()) {
+                const testData = @Html.Raw(Json.Serialize(Model.TestResults.Select(tr => new { 
+                    ExamName = tr.Exam.Name ?? "Test",
+                    Percentage = tr.Percentage 
+                })));
+
+                new Chart(testCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: testData.map(t => t.ExamName),
+                        datasets: [{
+                            label: 'Percentage',
+                            data: testData.map(t => t.Percentage),
+                            backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                            borderColor: 'rgb(59, 130, 246)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        });
+        
+        // Image Modal Functions
+        window.openImageModal = function(imagePath, description, imageId) {
+            document.getElementById('modalImage').src = imagePath;
+            document.getElementById('modalImageTitle').textContent = description || 'Diary Image';
+            document.getElementById('downloadImageLink').href = '@Url.Action("DownloadDiaryImage", "ParentDashboard")?id=' + imageId;
+            document.getElementById('imageModal').classList.remove('hidden');
+        };
+        
+        window.closeImageModal = function() {
+            document.getElementById('imageModal').classList.add('hidden');
+        };
+        
+        // Close modal when clicking outside
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeImageModal();
+            }
+        });
+        
+        // Fee Details Functions
+        window.toggleFeeDetails = function() {
+            // This would expand to show more detailed breakdown
+            alert('Fee details would be expanded here');
+        };
+        
+        window.toggleTransactionHistory = function() {
+            // This would show transaction history
+            alert('Transaction history would be shown here');
+        };
+        
+        window.openFeeDetails = function() {
+            // Redirect to detailed fee page
+            window.location.href = '@Url.Action("FeeDetails", "ParentDashboard", new { id = Model.Student.Id })';
+        };
+        
+        window.printFeeVoucher = function() {
+            // Open print dialog for fee voucher
+            var printWindow = window.open('@Url.Action("PrintFeeVoucher", "ParentDashboard", new { id = Model.Student.Id })', 'FeeVoucher', 'width=800,height=600');
+            if (printWindow) {
+                printWindow.focus();
+            }
+        };
+        
+        // Student Duties Functions
+        window.showAllDuties = function() {
+            // This would show all duties in a modal or redirect to a detailed view
+            window.location.href = '@Url.Action("StudentDuties", "ParentDashboard", new { id = Model.Student.Id })';
+        };
+    </script>
+}

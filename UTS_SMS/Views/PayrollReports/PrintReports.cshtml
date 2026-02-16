@@ -1,0 +1,205 @@
+﻿@model List<SMS.ViewModels.PayrollReportViewModel>
+
+@{
+    ViewData["Title"] = "Payroll Report";
+    Layout = null;
+
+    var startDate = ViewBag.StartDate as DateTime? ?? DateTime.Now.AddMonths(-1);
+    var endDate = ViewBag.EndDate as DateTime? ?? DateTime.Now;
+    var campus = ViewBag.Campus as SMS.Models.Campus;
+
+    var totalPayable = Model.Sum(p => p.TotalPayable);
+    var totalPaid = Model.Sum(p => p.TotalPaid);
+    var totalAdvance = Model.Where(p => p.Balance < 0).Sum(p => Math.Abs(p.Balance));
+    var totalDues = Model.Where(p => p.Balance > 0).Sum(p => p.Balance);
+
+    var paidCount = Model.Count(p => p.Status == "Paid");
+    var partialCount = Model.Count(p => p.Status == "Partial");
+    var advanceCount = Model.Count(p => p.Status == "Advance");
+    var notProcessedCount = Model.Count(p => p.Status == "NotProcessed" || p.Status == "NotPaid");
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Payroll Report - @(startDate.ToString("dd MMM yyyy")) to @(endDate.ToString("dd MMM yyyy"))</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" /> 
+    <style>
+        @@media print {
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .no-print {
+                display: none;
+            }
+
+            .print-break {
+                page-break-after: always;
+            }
+        }
+
+        .status-badge { @@apply
+            px-2 py-1 rounded text-xs font-semibold;
+        }
+
+        .status-paid { @@apply
+            bg-success-light text-success;
+        }
+
+        .status-partial { @@apply
+            bg-warning-light text-yellow-800;
+        }
+
+        .status-advance { @@apply
+            bg-primary-100 text-primary-800;
+        }
+
+        .status-notprocessed { @@apply
+            bg-error-light text-error;
+        }
+    </style>
+</head>
+<body class="bg-white text-primary-800">
+    <div class="max-w-7xl mx-auto p-6">
+        <!-- Header -->
+        <div class="text-center mb-8 border-b-2 border-blue-600 pb-6 flex flex-col items-center">
+            @if (!string.IsNullOrEmpty(campus?.Logo))
+            {
+                <img src="@Url.Content($"~/{campus.Logo}")"
+                     alt="@campus.Name Logo"
+                     class="h-24 w-24 rounded-full object-contain mb-4 shadow-sms-md border border-primary-200" />
+            }
+
+            <!-- Campus Name -->
+            <h1 class="text-3xl font-bold text-primary-600">@campus?.Name</h1>
+
+            <!-- Campus Details -->
+            <div class="text-neutral-600 mt-1 space-y-1">
+                @if (!string.IsNullOrEmpty(campus?.Address))
+                {
+                    <p>@campus.Address</p>
+                }
+                @if (!string.IsNullOrEmpty(campus?.Phone))
+                {
+                    <p>Phone: @campus.Phone</p>
+                }
+            </div>
+
+            <!-- Report Title -->
+            <h2 class="text-2xl font-semibold text-primary-800 mt-4">PAYROLL REPORT</h2>
+
+            @{
+                var period = new DateTime((int)ViewBag.ForYear, (int)ViewBag.ForMonth, 1);
+            }
+            <p class="text-lg text-neutral-600 mt-1">
+                Period: @period.ToString("MMMM yyyy")
+            </p>
+
+
+
+        </div>
+
+       
+
+        <!-- Summary Section -->
+        <div class="grid grid-cols-4 gap-6 mb-8">
+            <div class="bg-primary-50 p-4 rounded-lg border border-blue-200">
+                <h3 class="text-sm font-medium text-blue-700 uppercase">Total Employees</h3>
+                <p class="text-2xl font-bold text-primary-800">@Model.Count</p>
+                <p class="text-xs text-primary-600">
+                    Paid: @paidCount | Partial: @partialCount | Advance: @advanceCount | NotProcessed: @notProcessedCount
+                </p>
+            </div>
+            <div class="bg-success-light p-4 rounded-lg border border-green-200">
+                <h3 class="text-sm font-medium text-success uppercase">Total Payable</h3>
+                <p class="text-2xl font-bold text-green-900">₨@totalPayable.ToString("N0")</p>
+            </div>
+            <div class="bg-warning-light p-4 rounded-lg border border-yellow-200">
+                <h3 class="text-sm font-medium text-yellow-700 uppercase">Amount Paid</h3>
+                <p class="text-2xl font-bold text-yellow-900">₨@totalPaid.ToString("N0")</p>
+            </div>
+            <div class="bg-neutral-50 p-4 rounded-lg border border-primary-100">
+                <h3 class="text-sm font-medium text-neutral-700 uppercase">Advance / Dues</h3>
+                <p class="text-sm text-blue-700">Advance: ₨@totalAdvance.ToString("N0")</p>
+                <p class="text-sm text-error">Dues: ₨@totalDues.ToString("N0")</p>
+            </div>
+        </div>
+
+        <!-- Employee Payroll Table -->
+        <div class="mb-8 overflow-x-auto">
+            <table class="w-full border-collapse border border-primary-200 text-sm">
+                <thead class="bg-neutral-100">
+                    <tr>
+                        <th class="border px-4 py-2 text-left">#</th>
+                        <th class="border px-4 py-2 text-left">Employee Name</th>
+                        <th class="border px-4 py-2 text-left">Role</th>
+                        <th class="border px-4 py-2 text-left">Campus</th>
+                        <th class="border px-4 py-2 text-left">Status</th>
+                        <th class="border px-4 py-2 text-right">Payable</th>
+                        <th class="border px-4 py-2 text-right">Paid</th>
+                        <th class="border px-4 py-2 text-right">Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.Count; i++)
+                    {
+                        var item = Model[i];
+                        <tr class="@(i % 2 == 0 ? "bg-white" : "bg-neutral-50")">
+                            <td class="border px-4 py-2">@(@i + 1)</td>
+                            <td class="border px-4 py-2 font-medium">@item.Employee.FullName</td>
+                            <td class="border px-4 py-2">@item.Employee.Role</td>
+                            <td class="border px-4 py-2">@item.Campus.Name</td>
+                            <td class="border px-4 py-2">
+                                <span class="status-badge @(item.Status == "Paid" ? "status-paid" : item.Status == "Partial" ? "status-partial" : item.Status == "Advance" ? "status-advance" : "status-notprocessed")">
+                                    @item.Status
+                                </span>
+                            </td>
+                            <td class="border px-4 py-2 text-right">₨@item.TotalPayable.ToString("N0")</td>
+                            <td class="border px-4 py-2 text-right text-success">₨@item.TotalPaid.ToString("N0")</td>
+                            <td class="border px-4 py-2 text-right @(item.Balance == 0 ? "text-success" : item.Status == "Advance" ? "text-primary-600" : item.Status == "Partial" ? "text-accent-600" : "text-error")">
+                                ₨@Math.Abs(item.Balance).ToString("N0")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="border-t border-primary-200 pt-6 mt-8">
+            <div class="flex justify-between items-end">
+                <div class="text-sm text-neutral-600">
+                    <p>Report Generated: @DateTime.Now.ToString("dd MMMM yyyy hh:mm tt")</p>
+                    <p>Total Records: @Model.Count</p>
+                </div>
+                <div class="text-center">
+                    <div class="border-t border-gray-400 w-48 mb-2 mx-auto"></div>
+                    <p class="text-sm text-neutral-600">Principal / Authorized Signature</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Print Controls -->
+        <div class="text-center mt-8 no-print">
+            <button onclick="window.print()" class="bg-gradient-primary hover:bg-primary-700 text-white px-6 py-2 rounded-lg mr-4">
+                Print Report
+            </button>
+            <button onclick="window.close()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg">
+                Close
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // Auto-print when page loads
+        window.onload = function() {
+            setTimeout(() => { window.print(); }, 500);
+        };
+    </script>
+</body>
+</html>
