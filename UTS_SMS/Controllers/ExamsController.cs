@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-using SMS.Models;
+using UTS_SMS.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;

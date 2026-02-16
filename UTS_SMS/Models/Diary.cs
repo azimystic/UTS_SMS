@@ -1,5 +1,5 @@
 ﻿// Models/Diary.cs
-using SMS.Models;
+using UTS_SMS.Models;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
