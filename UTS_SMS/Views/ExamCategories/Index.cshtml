@@ -1,0 +1,125 @@
+﻿@model IEnumerable<ExamCategory>
+
+@{
+    ViewData["Title"] = "Exam Categories";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-primary-800">📚 Exam Categories</h1>
+                <p class="text-neutral-600 mt-2">Manage exam categories for your institution</p>
+            </div>
+            <a asp-action="Create" class="bg-gradient-primary hover:shadow-sms-lg text-white px-6 py-3 rounded-xl transition-all duration-300 flex items-center mt-4 md:mt-0 shadow-sms-md hover:shadow-sms-lg">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Create New
+            </a>
+        </div>
+
+        <!-- Success Message -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="bg-success-light border-l-4 border-success text-success p-4 mb-6 rounded-xl animate-fade-in">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 01118 0z"></path>
+                    </svg>
+                    @TempData["SuccessMessage"]
+                </div>
+            </div>
+        }
+
+        <!-- Exam Categories Table -->
+        <div class="bg-white rounded-2xl shadow-sms-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-neutral-50">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Campus</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-primary-100">
+                        @if (Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr class="transition-all duration-300 hover:bg-primary-50">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-primary-800">@item.Name</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-primary-800">
+                                        @if (item.CampusId == -1)
+                                        {
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-info-light text-info">
+                                                🌐 All Campuses
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            @item.Campus?.Name
+                                        }
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium @(item.IsActive ? "bg-success-light text-success" : "bg-error-light text-error")">
+                                            @(item.IsActive ? "Active" : "Inactive")
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex space-x-2">
+                                            <a asp-action="Edit" asp-route-id="@item.Id" class="text-info hover:text-indigo-900">Edit</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="px-6 py-12 text-center">
+                                    <svg class="w-16 h-16 text-neutral-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                    <h3 class="text-lg font-medium text-primary-800 mb-2">No exam categories yet</h3>
+                                    <p class="text-neutral-500 mb-4">Create an exam category to get started.</p>
+                                    <a asp-action="Create" class="bg-gradient-primary hover:shadow-sms-lg text-white px-6 py-2 rounded-lg transition-all duration-300 inline-flex items-center shadow">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                        </svg>
+                                        Create Exam Category
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+}

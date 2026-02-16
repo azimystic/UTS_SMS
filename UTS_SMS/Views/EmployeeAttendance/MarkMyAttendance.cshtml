@@ -1,0 +1,148 @@
+﻿@{
+    ViewData["Title"] = "Mark My Attendance";
+}
+
+<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 p-4 md:p-6">
+    <div class="max-w-2xl mx-auto">
+
+        <!-- Header -->
+        <div class="text-center mb-8 animate-fade-in">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-primary-800 tracking-tight">
+                📍 Mark My Attendance
+            </h1>
+            <p class="text-neutral-500 mt-2 text-sm md:text-base">
+                @DateTime.Now.ToString("dddd, MMMM dd, yyyy hh:mm tt")
+            </p>
+        </div>
+
+        <!-- Success / Error -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="bg-success-light border-l-4 border-success text-success p-4 mb-6 rounded-xl shadow-sms-md animate-slide-in">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 mr-3 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path>
+                    </svg>
+                    <span class="text-sm md:text-base">@TempData["SuccessMessage"]</span>
+                </div>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="bg-error-light border-l-4 border-error text-error p-4 mb-6 rounded-xl shadow-sms-md animate-slide-in">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 mr-3 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01"></path>
+                    </svg>
+                    <span class="text-sm md:text-base">@TempData["ErrorMessage"]</span>
+                </div>
+            </div>
+        }
+
+        <!-- Location Status -->
+        <div class="bg-white rounded-2xl shadow-sms-lg p-6 mb-8 transition-all duration-300 hover:shadow-sms-xl">
+            <h2 class="text-lg md:text-xl font-semibold text-primary-800 mb-4 flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                Location Status
+            </h2>
+            <div id="locationStatus" class="flex items-center p-4 bg-neutral-100 rounded-lg text-sm md:text-base">
+                <svg class="w-6 h-6 text-neutral-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01"></path>
+                </svg>
+                <div>
+                    <p class="text-neutral-700">Location access is required to mark attendance.</p>
+                    <p class="text-xs md:text-sm text-neutral-500">Please allow location access when prompted.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance Options -->
+        <div class="bg-white rounded-2xl shadow-sms-lg p-6 mb-8 transition-all duration-300 hover:shadow-sms-xl">
+            <h2 class="text-lg md:text-xl font-semibold text-primary-800 mb-4">Mark Attendance</h2>
+            <form id="attendanceForm" asp-action="MarkMyAttendance" method="post" class="space-y-6">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="latitude" name="latitude" />
+                <input type="hidden" id="longitude" name="longitude" />
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Present Button -->
+                    <label class="attendance-option present cursor-pointer block">
+                        <input type="radio" name="status" value="P" class="hidden" />
+                        <div class="p-4 border-2 border-green-200 rounded-xl text-center transition-all duration-300 hover:shadow-sms-lg hover:scale-105">
+                            <svg class="w-12 h-12 text-success mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path>
+                            </svg>
+                            <h3 class="font-semibold text-success">Present</h3>
+                            <p class="text-xs md:text-sm text-success">Check in as present</p>
+                        </div>
+                    </label>
+
+                    <!-- Short Leave Button -->
+                    <label class="attendance-option shortleave cursor-pointer block">
+                        <input type="radio" name="status" value="S" class="hidden" />
+                        <div class="p-4 border-2 border-blue-200 rounded-xl text-center transition-all duration-300 hover:shadow-sms-lg hover:scale-105">
+                            <svg class="w-12 h-12 text-primary-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01"></path>
+                            </svg>
+                            <h3 class="font-semibold text-primary-800">Short Leave</h3>
+                            <p class="text-xs md:text-sm text-primary-600">Check in with short leave</p>
+                        </div>
+                    </label>
+                </div>
+
+                <button type="submit" id="submitButton" disabled
+                        class="w-full bg-gradient-primary hover:bg-primary-700 text-white font-medium py-3 px-6 rounded-xl
+                               transition-all duration-300 flex items-center justify-center gap-2
+                               disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span class="text-sm md:text-base">Submit Attendance</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const locationStatus = document.getElementById('locationStatus');
+            const latitudeInput = document.getElementById('latitude');
+            const longitudeInput = document.getElementById('longitude');
+            const submitButton = document.getElementById('submitButton');
+            const attendanceOptions = document.querySelectorAll('.attendance-option');
+            let selectedStatus = null;
+
+            attendanceOptions.forEach(option => {
+                option.addEventListener('click', function () {
+                    attendanceOptions.forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedStatus = this.querySelector('input').value;
+                    checkFormValidity();
+                });
+            });
+
+            function checkFormValidity() {
+                submitButton.disabled = !(selectedStatus && latitudeInput.value && longitudeInput.value);
+            }
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function (position) {
+                        latitudeInput.value = position.coords.latitude;
+                        longitudeInput.value = position.coords.longitude;
+                        checkFormValidity();
+                        locationStatus.innerHTML = "<p class='text-success font-medium'>✅ Location Access Granted</p>";
+                    },
+                    function (error) {
+                        locationStatus.innerHTML = "<p class='text-error font-medium'>❌ Location Access Denied</p>";
+                    }
+                );
+            }
+        });
+    </script>
+}

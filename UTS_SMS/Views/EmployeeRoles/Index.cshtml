@@ -1,0 +1,326 @@
+@model IEnumerable<SMS.Models.EmployeeRole>
+
+@{
+    ViewData["Title"] = "Employee Role Assignments";
+    var employeeName = ViewBag.EmployeeName as string;
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    @Html.AntiForgeryToken()
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-primary-800">
+                    👤 @(string.IsNullOrEmpty(employeeName) ? "Employee Role Assignments" : $"Role History for {employeeName}")
+                </h1>
+                <p class="text-neutral-600 mt-2">
+                    @(string.IsNullOrEmpty(employeeName) ? "Manage employee role assignments and history" : "View all role assignments for this employee")
+                </p>
+            </div>
+            @if (string.IsNullOrEmpty(employeeName))
+            {
+                <a asp-action="Create" class="bg-gradient-primary hover:shadow-sms-lg text-white px-6 py-3 rounded-xl transition-all duration-300 flex items-center mt-4 md:mt-0 shadow-sms-md hover:shadow-sms-lg">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Assign New Role
+                </a>
+            }
+        </div>
+
+        <!-- Success Message -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="bg-success-light border-l-4 border-success text-success p-4 mb-6 rounded-xl animate-fade-in">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    @TempData["SuccessMessage"]
+                </div>
+            </div>
+        }
+
+        <!-- Error Message -->
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="bg-danger-light border-l-4 border-danger text-danger p-4 mb-6 rounded-xl animate-fade-in">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    @TempData["ErrorMessage"]
+                </div>
+            </div>
+        }
+
+        <!-- Role Assignments Table -->
+        <div class="bg-white rounded-2xl shadow-sms-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-neutral-50">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Employee Name</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Role Name</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">From Date</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">To Date</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-primary-100">
+                        @if (Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                var isActive = item.IsActive && !item.ToDate.HasValue;
+                                <tr class="transition-all duration-300 hover:bg-primary-50">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 bg-gradient-to-r from-indigo-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3">
+                                                @(item.Employee?.FullName?.Substring(0, 1).ToUpper() ?? "E")
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-medium text-primary-800">@item.Employee?.FullName</div>
+                                                <div class="text-sm text-neutral-500">ID: @item.EmployeeId</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-medium text-primary-800">@item.EmployeeRoleConfig?.RoleName</div>
+                                        <div class="text-xs text-neutral-500">@item.EmployeeRoleConfig?.EmployeeType</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-primary-800">
+                                        @item.FromDate.ToString("MMM dd, yyyy")
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-primary-800">
+                                        @if (item.ToDate.HasValue)
+                                        {
+                                            @item.ToDate.Value.ToString("MMM dd, yyyy")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-success font-medium">Current</span>
+                                        }
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        @if (isActive)
+                                        {
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-success-light text-success">
+                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                                </svg>
+                                                Active
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-neutral-100 text-neutral-600">
+                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                                </svg>
+                                                Ended
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex space-x-2">
+                                            @if (isActive)
+                                            {
+                                                <button onclick="openEditModal(@item.Id, @item.EmployeeId, '@item.Employee?.FullName', '@item.EmployeeRoleConfig?.RoleName', '@item.EmployeeRoleConfig?.EmployeeType')"
+                                                        class="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white px-3 py-1.5 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-sms-md flex items-center text-sm">
+                                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                    </svg>
+                                                    Edit
+                                                </button>
+                                            }
+                                            <a asp-action="Details" asp-route-id="@item.Id"
+                                               class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-primary-600 hover:to-blue-700 text-white px-3 py-1.5 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-sms-md flex items-center text-sm">
+                                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                                View
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="px-6 py-12 text-center">
+                                    <svg class="w-16 h-16 text-neutral-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                    </svg>
+                                    <h3 class="text-lg font-medium text-primary-800 mb-2">No role assignments yet</h3>
+                                    <p class="text-neutral-500 mb-4">Assign roles to employees to manage their responsibilities.</p>
+                                    @if (string.IsNullOrEmpty(employeeName))
+                                    {
+                                        <a asp-action="Create" class="bg-gradient-primary hover:shadow-sms-lg text-white px-6 py-2 rounded-lg transition-all duration-300 inline-flex items-center shadow">
+                                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                            </svg>
+                                            Assign Role
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Back Button (only when viewing employee-specific history) -->
+        @if (!string.IsNullOrEmpty(employeeName))
+        {
+            <div class="mt-8">
+                <a asp-controller="Employees" asp-action="Index" class="bg-gradient-to-r from-neutral-500 to-neutral-600 hover:from-neutral-600 hover:to-neutral-700 text-white px-6 py-3 rounded-xl transition-all duration-300 inline-flex items-center shadow-sms-md hover:shadow-sms-lg">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Back to Employees
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Edit Role Modal -->
+<div id="editRoleModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-2xl bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg leading-6 font-bold text-primary-800 mb-4">Change Employee Role</h3>
+            <div class="mt-2 px-4 py-3">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Employee</label>
+                    <input type="text" id="modalEmployeeName" readonly class="w-full px-4 py-2 border border-primary-200 rounded-lg bg-neutral-50">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Current Role</label>
+                    <input type="text" id="modalCurrentRole" readonly class="w-full px-4 py-2 border border-primary-200 rounded-lg bg-neutral-50">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Change To <span class="text-red-500">*</span></label>
+                    <select id="modalNewRole" class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400">
+                        <option value="">-- Select New Role --</option>
+                    </select>
+                </div>
+                <div class="text-xs text-neutral-600 bg-blue-50 p-3 rounded-lg mb-4">
+                    <strong>Note:</strong> Changing role will automatically adjust leave balances according to the new role's leave configuration.
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3 px-4 py-3">
+                <button onclick="closeEditModal()" class="px-4 py-2 bg-neutral-200 text-neutral-700 rounded-lg hover:bg-neutral-300 transition-all duration-300">
+                    Cancel
+                </button>
+                <button onclick="saveRoleChange()" class="px-4 py-2 bg-gradient-primary text-white rounded-lg hover:shadow-sms-lg transition-all duration-300">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+
+    <script>
+        var currentEmployeeRoleId = 0;
+        var roleConfigs = @Html.Raw(Json.Serialize(ViewBag.RoleConfigs ?? new List<object>()));
+
+        function openEditModal(roleId, employeeId, employeeName, currentRole, employeeType) {
+            currentEmployeeRoleId = roleId;
+            document.getElementById('modalEmployeeName').value = employeeName;
+            document.getElementById('modalCurrentRole').value = currentRole;
+            
+            // Filter roles by employee type and populate dropdown
+            var select = document.getElementById('modalNewRole');
+            select.innerHTML = '<option value="">-- Select New Role --</option>';
+            
+            roleConfigs.forEach(function(role) {
+                if (role.employeeType === employeeType) {
+                    var option = document.createElement('option');
+                    option.value = role.id;
+                    option.text = role.roleName;
+                    select.appendChild(option);
+                }
+            });
+            
+            document.getElementById('editRoleModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editRoleModal').classList.add('hidden');
+            currentEmployeeRoleId = 0;
+        }
+
+        function saveRoleChange() {
+            var newRoleConfigId = document.getElementById('modalNewRole').value;
+            
+            if (!newRoleConfigId) {
+                alert('Please select a new role');
+                return;
+            }
+
+            // Disable button to prevent double submission
+            event.target.disabled = true;
+            event.target.textContent = 'Saving...';
+
+            fetch('@Url.Action("ChangeRole", "EmployeeRoles")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: new URLSearchParams({
+                    employeeRoleId: currentEmployeeRoleId,
+                    newRoleConfigId: newRoleConfigId,
+                    __RequestVerificationToken: document.querySelector('input[name="__RequestVerificationToken"]').value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                    event.target.disabled = false;
+                    event.target.textContent = 'Save Changes';
+                }
+            })
+            .catch(error => {
+                alert('An error occurred: ' + error);
+                event.target.disabled = false;
+                event.target.textContent = 'Save Changes';
+            });
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('editRoleModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEditModal();
+            }
+        });
+    </script>
+}

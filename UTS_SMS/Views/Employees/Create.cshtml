@@ -1,0 +1,541 @@
+@model Employee
+@{
+    ViewData["Title"] = "Register New Employee";
+}
+
+<div class="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <h1 class="text-3xl font-bold text-primary-800 mb-4 md:mb-0">Register New Employee</h1>
+        <a asp-action="Index" class="bg-primary-100 hover:bg-primary-200 text-primary-800 px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sms-md flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Back to List
+        </a>
+    </div>
+
+    <form asp-action="Create" method="post" enctype="multipart/form-data" id="employeeForm" class="space-y-6">
+        <!-- Employee Information Section -->
+        <div class="bg-white rounded-xl shadow-sms-md overflow-hidden transition-all duration-300 hover:shadow-sms-xl">
+            <div class="bg-gradient-primary px-6 py-3">
+                <h2 class="text-xl font-semibold text-white">Employee Information</h2>
+            </div>
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-primary-700 mb-4 border-b pb-2">Personal Details</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label asp-for="FullName" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <input asp-for="FullName" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" required />
+                        <span asp-validation-for="FullName" class="text-error text-sm mt-1"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="CNIC" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <input asp-for="CNIC" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all cnic-input" placeholder="12345-1234567-1" required />
+                        <span asp-validation-for="CNIC" class="text-error text-sm mt-1"></span>
+                        <span class="cnic-error text-error text-sm mt-1 hidden">CNIC must be exactly 13 digits</span>
+                    </div>
+
+                    <div>
+                        <label asp-for="DateOfBirth" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <input asp-for="DateOfBirth" type="date" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" required />
+                        <span asp-validation-for="DateOfBirth" class="text-error text-sm mt-1"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="Gender" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <select asp-for="Gender" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" required
+                                asp-items="new SelectList(ViewBag.Genders)">
+                            <option value="">-- Select Gender --</option>
+                        </select>
+                        <span asp-validation-for="Gender" class="text-error text-sm mt-1"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="Role" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <select asp-for="Role" id="employeeTypeSelect" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" required
+                                asp-items="new SelectList(ViewBag.Roles)">
+                            <option value="">-- Select Role --</option>
+                        </select>
+                        <span asp-validation-for="Role" class="text-error text-sm mt-1"></span>
+                    </div>
+
+                    <div>
+                        <label for="employeeRoleConfigId" class="block text-sm font-medium text-gray-700 mb-1">Specific Role (Optional)</label>
+                        <select name="employeeRoleConfigId" id="employeeRoleConfigId" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" asp-items="ViewBag.EmployeeRoleConfigs">
+                            <option value="">-- Select Specific Role (Optional) --</option>
+                        </select>
+                        <p class="text-sm text-gray-500 mt-1">Select a specific role configuration for detailed role tracking</p>
+                    </div>
+
+                    <div>
+                        <label asp-for="PhoneNumber" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <input asp-for="PhoneNumber" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all phone-input" value="+92 " placeholder="+92 300 1234567" required />
+                        <span asp-validation-for="PhoneNumber" class="text-error text-sm mt-1"></span>
+                        <span class="phone-error text-error text-sm mt-1 hidden">Phone must be in format: +92 300 1234567</span>
+                    </div>
+
+                    <div>
+                        <label asp-for="CampusId" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <select asp-for="CampusId" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" asp-items="ViewBag.CampusId">
+                            <option value="">-- Select Campus --</option>
+                        </select>
+                        <span asp-validation-for="CampusId" class="text-error text-sm"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="OnTime" class="block text-sm font-medium text-gray-700 mb-1">On Time (Leave Blank if same as Campus)</label>
+                        <input asp-for="OnTime" type="time" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" />
+                        <span asp-validation-for="OnTime" class="text-error text-sm mt-1"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="OffTime" class="block text-sm font-medium text-gray-700 mb-1">Off Time (Leave Blank if same as Campus)</label>
+                        <input asp-for="OffTime" type="time" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" />
+                        <span asp-validation-for="OffTime" class="text-error text-sm mt-1"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="LateTimeFlexibility" class="block text-sm font-medium text-gray-700 mb-1">Late Time Flexibility (min)</label>
+                        <input asp-for="LateTimeFlexibility" type="number" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" required min="0" value="0" />
+                        <span asp-validation-for="LateTimeFlexibility" class="text-error text-sm mt-1"></span>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Profile Picture</label>
+                        <input type="file" id="profilePicture" name="profilePicture" accept="image/jpeg,image/png,image/jpg" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all file-input" />
+                        <span class="file-error text-error text-sm mt-1 hidden">Max 2MB, only JPG/PNG allowed</span>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label asp-for="Address" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <textarea asp-for="Address" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" required rows="3"></textarea>
+                        <span asp-validation-for="Address" class="text-error text-sm mt-1"></span>
+                    </div>
+                </div>
+
+                <!-- Education Information Section -->
+                <h3 class="text-lg font-semibold text-primary-700 mb-4 border-b pb-2 mt-6">Education Details</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label asp-for="EducationLevel" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <select asp-for="EducationLevel" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all"
+                                asp-items="new SelectList(ViewBag.EducationLevels)">
+                            <option value="">-- Select Education Level --</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label asp-for="Degree" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <input asp-for="Degree" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" />
+                    </div>
+
+                    <div>
+                        <label asp-for="MajorSubject" class="block text-sm font-medium text-gray-700 mb-1"></label>
+                        <input asp-for="MajorSubject" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" />
+                    </div>
+
+                    <div>
+                        <label asp-for="MatricMarks" class="block text-sm font-medium text-gray-700 mb-1">Matric Marks</label>
+                        <input asp-for="MatricMarks" type="number" step="0.01" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" />
+                    </div>
+
+                    <div>
+                        <label asp-for="InterMarks" class="block text-sm font-medium text-gray-700 mb-1">Inter Marks</label>
+                        <input asp-for="InterMarks" type="number" step="0.01" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" />
+                    </div>
+
+                    <div>
+                        <label asp-for="CGPA" class="block text-sm font-medium text-gray-700 mb-1">CGPA</label>
+                        <input asp-for="CGPA" type="number" step="0.01" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" />
+                    </div>
+
+                    <div>
+                        <label asp-for="University" class="block text-sm font-medium text-gray-700 mb-1">University</label>
+                        <input asp-for="University" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documents Section -->
+        <div class="bg-white rounded-xl shadow-sms-md overflow-hidden transition-all duration-300 hover:shadow-sms-xl">
+            <div class="bg-gradient-primary px-6 py-3">
+                <h2 class="text-xl font-semibold text-white">Documents</h2>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">CNIC Front</label>
+                        <input type="file" id="cnicFront" name="cnicFront" accept="image/jpeg,image/png,image/jpg,application/pdf" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all file-input" />
+                        <span class="file-error text-error text-sm mt-1 hidden"></span>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">CNIC Back</label>
+                        <input type="file" id="cnicBack" name="cnicBack" accept="image/jpeg,image/png,image/jpg,application/pdf" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all file-input" />
+                        <span class="file-error text-error text-sm mt-1 hidden"></span>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Matric Certificate</label>
+                        <input type="file" id="matricCertificate" name="matricCertificate" accept="image/jpeg,image/png,image/jpg,application/pdf" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all file-input" />
+                        <span class="file-error text-error text-sm mt-1 hidden"></span>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Inter Certificate</label>
+                        <input type="file" id="interCertificate" name="interCertificate" accept="image/jpeg,image/png,image/jpg,application/pdf" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all file-input" />
+                        <span class="file-error text-error text-sm mt-1 hidden"></span>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Degree Certificate</label>
+                        <input type="file" id="degreeCertificate" name="degreeCertificate" accept="image/jpeg,image/png,image/jpg,application/pdf" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all file-input" />
+                        <span class="file-error text-error text-sm mt-1 hidden"></span>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Other Qualifications</label>
+                        <input type="file" id="otherQualifications" name="otherQualifications" accept="image/jpeg,image/png,image/jpg,application/pdf" class="w-full px-4 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 transition-all file-input" />
+                        <span class="file-error text-error text-sm mt-1 hidden"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4 pt-4">
+            <button type="submit" class="bg-gradient-primary hover:bg-primary-700 text-white px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sms-md flex items-center justify-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                Register Employee
+            </button>
+
+            <a asp-action="Index" class="bg-primary-100 hover:bg-primary-200 text-primary-800 px-6 py-3 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sms-md text-center">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // ==================== FILE VALIDATION ====================
+            document.querySelectorAll('.file-input').forEach(function(input) {
+                input.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    const errorSpan = e.target.nextElementSibling;
+
+                    if (file) {
+                        const fileType = file.type;
+                        const fileSize = file.size;
+
+                        // Check file type
+                        const isImage = fileType.startsWith('image/') && (fileType === 'image/jpeg' || fileType === 'image/png' || fileType === 'image/jpg');
+                        const isPDF = fileType === 'application/pdf';
+
+                        if (!isImage && !isPDF) {
+                            if (errorSpan) {
+                                errorSpan.textContent = 'Only JPG, PNG images and PDF files are allowed';
+                                errorSpan.classList.remove('hidden');
+                            }
+                            e.target.value = '';
+                            e.target.classList.add('border-error');
+                            return;
+                        }
+
+                        // Check file size
+                        const maxSize = isImage ? 2 * 1024 * 1024 : 10 * 1024 * 1024; // 2MB for images, 10MB for PDFs
+                        if (fileSize > maxSize) {
+                            if (errorSpan) {
+                                errorSpan.textContent = isImage ? 'Image size must be less than 2MB' : 'PDF size must be less than 10MB';
+                                errorSpan.classList.remove('hidden');
+                            }
+                            e.target.value = '';
+                            e.target.classList.add('border-error');
+                            return;
+                        }
+
+                        // Valid file
+                        if (errorSpan) {
+                            errorSpan.classList.add('hidden');
+                        }
+                        e.target.classList.remove('border-error');
+
+                        // Show profile picture preview
+                        if (input.id === 'profilePicture' && isImage) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                let preview = document.getElementById('profilePreview');
+                                if (!preview) {
+                                    preview = document.createElement('img');
+                                    preview.id = 'profilePreview';
+                                    preview.className = 'mt-2 w-32 h-32 object-cover rounded-full border-2 border-primary-400';
+                                    input.parentElement.appendChild(preview);
+                                }
+                                preview.src = e.target.result;
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    }
+                });
+            });
+
+            // ==================== CNIC INPUT ====================
+            document.querySelectorAll('.cnic-input').forEach(function(input) {
+                input.addEventListener('input', function(e) {
+                    let value = e.target.value;
+                    let digits = value.replace(/\D/g, '');
+
+                    if (digits.length > 13) {
+                        digits = digits.substring(0, 13);
+                    }
+
+                    let formatted = '';
+                    for (let i = 0; i < digits.length; i++) {
+                        if (i === 5 || i === 12) {
+                            formatted += '-';
+                        }
+                        formatted += digits[i];
+                    }
+
+                    e.target.value = formatted;
+                    validateCnic(e.target);
+                });
+
+                input.addEventListener('keydown', function(e) {
+                    if ([46, 8, 9, 27, 13, 37, 38, 39, 40].indexOf(e.keyCode) !== -1 ||
+                        (e.keyCode === 65 && e.ctrlKey === true) ||
+                        (e.keyCode === 67 && e.ctrlKey === true) ||
+                        (e.keyCode === 86 && e.ctrlKey === true) ||
+                        (e.keyCode === 88 && e.ctrlKey === true)) {
+                        return;
+                    }
+
+                    let digits = e.target.value.replace(/\D/g, '');
+                    if (digits.length >= 13 && e.keyCode >= 48 && e.keyCode <= 57) {
+                        e.preventDefault();
+                    }
+                    if (digits.length >= 13 && e.keyCode >= 96 && e.keyCode <= 105) {
+                        e.preventDefault();
+                    }
+                });
+
+                input.addEventListener('blur', function(e) {
+                    validateCnic(e.target);
+                });
+            });
+
+            function validateCnic(input) {
+                let digits = input.value.replace(/\D/g, '');
+                let errorSpan = input.parentElement.querySelector('.cnic-error');
+                let isRequired = input.hasAttribute('required');
+
+                if (digits.length === 0 && !isRequired) {
+                    if (errorSpan) errorSpan.classList.add('hidden');
+                    input.classList.remove('border-error');
+                } else if (digits.length > 0 && digits.length < 13) {
+                    if (errorSpan) errorSpan.classList.remove('hidden');
+                    input.classList.add('border-error');
+                } else if (digits.length === 13) {
+                    if (errorSpan) errorSpan.classList.add('hidden');
+                    input.classList.remove('border-error');
+                } else if (isRequired && digits.length === 0) {
+                    if (errorSpan) errorSpan.classList.remove('hidden');
+                    input.classList.add('border-error');
+                }
+            }
+
+            // ==================== PHONE INPUT ====================
+            document.querySelectorAll('.phone-input').forEach(function(input) {
+                if (!input.value || input.value.trim() === '' || input.value.trim() === '+92') {
+                    input.value = '+92 ';
+                }
+
+                input.addEventListener('input', function(e) {
+                    let value = e.target.value;
+
+                    if (!value.startsWith('+92')) {
+                        let digits = value.replace(/\D/g, '');
+                        if (digits.startsWith('92')) {
+                            digits = digits.substring(2);
+                        }
+                        value = '+92' + digits;
+                    }
+
+                    let afterPrefix = value.substring(3).replace(/\D/g, '');
+                    if (afterPrefix.length > 10) {
+                        afterPrefix = afterPrefix.substring(0, 10);
+                    }
+
+                    let formatted = '+92 ';
+                    for (let i = 0; i < afterPrefix.length; i++) {
+                        if (i === 3) {
+                            formatted += ' ';
+                        }
+                        formatted += afterPrefix[i];
+                    }
+
+                    e.target.value = formatted;
+                    validatePhone(e.target);
+                });
+
+                input.addEventListener('keydown', function(e) {
+                    let value = e.target.value;
+                    let cursorPos = e.target.selectionStart;
+
+                    if ((e.keyCode === 8 || e.keyCode === 46) && cursorPos <= 4) {
+                        e.preventDefault();
+                        e.target.setSelectionRange(4, 4);
+                        return;
+                    }
+
+                    if ([37, 38].indexOf(e.keyCode) !== -1 && cursorPos <= 4) {
+                        e.preventDefault();
+                        return;
+                    }
+
+                    if ([46, 8, 9, 27, 13, 37, 38, 39, 40].indexOf(e.keyCode) !== -1 ||
+                        (e.keyCode === 65 && e.ctrlKey === true) ||
+                        (e.keyCode === 67 && e.ctrlKey === true) ||
+                        (e.keyCode === 86 && e.ctrlKey === true) ||
+                        (e.keyCode === 88 && e.ctrlKey === true)) {
+                        return;
+                    }
+
+                    let afterPrefix = value.substring(3).replace(/\D/g, '');
+                    if (afterPrefix.length >= 10 && e.keyCode >= 48 && e.keyCode <= 57) {
+                        e.preventDefault();
+                    }
+                    if (afterPrefix.length >= 10 && e.keyCode >= 96 && e.keyCode <= 105) {
+                        e.preventDefault();
+                    }
+                });
+
+                input.addEventListener('focus', function(e) {
+                    if (e.target.selectionStart < 4) {
+                        e.target.setSelectionRange(4, 4);
+                    }
+                });
+
+                input.addEventListener('click', function(e) {
+                    if (e.target.selectionStart < 4) {
+                        e.target.setSelectionRange(4, 4);
+                    }
+                });
+
+                input.addEventListener('blur', function(e) {
+                    if (e.target.value.replace(/\D/g, '').length <= 2) {
+                        e.target.value = '+92 ';
+                    }
+                    validatePhone(e.target);
+                });
+            });
+
+            function validatePhone(input) {
+                let value = input.value;
+                let afterPrefix = value.substring(3).replace(/\D/g, '');
+                let errorSpan = input.parentElement.querySelector('.phone-error');
+                let isRequired = input.hasAttribute('required');
+
+                if (afterPrefix.length === 0 && !isRequired) {
+                    if (errorSpan) errorSpan.classList.add('hidden');
+                    input.classList.remove('border-error');
+                } else if (afterPrefix.length > 0 && afterPrefix.length < 10) {
+                    if (errorSpan) errorSpan.classList.remove('hidden');
+                    input.classList.add('border-error');
+                } else if (afterPrefix.length === 10) {
+                    if (errorSpan) errorSpan.classList.add('hidden');
+                    input.classList.remove('border-error');
+                } else if (isRequired && afterPrefix.length === 0) {
+                    if (errorSpan) errorSpan.classList.remove('hidden');
+                    input.classList.add('border-error');
+                }
+            }
+        });
+
+        $(document).ready(function() {
+            // Form validation on submit
+            $('#employeeForm').on('submit', function(e) {
+                let isValid = true;
+                let errorMessages = [];
+
+                // Required fields validation
+                $('input[required], select[required], textarea[required]').each(function() {
+                    if (!$(this).val() || $(this).val() === '') {
+                        isValid = false;
+                        $(this).addClass('border-error');
+                    } else {
+                        $(this).removeClass('border-error');
+                    }
+                });
+
+                // CNIC validation
+                $('.cnic-input').each(function() {
+                    let digits = $(this).val().replace(/\D/g, '');
+                    let isRequired = $(this).attr('required');
+
+                    if ((isRequired && digits.length !== 13) || (digits.length > 0 && digits.length !== 13)) {
+                        isValid = false;
+                        $(this).addClass('border-error');
+                        $(this).parent().find('.cnic-error').removeClass('hidden');
+                        if (errorMessages.indexOf('CNIC must be exactly 13 digits') === -1) {
+                            errorMessages.push('CNIC must be exactly 13 digits');
+                        }
+                    }
+                });
+
+                // Phone validation
+                $('.phone-input').each(function() {
+                    let afterPrefix = $(this).val().substring(3).replace(/\D/g, '');
+                    let isRequired = $(this).attr('required');
+
+                    if ((isRequired && afterPrefix.length !== 10) || (afterPrefix.length > 0 && afterPrefix.length !== 10)) {
+                        isValid = false;
+                        $(this).addClass('border-error');
+                        $(this).parent().find('.phone-error').removeClass('hidden');
+                        if (errorMessages.indexOf('Phone number must be complete (10 digits after +92)') === -1) {
+                            errorMessages.push('Phone number must be complete (10 digits after +92)');
+                        }
+                    }
+                });
+
+                // File validation
+                $('.file-input').each(function() {
+                    if ($(this).hasClass('border-error')) {
+                        isValid = false;
+                        if (errorMessages.indexOf('Please check file uploads (size/type)') === -1) {
+                            errorMessages.push('Please check file uploads (size/type)');
+                        }
+                    }
+                });
+
+                if (!isValid) {
+                    e.preventDefault();
+                    alert('Please fix the following errors:\n\n' + errorMessages.join('\n'));
+                }
+            });
+        });
+    </script>
+
+    <style>
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+        }
+
+        .border-error {
+            border-color: #ef4444 !important;
+        }
+
+        .text-error {
+            color: #ef4444;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+}
