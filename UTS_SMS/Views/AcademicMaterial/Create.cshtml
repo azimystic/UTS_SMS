@@ -1,3 +1,4 @@
+﻿@using UTS_SMS.Models
 @model SMS.ViewModels.AcademicMaterialViewModel
 
 @{
@@ -11,11 +12,11 @@
         <!-- Header -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
             <div>
-                <h1 class="text-3xl font-bold text-primary-800">@(isEdit ? "✏️ Edit" : "➕ Create") Chapter</h1>
+                <h1 class="text-3xl font-bold text-primary-800">@(isEdit ? "âœï¸ Edit" : "âž• Create") Chapter</h1>
                 <p class="text-neutral-600 mt-2">@Model.Subject?.Name</p>
             </div>
             <a href="@Url.Action("Chapters", new { id = Model.SubjectId, classId = classId })" class="mt-4 md:mt-0 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 px-4 py-2 rounded-lg">
-                ← Back
+                â† Back
             </a>
         </div>
 
@@ -28,7 +29,7 @@
 
             <!-- Chapter Information -->
             <div class="bg-white rounded-2xl shadow-sms-xl p-6 mb-6">
-                <h2 class="text-xl font-bold text-primary-700 mb-4">📖 Chapter Information</h2>
+                <h2 class="text-xl font-bold text-primary-700 mb-4">ðŸ“– Chapter Information</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label asp-for="ChapterName" class="block text-sm font-medium text-neutral-700 mb-2">Chapter Name *</label>
@@ -51,7 +52,7 @@
             <!-- Questions -->
             <div class="bg-white rounded-2xl shadow-sms-xl p-6 mb-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-primary-700">❓ Questions</h2>
+                    <h2 class="text-xl font-bold text-primary-700">â“ Questions</h2>
                     <div class="space-x-2">
                         <button type="button" onclick="addQuestion('ShortQuestion')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-sm">
                             + Short Q
@@ -77,7 +78,7 @@
                             <div class="flex justify-between items-center mb-3">
                                 <span class="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-sm font-semibold">@question.Type</span>
                                 <button type="button" onclick="removeQuestion(this)" class="text-red-500 hover:text-red-700 text-sm">
-                                    🗑️ Remove
+                                    ðŸ—‘ï¸ Remove
                                 </button>
                             </div>
                             
@@ -130,7 +131,7 @@
             <!-- Materials -->
             <div class="bg-white rounded-2xl shadow-sms-xl p-6 mb-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-primary-700">📎 Materials (Notes, PDFs, Images, Books)</h2>
+                    <h2 class="text-xl font-bold text-primary-700">ðŸ“Ž Materials (Notes, PDFs, Images, Books)</h2>
                     <button type="button" onclick="addMaterial()" class="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg text-sm">
                         + Add Material
                     </button>
@@ -153,7 +154,7 @@
                                         }
                                     </div>
                                     <button type="button" onclick="deleteMaterial(@material.Id)" class="text-red-500 hover:text-red-700">
-                                        🗑️
+                                        ðŸ—‘ï¸
                                     </button>
                                 </div>
                             }
@@ -170,7 +171,7 @@
                     Cancel
                 </a>
                 <button type="submit" class="bg-gradient-primary hover:bg-primary-700 text-white px-6 py-3 rounded-lg">
-                    @(isEdit ? "💾 Update" : "➕ Create") Chapter
+                    @(isEdit ? "ðŸ’¾ Update" : "âž• Create") Chapter
                 </button>
             </div>
         </form>
@@ -230,7 +231,7 @@
                     <div class="flex justify-between items-center mb-3">
                         <span class="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-sm font-semibold">${type}</span>
                         <button type="button" onclick="removeQuestion(this)" class="text-red-500 hover:text-red-700 text-sm">
-                            🗑️ Remove
+                            ðŸ—‘ï¸ Remove
                         </button>
                     </div>
                     
@@ -272,7 +273,7 @@
                     <div class="flex justify-between items-center mb-3">
                         <h4 class="font-semibold text-neutral-700">Material #${materialIndex + 1}</h4>
                         <button type="button" onclick="removeMaterial(this)" class="text-red-500 hover:text-red-700 text-sm">
-                            🗑️ Remove
+                            ðŸ—‘ï¸ Remove
                         </button>
                     </div>
                     

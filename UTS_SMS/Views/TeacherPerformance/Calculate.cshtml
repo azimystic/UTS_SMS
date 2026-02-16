@@ -1,3 +1,4 @@
+﻿@using UTS_SMS.Models
 @model IEnumerable<UTS_SMS.Models.TeacherPerformance>
 
 @{
@@ -189,7 +190,7 @@
         else
         {
             <div class="bg-white rounded-2xl shadow-sms-lg p-12 text-center">
-                <div class="text-6xl mb-4">⚠️</div>
+                <div class="text-6xl mb-4">âš ï¸</div>
                 <h3 class="text-lg font-medium text-primary-800 mb-2">No Performance Data to Calculate</h3>
                 <p class="text-neutral-600 mb-6">There might not be sufficient data available for calculation, or no active teachers found for the selected period.</p>
                 <a asp-action="Index" class="bg-gradient-primary hover:bg-primary-700 text-white px-6 py-3 rounded-lg transition-all duration-300">
@@ -200,15 +201,15 @@
 
         <!-- Calculation Method Info -->
         <div class="bg-yellow-50 rounded-2xl p-6 mt-6 border border-yellow-200">
-            <h3 class="text-lg font-semibold text-yellow-900 mb-4">ℹ️ Calculation Methodology</h3>
+            <h3 class="text-lg font-semibold text-yellow-900 mb-4">â„¹ï¸ Calculation Methodology</h3>
             <div class="text-sm text-yellow-800 space-y-2">
                 <p><strong>Working Days:</strong> Total days in month excluding Sundays and holidays from calendar</p>
-                <p><strong>Attendance:</strong> (Attended Days ÷ Working Days) × 3.5</p>
-                <p><strong>Punctuality:</strong> (On-time Days ÷ Working Days) × 2.5 (Late arrivals count as absent)</p>
-                <p><strong>Tests:</strong> (Average Class Percentage ÷ 100) × 5.5 | <em>Full marks (5.5) if no tests conducted</em></p>
-                <p><strong>Survey:</strong> (Positive Responses ÷ Total Responses) × 6 | <em>Full marks (6.0) if no surveys filled</em></p>
-                <p><strong>Test Return:</strong> (On-time Returns ÷ Total Tests) × 1.5 | <em>Full marks (1.5) if no tests to return</em></p>
-                <p><strong>Quality:</strong> ((Better × 1 + Good × 0.7) ÷ Total Tests) capped at 1.0 | <em>Full marks (1.0) if no tests</em></p>
+                <p><strong>Attendance:</strong> (Attended Days Ã· Working Days) Ã— 3.5</p>
+                <p><strong>Punctuality:</strong> (On-time Days Ã· Working Days) Ã— 2.5 (Late arrivals count as absent)</p>
+                <p><strong>Tests:</strong> (Average Class Percentage Ã· 100) Ã— 5.5 | <em>Full marks (5.5) if no tests conducted</em></p>
+                <p><strong>Survey:</strong> (Positive Responses Ã· Total Responses) Ã— 6 | <em>Full marks (6.0) if no surveys filled</em></p>
+                <p><strong>Test Return:</strong> (On-time Returns Ã· Total Tests) Ã— 1.5 | <em>Full marks (1.5) if no tests to return</em></p>
+                <p><strong>Quality:</strong> ((Better Ã— 1 + Good Ã— 0.7) Ã· Total Tests) capped at 1.0 | <em>Full marks (1.0) if no tests</em></p>
                 <p class="mt-3 pt-3 border-t border-yellow-300"><strong>Note:</strong> Missing data is not penalized - teachers receive full marks for categories where they have no data (benefit of doubt principle).</p>
             </div>
         </div>

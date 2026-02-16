@@ -1,3 +1,4 @@
+﻿@using UTS_SMS.Models
 @model IEnumerable<UTS_SMS.Models.LeaveRequest>
 
 @{
@@ -25,7 +26,7 @@
         @if (leaveBalances.Any())
         {
             <div class="mb-6">
-                <h2 class="text-lg font-semibold text-primary-800 mb-4">📊 Leave Balance</h2>
+                <h2 class="text-lg font-semibold text-primary-800 mb-4">ðŸ“Š Leave Balance</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     @foreach (var balance in leaveBalances)
                     {
@@ -38,7 +39,7 @@
         <!-- Leave Requests Table -->
         <div class="bg-white rounded-2xl shadow-sms-lg overflow-hidden border border-primary-100">
             <div class="p-6 border-b border-primary-100">
-                <h2 class="text-lg font-semibold text-primary-800">📋 Leave History</h2>
+                <h2 class="text-lg font-semibold text-primary-800">ðŸ“‹ Leave History</h2>
             </div>
             
             @if (Model != null && Model.Any())
@@ -79,19 +80,19 @@
                                         @if (item.Status == "Pending")
                                         {
                                             <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                                ⏳ Pending
+                                                â³ Pending
                                             </span>
                                         }
                                         else if (item.Status == "Approved")
                                         {
                                             <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                ✓ Approved
+                                                âœ“ Approved
                                             </span>
                                         }
                                         else if (item.Status == "Rejected")
                                         {
                                             <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                                ✗ Rejected
+                                                âœ— Rejected
                                             </span>
                                         }
                                     </td>

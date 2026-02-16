@@ -1,3 +1,4 @@
+﻿@using UTS_SMS.Models
 @model IEnumerable<UTS_SMS.Models.StudentComplaint>
 
 @{
@@ -283,7 +284,7 @@
                                     <div class="text-xs text-neutral-500 truncate">@complaint.Student?.ClassObj?.Name - @complaint.Student?.SectionObj?.Name</div>
                                     @if (complaint.Teacher != null)
                                     {
-                                        <div class="text-xs text-orange-600 mt-1">👨‍🏫 @complaint.Teacher.FullName</div>
+                                        <div class="text-xs text-orange-600 mt-1">ðŸ‘¨â€ðŸ« @complaint.Teacher.FullName</div>
                                     }
                                 </div>
                                 <div class="ml-2 flex-shrink-0">
@@ -470,7 +471,7 @@ async function showResolveModal(id, title, hasTeacher, hasTeacherComments) {
                                 <p class="text-sm text-neutral-700 whitespace-pre-wrap">${data.teacherComments}</p>
                             </div>
                         </div>
-                        <p class="text-sm text-success mb-3">✓ Teacher has provided their input. You can now proceed with resolution.</p>
+                        <p class="text-sm text-success mb-3">âœ“ Teacher has provided their input. You can now proceed with resolution.</p>
                     </div>
                 `,
                 icon: 'info',

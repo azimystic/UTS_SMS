@@ -1,3 +1,4 @@
+﻿@using UTS_SMS.Models
 @model IEnumerable<UTS_SMS.Models.StudentComplaint>
 
 @{
@@ -12,7 +13,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
                 <div class="flex-1 min-w-0">
-                    <h1 class="text-2xl font-bold text-primary-800 sm:text-3xl">📋 My Assigned Complaints</h1>
+                    <h1 class="text-2xl font-bold text-primary-800 sm:text-3xl">ðŸ“‹ My Assigned Complaints</h1>
                     <p class="mt-1 text-sm text-neutral-500">
                         View and respond to student complaints involving you
                     </p>
@@ -50,10 +51,10 @@
                 </div>
                 <div class="flex items-end gap-2">
                     <button type="submit" class="px-4 py-2 bg-gradient-primary text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-400 text-sm">
-                        🔍 Filter
+                        ðŸ” Filter
                     </button>
                     <a href="@Url.Action("TeacherIndex")" class="px-4 py-2 bg-gray-300 text-neutral-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 text-sm">
-                        🔄 Clear
+                        ðŸ”„ Clear
                     </a>
                 </div>
             </form>
@@ -135,8 +136,8 @@
                                         </span>
                                     </div>
                                     <div class="flex items-center gap-4 text-sm text-neutral-600">
-                                        <span>📅 @complaint.ComplaintDate.ToString("MMM dd, yyyy")</span>
-                                        <span>👨‍🎓 @complaint.Student?.StudentName (@complaint.Student?.ClassObj?.Name - @complaint.Student?.SectionObj?.Name)</span>
+                                        <span>ðŸ“… @complaint.ComplaintDate.ToString("MMM dd, yyyy")</span>
+                                        <span>ðŸ‘¨â€ðŸŽ“ @complaint.Student?.StudentName (@complaint.Student?.ClassObj?.Name - @complaint.Student?.SectionObj?.Name)</span>
                                         <span class="inline-flex px-2 py-1 text-xs rounded-full 
                                             @(complaint.Priority == "High" ? "bg-error-light text-error" : 
                                               complaint.Priority == "Medium" ? "bg-warning-light text-yellow-800" : 

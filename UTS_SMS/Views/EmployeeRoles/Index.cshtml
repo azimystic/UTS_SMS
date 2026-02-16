@@ -1,3 +1,4 @@
+﻿@using UTS_SMS.Models
 @model IEnumerable<UTS_SMS.Models.EmployeeRole>
 
 @{
@@ -12,7 +13,7 @@
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
             <div>
                 <h1 class="text-3xl font-bold text-primary-800">
-                    👤 @(string.IsNullOrEmpty(employeeName) ? "Employee Role Assignments" : $"Role History for {employeeName}")
+                    ðŸ‘¤ @(string.IsNullOrEmpty(employeeName) ? "Employee Role Assignments" : $"Role History for {employeeName}")
                 </h1>
                 <p class="text-neutral-600 mt-2">
                     @(string.IsNullOrEmpty(employeeName) ? "Manage employee role assignments and history" : "View all role assignments for this employee")

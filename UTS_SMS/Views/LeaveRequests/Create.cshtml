@@ -1,3 +1,4 @@
+﻿@using UTS_SMS.Models
 @model UTS_SMS.Models.LeaveRequest
 
 @{
@@ -25,7 +26,7 @@
         @if (leaveBalances.Any())
         {
             <div class="mb-6">
-                <h2 class="text-lg font-semibold text-primary-800 mb-4">📊 Your Leave Balance</h2>
+                <h2 class="text-lg font-semibold text-primary-800 mb-4">ðŸ“Š Your Leave Balance</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     @foreach (var balance in leaveBalances)
                     {
@@ -63,7 +64,7 @@
             <!-- Leave Application Form -->
             <div class="lg:col-span-2">
                 <div class="bg-white rounded-2xl shadow-sms-lg p-6 border border-primary-100">
-                    <h2 class="text-lg font-semibold text-primary-800 mb-6">📝 Leave Application Form</h2>
+                    <h2 class="text-lg font-semibold text-primary-800 mb-6">ðŸ“ Leave Application Form</h2>
                     
                     <form asp-action="Create" method="post">
                         @Html.AntiForgeryToken()
@@ -141,7 +142,7 @@
             <!-- Leave History Sidebar -->
             <div class="lg:col-span-1">
                 <div class="bg-white rounded-2xl shadow-sms-lg p-6 border border-primary-100 sticky top-6">
-                    <h2 class="text-lg font-semibold text-primary-800 mb-4">📋 Recent Approved Leaves</h2>
+                    <h2 class="text-lg font-semibold text-primary-800 mb-4">ðŸ“‹ Recent Approved Leaves</h2>
                     
                     @if (approvedLeaves.Any())
                     {
@@ -154,10 +155,10 @@
                                         <span class="text-xs px-2 py-1 bg-success text-white rounded-full">@leave.TotalDays days</span>
                                     </div>
                                     <div class="text-xs text-neutral-700 space-y-1">
-                                        <div>📅 @leave.StartDate.ToString("MMM dd") - @leave.EndDate.ToString("MMM dd, yyyy")</div>
+                                        <div>ðŸ“… @leave.StartDate.ToString("MMM dd") - @leave.EndDate.ToString("MMM dd, yyyy")</div>
                                         @if (leave.ApprovedBy != null)
                                         {
-                                            <div>✅ Approved by @leave.ApprovedBy</div>
+                                            <div>âœ… Approved by @leave.ApprovedBy</div>
                                         }
                                     </div>
                                 </div>

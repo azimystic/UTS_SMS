@@ -1,3 +1,4 @@
+﻿@using UTS_SMS.Models
 @model SMS.ViewModels.PayrollCreateViewModel
 
 @{
@@ -99,7 +100,7 @@
                 <div class="mt-4 bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-3 rounded-lg">
                     <p class="text-sm font-medium">
                         <i class="fas fa-info-circle mr-2"></i>
-                        Payroll for this month already exists with a @(Model.ExistingBalance > 0 ? "pending" : "advance") balance of <strong>₨@Math.Abs(Model.ExistingBalance).ToString("N0")</strong>. 
+                        Payroll for this month already exists with a @(Model.ExistingBalance > 0 ? "pending" : "advance") balance of <strong>â‚¨@Math.Abs(Model.ExistingBalance).ToString("N0")</strong>. 
                         @if (Model.ExistingBalance > 0)
                         {
                             <span>You can pay the remaining balance.</span>
@@ -295,9 +296,9 @@
                                                     </span>
                                                 }
                                             </td>
-                                            <td class="py-3 text-neutral-700">₨@history.BasicSalary.ToString("N0")</td>
-                                            <td class="py-3 text-neutral-700">₨@history.NetSalary.ToString("N0")</td>
-                                            <td class="py-3 text-neutral-700">₨@history.AmountPaid.ToString("N0")</td>
+                                            <td class="py-3 text-neutral-700">â‚¨@history.BasicSalary.ToString("N0")</td>
+                                            <td class="py-3 text-neutral-700">â‚¨@history.NetSalary.ToString("N0")</td>
+                                            <td class="py-3 text-neutral-700">â‚¨@history.AmountPaid.ToString("N0")</td>
                                             <td class="py-3 font-semibold @{
                                                 string balanceColorClass;
                                                 if (history.Balance == 0)
@@ -314,7 +315,7 @@
                                                 }
                                                 @balanceColorClass
                                             }">
-                                                ₨@Math.Abs(history.Balance).ToString("N0")
+                                                â‚¨@Math.Abs(history.Balance).ToString("N0")
                                             </td>
                                             <td class="py-3">
                                                 <span class="px-2 py-1 rounded-full text-xs font-medium @{
@@ -375,7 +376,7 @@
                             <label asp-for="BasicSalary" class="block text-sm font-medium text-gray-300 mb-1"></label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="text-gray-400">₨</span>
+                                    <span class="text-gray-400">â‚¨</span>
                                 </div>
                                 <input asp-for="BasicSalary" class="pl-10 w-full px-4 py-2.5 border-2 border-gray-700 rounded-lg bg-gray-800 cursor-not-allowed input-field text-white" readonly />
                             </div>
@@ -386,7 +387,7 @@
                             <label asp-for="Allowances" class="block text-sm font-medium text-gray-300 mb-1"></label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="text-gray-400">₨</span>
+                                    <span class="text-gray-400">â‚¨</span>
                                 </div>
                                 <input asp-for="Allowances" class="pl-10 w-full px-4 py-2.5 border-2 border-gray-700 rounded-lg bg-gray-800 cursor-not-allowed input-field text-white" readonly />
                             </div>
@@ -397,7 +398,7 @@
                             <label asp-for="Deductions" class="block text-sm font-medium text-gray-300 mb-1"></label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="text-gray-400">₨</span>
+                                    <span class="text-gray-400">â‚¨</span>
                                 </div>
                                 <input asp-for="Deductions" class="pl-10 w-full px-4 py-2.5 border-2 border-gray-700 rounded-lg bg-gray-800 cursor-not-allowed input-field text-white" readonly />
                             </div>
@@ -408,7 +409,7 @@
                             <label asp-for="AttendanceDeduction" class="block text-sm font-medium text-gray-300 mb-1"></label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="text-gray-400">₨</span>
+                                    <span class="text-gray-400">â‚¨</span>
                                 </div>
                                 <input asp-for="AttendanceDeduction" class="pl-10 w-full px-4 py-2.5 border-2 border-gray-700 rounded-lg input-field calculate-field text-white bg-gray-800 focus:ring-2 focus:ring-primary-400 focus:border-primary-400" />
                             </div>
@@ -420,7 +421,7 @@
                             <label asp-for="PreviousBalance" class="block text-sm font-medium text-gray-300 mb-1"></label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="text-gray-400">₨</span>
+                                    <span class="text-gray-400">â‚¨</span>
                                 </div>
                                 <input asp-for="PreviousBalance" class="pl-10 w-full px-4 py-2.5 border-2 border-gray-700 rounded-lg bg-gray-800 cursor-not-allowed input-field text-white" readonly />
                             </div>
@@ -431,7 +432,7 @@
                             <label asp-for="Bonus" class="block text-sm font-medium text-gray-300 mb-1"></label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="text-gray-400">₨</span>
+                                    <span class="text-gray-400">â‚¨</span>
                                 </div>
                                 <input asp-for="Bonus" class="pl-10 w-full px-4 py-2.5 border-2 border-gray-700 rounded-lg input-field calculate-field text-white bg-gray-800 focus:ring-2 focus:ring-primary-400 focus:border-primary-400" value="0" />
                             </div>
@@ -442,7 +443,7 @@
                             <label asp-for="CashPaid" class="block text-sm font-medium text-gray-300 mb-1">Cash in Hand</label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="text-gray-400">₨</span>
+                                    <span class="text-gray-400">â‚¨</span>
                                 </div>
                                 <input asp-for="CashPaid" id="CashPaid" class="pl-10 w-full px-4 py-2.5 border-2 border-gray-700 rounded-lg input-field payment-field text-white bg-gray-800 focus:ring-2 focus:ring-primary-400 focus:border-primary-400" value="0" />
                             </div>
@@ -454,7 +455,7 @@
                             <label asp-for="OnlinePaid" class="block text-sm font-medium text-gray-300 mb-1">Online Paid</label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="text-gray-400">₨</span>
+                                    <span class="text-gray-400">â‚¨</span>
                                 </div>
                                 <input asp-for="OnlinePaid" id="OnlinePaid" class="pl-10 w-full px-4 py-2.5 border-2 border-gray-700 rounded-lg input-field payment-field text-white bg-gray-800 focus:ring-2 focus:ring-primary-400 focus:border-primary-400" value="0" />
                             </div>
@@ -466,25 +467,25 @@
                     <div class="grid grid-cols-2 gap-3 mb-4">
                         <div class="text-center p-3 bg-blue-900/30 rounded-xl border border-blue-600">
                             <div class="text-xs font-medium text-gray-300 mb-1">Total Payable</div>
-                            <div class="text-lg font-bold text-blue-400" id="totalPayable">₨0</div>
+                            <div class="text-lg font-bold text-blue-400" id="totalPayable">â‚¨0</div>
                         </div>
                         
                         @if (Model.IsEmployeeParent && Model.StudentFeeDeduction > 0)
                         {
                             <div class="text-center p-3 bg-yellow-900/30 rounded-xl border border-yellow-600">
                                 <div class="text-xs font-medium text-gray-300 mb-1">Fee Deduction</div>
-                                <div class="text-lg font-bold text-yellow-400" id="feeDeduction">₨@Model.StudentFeeDeduction.ToString("N0")</div>
+                                <div class="text-lg font-bold text-yellow-400" id="feeDeduction">â‚¨@Model.StudentFeeDeduction.ToString("N0")</div>
                             </div>
                         }
 
                         <div class="text-center p-3 bg-green-900/30 rounded-xl border border-green-600">
                             <div class="text-xs font-medium text-gray-300 mb-1">Total Paid</div>
-                            <div class="text-lg font-bold text-green-400" id="totalPaid">₨0</div>
+                            <div class="text-lg font-bold text-green-400" id="totalPaid">â‚¨0</div>
                         </div>
 
                         <div class="text-center p-3 bg-red-900/30 rounded-xl border border-red-600">
                             <div class="text-xs font-medium text-gray-300 mb-1">Balance</div>
-                            <div class="text-lg font-bold text-red-400" id="balance">₨0</div>
+                            <div class="text-lg font-bold text-red-400" id="balance">â‚¨0</div>
                         </div>
                     </div>
 
@@ -517,19 +518,19 @@
                     <div class="space-y-2">
                         <div class="flex justify-between p-3 bg-neutral-50 rounded-lg border border-primary-100">
                             <span class="text-sm text-neutral-600">Basic Salary:</span>
-                            <span class="text-sm font-bold text-primary-800">₨@Model.BasicSalary.ToString("N0")</span>
+                            <span class="text-sm font-bold text-primary-800">â‚¨@Model.BasicSalary.ToString("N0")</span>
                         </div>
                         <div class="flex justify-between p-3 bg-success-light rounded-lg border border-success">
                             <span class="text-sm text-neutral-600">Allowances:</span>
-                            <span class="text-sm font-bold text-success">+₨@Model.Allowances.ToString("N0")</span>
+                            <span class="text-sm font-bold text-success">+â‚¨@Model.Allowances.ToString("N0")</span>
                         </div>
                         <div class="flex justify-between p-3 bg-error-light rounded-lg border border-error">
                             <span class="text-sm text-neutral-600">Deductions:</span>
-                            <span class="text-sm font-bold text-error">-₨@Model.Deductions.ToString("N0")</span>
+                            <span class="text-sm font-bold text-error">-â‚¨@Model.Deductions.ToString("N0")</span>
                         </div>
                         <div class="flex justify-between p-3 bg-primary-100 rounded-lg border border-primary-400">
                             <span class="text-sm text-primary-700 font-medium">Gross Salary:</span>
-                            <span class="text-sm font-bold text-primary-800">₨@Model.GrossSalary.ToString("N0")</span>
+                            <span class="text-sm font-bold text-primary-800">â‚¨@Model.GrossSalary.ToString("N0")</span>
                         </div>
                     </div>
                 </div>
@@ -552,7 +553,7 @@
                                             <div class="text-xs text-gray-400">@deduction.ClassName</div>
                                         </div>
                                         <div class="text-right">
-                                            <div class="text-sm font-bold text-accent-400">₨@deduction.AmountDeducted.ToString("N0")</div>
+                                            <div class="text-sm font-bold text-accent-400">â‚¨@deduction.AmountDeducted.ToString("N0")</div>
                                             <div class="text-xs text-gray-400">@deduction.PaymentMode</div>
                                         </div>
                                     </div>
@@ -560,7 +561,7 @@
                             }
                             <div class="flex justify-between p-3 bg-accent-900/20 rounded-lg mt-3 border border-accent-700">
                                 <span class="text-sm font-medium text-white">Total Fee Deduction:</span>
-                                <span class="text-sm font-bold text-accent-400">₨@Model.StudentFeeDeduction.ToString("N0")</span>
+                                <span class="text-sm font-bold text-accent-400">â‚¨@Model.StudentFeeDeduction.ToString("N0")</span>
                             </div>
                         </div>
                     </div>
@@ -584,7 +585,7 @@
                                             <div class="text-xs text-gray-400">@deduction.ClassName</div>
                                         </div>
                                         <div class="text-right">
-                                            <div class="text-sm font-bold text-red-400">-₨@deduction.AmountDeducted.ToString("N0")</div>
+                                            <div class="text-sm font-bold text-red-400">-â‚¨@deduction.AmountDeducted.ToString("N0")</div>
                                             <div class="text-xs text-gray-400">@deduction.DeductionDate.ToString("dd MMM yyyy")</div>
                                         </div>
                                     </div>
@@ -592,7 +593,7 @@
                             }
                             <div class="flex justify-between p-3 bg-red-900/30 rounded-lg mt-3 border border-red-700">
                                 <span class="text-sm font-medium text-white">Total Salary Deductions:</span>
-                                <span class="text-sm font-bold text-red-400">-₨@Model.TotalSalaryDeductions.ToString("N0")</span>
+                                <span class="text-sm font-bold text-red-400">-â‚¨@Model.TotalSalaryDeductions.ToString("N0")</span>
                             </div>
                         </div>
                     </div>
@@ -641,7 +642,7 @@
             }
 
             // Update UI
-            document.getElementById("totalPayable").innerText = '₨' + totalPayable.toLocaleString();
+            document.getElementById("totalPayable").innerText = 'â‚¨' + totalPayable.toLocaleString();
             
             // Calculate total paid from CashPaid and OnlinePaid
             const cashPaid = parseFloat(document.getElementById("CashPaid").value) || 0;
@@ -650,11 +651,11 @@
             
             // Set AmountPaid to sum of CashPaid and OnlinePaid
             document.getElementById("AmountPaid").value = totalPaid;
-            document.getElementById("totalPaid").innerText = '₨' + totalPaid.toLocaleString();
+            document.getElementById("totalPaid").innerText = 'â‚¨' + totalPaid.toLocaleString();
             
             // Calculate balance
             const balance = totalPayable - totalPaid;
-            document.getElementById("balance").innerText = '₨' + balance.toLocaleString();
+            document.getElementById("balance").innerText = 'â‚¨' + balance.toLocaleString();
             // Update color based on balance
             if (balance === 0) {
                 document.getElementById("balance").className = 'text-lg font-bold text-green-400';
@@ -721,7 +722,7 @@
                     Swal.fire({
                         icon: 'error',
                         title: 'Payment Exceeds Payable',
-                        text: `Total payment (₨${totalPaid.toLocaleString()}) cannot exceed Total Payable (₨${totalPayable.toLocaleString()}).`,
+                        text: `Total payment (â‚¨${totalPaid.toLocaleString()}) cannot exceed Total Payable (â‚¨${totalPayable.toLocaleString()}).`,
                         confirmButtonColor: '#FBBF24',
                         confirmButtonText: 'OK'
                     });
@@ -733,13 +734,13 @@
                 let confirmMessage = '', iconType = 'question';
                 
                 if (difference > 0) {
-                    confirmMessage = `<div style="text-align: left;"><p><strong>Total Payable:</strong> <span style="float: right;">₨${totalPayable.toLocaleString()}</span></p><p><strong>Total Paid:</strong> <span style="float: right;">₨${totalPaid.toLocaleString()}</span></p><hr style="margin: 10px 0;"><p><strong style="color: #3b82f6;">Advance Amount:</strong> <span style="color: #3b82f6; float: right; font-weight: bold;">₨${Math.abs(difference).toLocaleString()}</span></p><p style="margin-top: 15px; color: #f97316;"><strong>⚠️ Paying MORE than required.</strong></p></div>`;
+                    confirmMessage = `<div style="text-align: left;"><p><strong>Total Payable:</strong> <span style="float: right;">â‚¨${totalPayable.toLocaleString()}</span></p><p><strong>Total Paid:</strong> <span style="float: right;">â‚¨${totalPaid.toLocaleString()}</span></p><hr style="margin: 10px 0;"><p><strong style="color: #3b82f6;">Advance Amount:</strong> <span style="color: #3b82f6; float: right; font-weight: bold;">â‚¨${Math.abs(difference).toLocaleString()}</span></p><p style="margin-top: 15px; color: #f97316;"><strong>âš ï¸ Paying MORE than required.</strong></p></div>`;
                     iconType = 'info';
                 } else if (difference < 0) {
-                    confirmMessage = `<div style="text-align: left;"><p><strong>Total Payable:</strong> <span style="float: right;">₨${totalPayable.toLocaleString()}</span></p><p><strong>Total Paid:</strong> <span style="float: right;">₨${totalPaid.toLocaleString()}</span></p><hr style="margin: 10px 0;"><p><strong style="color: #ef4444;">Remaining Balance:</strong> <span style="color: #ef4444; float: right; font-weight: bold;">₨${Math.abs(difference).toLocaleString()}</span></p><p style="margin-top: 15px; color: #f97316;"><strong>⚠️ Paying LESS than required.</strong></p></div>`;
+                    confirmMessage = `<div style="text-align: left;"><p><strong>Total Payable:</strong> <span style="float: right;">â‚¨${totalPayable.toLocaleString()}</span></p><p><strong>Total Paid:</strong> <span style="float: right;">â‚¨${totalPaid.toLocaleString()}</span></p><hr style="margin: 10px 0;"><p><strong style="color: #ef4444;">Remaining Balance:</strong> <span style="color: #ef4444; float: right; font-weight: bold;">â‚¨${Math.abs(difference).toLocaleString()}</span></p><p style="margin-top: 15px; color: #f97316;"><strong>âš ï¸ Paying LESS than required.</strong></p></div>`;
                     iconType = 'warning';
                 } else {
-                    confirmMessage = `<div style="text-align: left;"><p><strong>Total Payable:</strong> <span style="float: right;">₨${totalPayable.toLocaleString()}</span></p><p><strong>Total Paid:</strong> <span style="float: right;">₨${totalPaid.toLocaleString()}</span></p><hr style="margin: 10px 0;"><p style="margin-top: 15px; color: #10b981;"><strong>✓ Payment amount matches exactly.</strong></p></div>`;
+                    confirmMessage = `<div style="text-align: left;"><p><strong>Total Payable:</strong> <span style="float: right;">â‚¨${totalPayable.toLocaleString()}</span></p><p><strong>Total Paid:</strong> <span style="float: right;">â‚¨${totalPaid.toLocaleString()}</span></p><hr style="margin: 10px 0;"><p style="margin-top: 15px; color: #10b981;"><strong>âœ“ Payment amount matches exactly.</strong></p></div>`;
                     iconType = 'success';
                 }
                 

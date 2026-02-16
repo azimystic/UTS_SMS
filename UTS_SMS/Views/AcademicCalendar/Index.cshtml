@@ -1,3 +1,4 @@
+﻿@using UTS_SMS.Models
 @model UTS_SMS.Models.MonthlyCalendarViewModel
 
 @{
@@ -113,7 +114,7 @@
                        asp-route-campusFilter="@ViewBag.CampusFilter"
                        asp-route-holidayType="@ViewBag.HolidayType"
                        class="inline-flex items-center px-3 py-2 border border-primary-200 shadow-sm text-sm leading-4 font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        ← Previous Month
+                        â† Previous Month
                     </a>
                     
                     <h2 class="text-2xl font-semibold text-primary-800">@Model.MonthName</h2>
@@ -123,7 +124,7 @@
                        asp-route-campusFilter="@ViewBag.CampusFilter"
                        asp-route-holidayType="@ViewBag.HolidayType"
                        class="inline-flex items-center px-3 py-2 border border-primary-200 shadow-sm text-sm leading-4 font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        Next Month →
+                        Next Month â†’
                     </a>
                 </div>
                 

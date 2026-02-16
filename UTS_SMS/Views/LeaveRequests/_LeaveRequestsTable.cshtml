@@ -1,3 +1,4 @@
+﻿@using UTS_SMS.Models
 @model IEnumerable<UTS_SMS.Models.LeaveRequest>
 
 @{
@@ -49,19 +50,19 @@
                         @if (item.Status == "Pending")
                         {
                             <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                ⏳ Pending
+                                â³ Pending
                             </span>
                         }
                         else if (item.Status == "Approved")
                         {
                             <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                ✓ Approved
+                                âœ“ Approved
                             </span>
                         }
                         else if (item.Status == "Rejected")
                         {
                             <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                ✗ Rejected
+                                âœ— Rejected
                             </span>
                         }
                     </td>
@@ -77,12 +78,12 @@
                                 <button type="submit" 
                                         onclick="return confirm('Are you sure you want to approve this leave request?');"
                                         class="px-3 py-1 bg-green-600 text-white text-xs rounded-md hover:bg-green-700 transition-colors duration-200">
-                                    ✓ Approve
+                                    âœ“ Approve
                                 </button>
                             </form>
                             <button onclick="openRejectionModal(@item.Id)" 
                                     class="px-3 py-1 bg-red-600 text-white text-xs rounded-md hover:bg-red-700 transition-colors duration-200">
-                                ✗ Reject
+                                âœ— Reject
                             </button>
                         </td>
                     }

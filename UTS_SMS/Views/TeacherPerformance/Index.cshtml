@@ -1,3 +1,4 @@
+﻿@using UTS_SMS.Models
 @model IEnumerable<UTS_SMS.Models.TeacherPerformance>
 @using System.Globalization
 
@@ -126,7 +127,7 @@
                     <div class="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl shadow-2xl p-8 mb-4 text-white">
                         <div class="flex flex-col md:flex-row items-center justify-between">
                             <div class="flex items-center mb-4 md:mb-0">
-                                <div class="text-6xl mr-4">🏆</div>
+                                <div class="text-6xl mr-4">ðŸ†</div>
                                 <div class="flex items-center">
                                     @if (!string.IsNullOrEmpty(topPerformers[0].Teacher?.ProfilePicture))
                                     {
@@ -330,7 +331,7 @@
                 </div>
                 <div class="bg-white rounded-lg p-2 shadow-sm border border-accent-400">
                     <div class="flex items-center mb-1">
-                        <span class="text-lg mr-1">⭐</span>
+                        <span class="text-lg mr-1">â­</span>
                         <div class="font-bold text-gray-800 text-sm">Survey</div>
                     </div>
                     <div class="text-xs text-gray-600">6 marks</div>

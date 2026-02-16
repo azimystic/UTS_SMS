@@ -1,4 +1,5 @@
-﻿@model List<SMS.ViewModels.DailyAttendanceSummaryViewModel>
+﻿@using UTS_SMS.Models
+@model List<SMS.ViewModels.DailyAttendanceSummaryViewModel>
 @{
     ViewData["Title"] = "Daily Attendance Summary";
     var date = ViewBag.Date as DateTime? ?? DateTime.Today;

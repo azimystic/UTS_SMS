@@ -1,3 +1,4 @@
+﻿@using UTS_SMS.Models
 @model SMS.Controllers.StudentDashboardController.StudentDashboardViewModel
 
 @{
@@ -158,7 +159,7 @@
                                      data-event-title="@evt.Title"
                                      data-event-description="@evt.Description"
                                      title="@evt.Description">
-                                    <div class="text-xl">@(evt.IsHoliday ? "🏖️" : "📅")</div>
+                                    <div class="text-xl">@(evt.IsHoliday ? "ðŸ–ï¸" : "ðŸ“…")</div>
                                     <div class="flex-1">
                                         <div class="text-sm font-medium text-white">@evt.Title</div>
                                         <div class="text-xs text-gray-300">@evt.StartDate.ToString("MMM dd, yyyy")</div>
@@ -235,7 +236,7 @@
 
                     <!-- Today's Homework/Diary -->
                     <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
-                        <h3 class="text-lg font-bold text-[#2D2D2D] mb-4">📓 Today's Homework</h3>
+                        <h3 class="text-lg font-bold text-[#2D2D2D] mb-4">ðŸ““ Today's Homework</h3>
                         <div class="space-y-3 max-h-96 overflow-y-auto">
                             @if (Model.TodayHomework.Any())
                             {
@@ -302,7 +303,7 @@
                     @if (Model.TomorrowTimetable.Any())
                     {
                         <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
-                            <h3 class="text-lg font-bold text-[#2D2D2D] mb-4">📅 Tomorrow's Schedule</h3>
+                            <h3 class="text-lg font-bold text-[#2D2D2D] mb-4">ðŸ“… Tomorrow's Schedule</h3>
                             <div class="space-y-2 max-h-60 overflow-y-auto">
                                 @foreach (var slot in Model.TomorrowTimetable)
                                 {
@@ -403,7 +404,7 @@
                                     @if (totalPaid >= totalPayable)
                                     {
                                         <div class="p-3 bg-green-50 rounded-xl text-center">
-                                            <span class="text-sm font-bold text-[#4CAF50]">✓ Paid in Full</span>
+                                            <span class="text-sm font-bold text-[#4CAF50]">âœ“ Paid in Full</span>
                                             <button onclick="printVoucher(@Model.FeeDetails.ThisMonthFee.Id)" class="mt-2 w-full px-3 py-2 bg-[#4CAF50] text-white rounded-lg text-sm">
                                                 Print Voucher
                                             </button>
@@ -510,11 +511,11 @@
                     @if (Model.TeacherOfMonth != null)
                     {
                         <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
-                            <h3 class="text-lg font-bold text-[#2D2D2D] mb-4">🏆 Teacher of the Month</h3>
+                            <h3 class="text-lg font-bold text-[#2D2D2D] mb-4">ðŸ† Teacher of the Month</h3>
                             <div class="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl p-6 text-white">
                                 <div class="flex items-center gap-4 mb-4">
                                     <div class="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-3xl">
-                                        🥇
+                                        ðŸ¥‡
                                     </div>
                                     <div class="flex-1">
                                         <div class="text-xl font-bold">@Model.TeacherOfMonth.TeacherName</div>
@@ -535,7 +536,7 @@
                     <!-- My Awards & Positions -->
                     <div class="card-dark rounded-3xl shadow-lg p-6 hover-lift">
                         <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-bold text-white">🏆 My Awards & Positions</h3>
+                            <h3 class="text-lg font-bold text-white">ðŸ† My Awards & Positions</h3>
                             @if (Model.StudentAwards.Count > 3)
                             {
                                 <button id="showMoreAwardsBtn" class="px-3 py-1 bg-[#FFD700] text-[#2D2D2D] rounded-lg text-xs font-medium hover:bg-[#FFC700] transition">
@@ -597,7 +598,7 @@
                             else
                             {
                                 <div class="text-sm text-gray-400 text-center py-8">
-                                    <div class="text-4xl mb-2">🎯</div>
+                                    <div class="text-4xl mb-2">ðŸŽ¯</div>
                                     <div>No awards yet. Keep striving for excellence!</div>
                                 </div>
                             }

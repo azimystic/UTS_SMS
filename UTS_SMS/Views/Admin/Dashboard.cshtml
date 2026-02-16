@@ -1,3 +1,4 @@
+﻿@using UTS_SMS.Models
 @model SMS.ViewModels.DashboardViewModel
 
 @{
@@ -756,13 +757,13 @@
                     {
                         <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift cursor-pointer" onclick="window.location.href='/TeacherPerformance/Index'">
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-bold text-[#2D2D2D]">🏆 Teacher of the Month</h3>
+                                <h3 class="text-lg font-bold text-[#2D2D2D]">ðŸ† Teacher of the Month</h3>
                                 <span class="text-xs text-gray-600">@Model.TeacherOfMonth.Month.ToString("D2")/@Model.TeacherOfMonth.Year</span>
                             </div>
                             <div class="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl p-6 text-white" onclick="event.stopPropagation();">
                                 <div class="flex items-center gap-4 mb-4">
                                     <div class="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-3xl">
-                                        🥇
+                                        ðŸ¥‡
                                     </div>
                                     <div class="flex-1">
                                         <div class="text-xl font-bold">@Model.TeacherOfMonth.Teacher.FullName</div>
@@ -777,7 +778,7 @@
                                 </div>
                             </div>
                             <div class="mt-4 text-center">
-                                <a href="/TeacherPerformance/Index" class="text-sm text-blue-600 hover:underline" onclick="event.stopPropagation();">View All Performance Rankings →</a>
+                                <a href="/TeacherPerformance/Index" class="text-sm text-blue-600 hover:underline" onclick="event.stopPropagation();">View All Performance Rankings â†’</a>
                             </div>
                         </div>
                     }
@@ -785,7 +786,7 @@
                     <!-- Today's Diaries (Homework) -->
                     <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-bold text-[#2D2D2D]">📓 Today's Homework</h3>
+                            <h3 class="text-lg font-bold text-[#2D2D2D]">ðŸ““ Today's Homework</h3>
                             <a href="/Diary/Index" class="text-xs text-blue-600 hover:underline">View All</a>
                         </div>
                         <div class="space-y-3 max-h-96 overflow-y-auto">
@@ -1357,7 +1358,7 @@
                         let tooltip = '';
                         if (hasEvents) {
                             tooltip = eventsByDate[day].map(e => {
-                                const icon = e.type === 'exam' ? '📝' : e.isHoliday ? '🏖️' : '📅';
+                                const icon = e.type === 'exam' ? 'ðŸ“' : e.isHoliday ? 'ðŸ–ï¸' : 'ðŸ“…';
                                 let text = `${icon} ${e.title}`;
                                 if (e.isMultiDay) text += ' (Multi-day)';
                                 if (e.classSection && e.classSection.trim() !== '') {
@@ -1432,7 +1433,7 @@
             
             let eventsHTML = `<div class="text-sm font-semibold text-gray-300 mb-2">${title}</div>`;
             events.slice(0, 5).forEach(event => {
-                const icon = event.type === 'exam' ? '📝' : event.isHoliday ? '🏖️' : '📅';
+                const icon = event.type === 'exam' ? 'ðŸ“' : event.isHoliday ? 'ðŸ–ï¸' : 'ðŸ“…';
                 const color = event.type === 'exam' ? 'bg-purple-900/50' : event.isHoliday ? 'bg-red-900/50' : 'bg-blue-900/50';
                 const textColor = event.type === 'exam' ? 'text-purple-200' : event.isHoliday ? 'text-red-200' : 'text-blue-200';
                 const multiDayBadge = event.isMultiDay ? '<span class="ml-2 px-2 py-0.5 bg-blue-600 text-white text-xs rounded">Multi-day</span>' : '';
@@ -1442,10 +1443,10 @@
                     eventDetails += ` - ${new Date(event.endDate).toLocaleDateString()}`;
                 }
                 if (event.classSection && event.classSection.trim() !== '') {
-                    eventDetails += ` • ${event.classSection}`;
+                    eventDetails += ` â€¢ ${event.classSection}`;
                 }
                 if (event.description) {
-                    eventDetails += ` • ${event.description}`;
+                    eventDetails += ` â€¢ ${event.description}`;
                 }
                 
                 // Only show edit/delete for non-exam events
@@ -1797,7 +1798,7 @@
                             formatter: function(params) {
                                 let result = params[0].name + '<br/>';
                                 params.forEach(param => {
-                                    result += '💰 ' + param.seriesName + ': $' + param.value.toLocaleString() + '<br/>';
+                                    result += 'ðŸ’° ' + param.seriesName + ': $' + param.value.toLocaleString() + '<br/>';
                                 });
                                 return result;
                             }

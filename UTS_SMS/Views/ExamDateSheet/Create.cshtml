@@ -1,3 +1,4 @@
+﻿@using UTS_SMS.Models
 @model UTS_SMS.Models.ExamDateSheetViewModel
 
 @{
@@ -8,7 +9,7 @@
     <div class="max-w-4xl mx-auto">
         <!-- Header -->
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-primary-800">📅 Create Exam Date Sheet</h1>
+            <h1 class="text-3xl font-bold text-primary-800">ðŸ“… Create Exam Date Sheet</h1>
             <p class="text-neutral-600 mt-2">Schedule an exam for a specific date</p>
         </div>
 
@@ -57,7 +58,7 @@
                             @foreach (var category in Model.ExamCategories)
                             {
                                 <option value="@category.Id" selected="@(Model.ExamCategoryId == category.Id)">
-                                    @category.Name @(category.CampusId == null ? "🌐" : "")
+                                    @category.Name @(category.CampusId == null ? "ðŸŒ" : "")
                                 </option>
                             }
                         </select>
@@ -240,7 +241,7 @@
                 .then(data => {
                     select.innerHTML = '<option value="">-- Select Exam Category --</option>';
                     data.forEach(item => {
-                        select.innerHTML += `<option value="${item.id}">${item.name} ${item.isAllCampuses ? '🌐' : ''}</option>`;
+                        select.innerHTML += `<option value="${item.id}">${item.name} ${item.isAllCampuses ? 'ðŸŒ' : ''}</option>`;
                     });
                 })
                 .catch(error => {

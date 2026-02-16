@@ -1,3 +1,4 @@
+﻿@using UTS_SMS.Models
 @model SMS.Controllers.ParentDashboardController.ParentStudentDetailsViewModel
 
 @{
@@ -90,13 +91,13 @@
                         <div class="flex items-center">
                             @{
                                 var percentage = (decimal)Model.LatestExamResult.Percentage;
-                                string icon = "💎"; // Default diamond
+                                string icon = "ðŸ’Ž"; // Default diamond
                                 string iconColor = "text-accent-100";
                                 
-                                if (percentage >= 90) { icon = "🥇"; iconColor = "text-yellow-300"; }
-                                else if (percentage >= 80) { icon = "🥈"; iconColor = "text-gray-300"; }
-                                else if (percentage >= 70) { icon = "🥉"; iconColor = "text-accent-600"; }
-                                else if (percentage >= 60) { icon = "💎"; iconColor = "text-accent-400"; }
+                                if (percentage >= 90) { icon = "ðŸ¥‡"; iconColor = "text-yellow-300"; }
+                                else if (percentage >= 80) { icon = "ðŸ¥ˆ"; iconColor = "text-gray-300"; }
+                                else if (percentage >= 70) { icon = "ðŸ¥‰"; iconColor = "text-accent-600"; }
+                                else if (percentage >= 60) { icon = "ðŸ’Ž"; iconColor = "text-accent-400"; }
                             }
                             <span class="text-2xl mr-3">@icon</span>
                             <div>
@@ -135,7 +136,7 @@
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
                         <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <span class="text-primary-600">🕌</span>
+                            <span class="text-primary-600">ðŸ•Œ</span>
                         </div>
                     </div>
                     <div class="ml-5">
@@ -295,7 +296,7 @@
                                     <div class="mt-2">
                                         <a asp-action="DiaryDetails" asp-route-studentId="@Model.Student.Id" asp-route-date="@diary.Date.ToString("yyyy-MM-dd")" 
                                            class="text-primary-600 hover:text-primary-800 text-xs font-medium">
-                                            View all images →
+                                            View all images â†’
                                         </a>
                                     </div>
                                 </div>

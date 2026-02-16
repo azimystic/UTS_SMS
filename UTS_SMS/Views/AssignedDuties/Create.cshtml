@@ -1,3 +1,4 @@
+﻿@using UTS_SMS.Models
 @model UTS_SMS.Models.AssignedDuty
 
 @{
@@ -22,20 +23,20 @@
 
         <!-- Mode Selection -->
         <div class="bg-white rounded-2xl shadow-sms-lg p-6 mb-6">
-            <h3 class="text-lg font-semibold text-primary-800 mb-4">📌 Assignment Mode</h3>
+            <h3 class="text-lg font-semibold text-primary-800 mb-4">ðŸ“Œ Assignment Mode</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <button type="button" id="modeTeacher" class="mode-btn p-6 border-2 border-primary-200 rounded-xl hover:border-primary-600 hover:bg-primary-50 transition-all duration-300 text-center">
-                    <div class="text-4xl mb-3">👨‍🏫</div>
+                    <div class="text-4xl mb-3">ðŸ‘¨â€ðŸ«</div>
                     <h4 class="font-semibold text-primary-800 mb-2">Teacher Only</h4>
                     <p class="text-sm text-neutral-600">Assign duty to a teacher/employee</p>
                 </button>
                 <button type="button" id="modeStudent" class="mode-btn p-6 border-2 border-primary-200 rounded-xl hover:border-primary-600 hover:bg-primary-50 transition-all duration-300 text-center">
-                    <div class="text-4xl mb-3">👨‍🎓</div>
+                    <div class="text-4xl mb-3">ðŸ‘¨â€ðŸŽ“</div>
                     <h4 class="font-semibold text-primary-800 mb-2">Student Only</h4>
                     <p class="text-sm text-neutral-600">Assign duty to student(s)</p>
                 </button>
                 <button type="button" id="modeHybrid" class="mode-btn p-6 border-2 border-primary-200 rounded-xl hover:border-primary-600 hover:bg-primary-50 transition-all duration-300 text-center active">
-                    <div class="text-4xl mb-3">👥</div>
+                    <div class="text-4xl mb-3">ðŸ‘¥</div>
                     <h4 class="font-semibold text-primary-800 mb-2">Hybrid</h4>
                     <p class="text-sm text-neutral-600">Assign to both teacher and students</p>
                 </button>
@@ -49,7 +50,7 @@
                 
                 <!-- Basic Information -->
                 <div class="mb-6">
-                    <h3 class="text-lg font-semibold text-primary-800 mb-4">📝 Duty Information</h3>
+                    <h3 class="text-lg font-semibold text-primary-800 mb-4">ðŸ“ Duty Information</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="md:col-span-2">
                             <label asp-for="DutyTitle" class="block text-sm font-medium text-neutral-700 mb-2">Duty Title <span class="text-error">*</span></label>
@@ -146,10 +147,10 @@
                     
                     <div class="flex flex-col sm:flex-row justify-between items-center gap-2 mb-4">
                         <button type="button" id="addStudents" class="w-full sm:w-auto px-4 py-2 bg-gradient-primary text-white rounded-md hover:bg-primary-700 transition-colors text-sm">
-                            Add Selected Students →
+                            Add Selected Students â†’
                         </button>
                         <button type="button" id="removeStudents" class="w-full sm:w-auto px-4 py-2 bg-error text-white rounded-md hover:bg-red-700 transition-colors text-sm">
-                            ← Remove Selected
+                            â† Remove Selected
                         </button>
                     </div>
                     

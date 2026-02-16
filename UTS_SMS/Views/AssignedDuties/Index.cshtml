@@ -1,3 +1,4 @@
+﻿@using UTS_SMS.Models
 @model IEnumerable<UTS_SMS.Models.AssignedDuty>
 
 @{
@@ -25,7 +26,7 @@
 
         <!-- Filters Card -->
         <div class="bg-white rounded-2xl shadow-sms-lg p-6 mb-6">
-            <h3 class="text-lg font-semibold text-primary-800 mb-4">🔍 Filters</h3>
+            <h3 class="text-lg font-semibold text-primary-800 mb-4">ðŸ” Filters</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-neutral-700 mb-1">Search</label>
@@ -257,18 +258,18 @@
                                 ${duty.status !== 'Completed' ? `
                                 <button onclick="markAsCompleted(${duty.id})" 
                                         class="bg-green-100 hover:bg-green-200 text-green-700 text-center py-2 px-3 rounded-md text-sm font-medium transition-colors">
-                                    ✓ Complete
+                                    âœ“ Complete
                                 </button>
                                 ` : ''}
                                 ${duty.status !== 'Cancelled' && duty.status !== 'Completed' ? `
                                 <button onclick="markAsCancelled(${duty.id})" 
                                         class="bg-yellow-100 hover:bg-yellow-200 text-yellow-700 text-center py-2 px-3 rounded-md text-sm font-medium transition-colors">
-                                    ✗ Cancel
+                                    âœ— Cancel
                                 </button>
                                 ` : ''}
                                 <button onclick="deleteDuty(${duty.id})" 
                                         class="bg-error-light hover:bg-error text-error hover:text-white text-center py-2 px-3 rounded-md text-sm font-medium transition-colors col-span-2">
-                                    🗑 Delete
+                                    ðŸ—‘ Delete
                                 </button>
                             </div>
                         </div>

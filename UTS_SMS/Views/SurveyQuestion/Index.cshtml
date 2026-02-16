@@ -1,3 +1,4 @@
+﻿@using UTS_SMS.Models
 @model IEnumerable<UTS_SMS.Models.SurveyQuestion>
 
 @{
@@ -319,7 +320,7 @@
                 // Show subtle success feedback
                 const notification = document.createElement('div');
                 notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300';
-                notification.textContent = '✓ Question order saved';
+                notification.textContent = 'âœ“ Question order saved';
                 document.body.appendChild(notification);
                 
                 setTimeout(() => {
@@ -330,7 +331,7 @@
                 // Show error notification
                 const errorNotification = document.createElement('div');
                 errorNotification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300';
-                errorNotification.textContent = '✗ Error saving order: ' + (data.message || 'Unknown error');
+                errorNotification.textContent = 'âœ— Error saving order: ' + (data.message || 'Unknown error');
                 document.body.appendChild(errorNotification);
                 
                 setTimeout(() => {
@@ -344,7 +345,7 @@
             // Show error notification to user
             const errorNotification = document.createElement('div');
             errorNotification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300';
-            errorNotification.textContent = '✗ Error saving order. Please try again.';
+            errorNotification.textContent = 'âœ— Error saving order. Please try again.';
             document.body.appendChild(errorNotification);
             
             setTimeout(() => {

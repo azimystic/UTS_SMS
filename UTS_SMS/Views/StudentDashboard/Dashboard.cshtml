@@ -1,3 +1,4 @@
+﻿@using UTS_SMS.Models
 @model SMS.Controllers.StudentDashboardController.StudentDashboardViewModel
 
 @{
@@ -1108,7 +1109,7 @@
                                     result += `${param.marker} <strong>Student: ${param.value}%</strong><br/>`;
                                     result += `<div style="margin-left: 20px; font-size: 11px;">`;
                                     subjectData.examResults.forEach(exam => {
-                                        result += `• ${exam.examName}: ${exam.obtainedMarks}/${exam.totalMarks}<br/>`;
+                                        result += `â€¢ ${exam.examName}: ${exam.obtainedMarks}/${exam.totalMarks}<br/>`;
                                     });
                                     result += `Avg: ${subjectData.averagePercentage.toFixed(1)}%</div>`;
                                 }
@@ -1179,7 +1180,7 @@
                                     result += `<div style="margin-left: 20px; font-size: 11px;">`;
                                     result += `Total: ${examData.totalObtained}/${examData.totalMarks}<br/>`;
                                     examData.subjectResults.forEach(subject => {
-                                        result += `• ${subject.subjectName}: ${subject.obtainedMarks}/${subject.totalMarks} (${subject.percentage.toFixed(1)}%)<br/>`;
+                                        result += `â€¢ ${subject.subjectName}: ${subject.obtainedMarks}/${subject.totalMarks} (${subject.percentage.toFixed(1)}%)<br/>`;
                                     });
                                     result += `</div>`;
                                 }
@@ -1345,7 +1346,7 @@
         }
 
         function showAwardDetails(award, examName, examCategory, position, percentage, academicYear) {
-            alert(`🏆 Achievement Details\n\nAward: ${award}\nPosition: #${position}\nPercentage: ${percentage}%\nExam: ${examName}\nCategory: ${examCategory}\nAcademic Year: ${academicYear}`);
+            alert(`ðŸ† Achievement Details\n\nAward: ${award}\nPosition: #${position}\nPercentage: ${percentage}%\nExam: ${examName}\nCategory: ${examCategory}\nAcademic Year: ${academicYear}`);
         }
     </script>
 </body>
