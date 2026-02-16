@@ -1,5 +1,5 @@
 ﻿// View Models
-using UTS_SMS.Models;
+using SMS.Models;
 
 namespace SMS.ViewModels
 {
