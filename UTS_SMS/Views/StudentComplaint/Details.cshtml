@@ -1,0 +1,497 @@
+@model SMS.Models.StudentComplaint
+
+@{
+    ViewData["Title"] = "Complaint Details";
+    var isAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+    var isTeacher = User.IsInRole("Teacher");
+    var isResolved = Model.Status == "Resolved" || Model.Status == "Closed";
+    var hasTeacherComments = !string.IsNullOrWhiteSpace(Model.TeacherComments);
+}
+
+<link rel="stylesheet" href="~/lib/sweetalert2/sweetalert2.min.css" />
+
+<div class="min-h-screen">
+    <!-- Header Section -->
+    <div class=" shadow-sm border-b border-primary-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-2xl font-bold text-primary-800 sm:text-3xl">Complaint Details</h1>
+                    <p class="mt-1 text-sm text-neutral-500">View detailed information about this complaint</p>
+                </div>
+                <div class="mt-4 md:mt-0 flex gap-2">
+                    @if (isAdmin)
+                    {
+                        <a asp-action="AdminIndex" class="inline-flex items-center px-4 py-2 border border-primary-200 rounded-lg shadow-sm text-sm font-medium text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-400">
+                            <svg class="-ml-1 mr-2 h-5 w-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            </svg>
+                            Back to List
+                        </a>
+                    }
+                    else if (isTeacher)
+                    {
+                        <a asp-action="TeacherIndex" class="inline-flex items-center px-4 py-2 border border-primary-200 rounded-lg shadow-sm text-sm font-medium text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-400">
+                            <svg class="-ml-1 mr-2 h-5 w-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            </svg>
+                            Back to My Complaints
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-action="Index" class="inline-flex items-center px-4 py-2 border border-primary-200 rounded-lg shadow-sm text-sm font-medium text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-400">
+                            <svg class="-ml-1 mr-2 h-5 w-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            </svg>
+                            Back to My Complaints
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Main Content - Left Column -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Complaint Information Card -->
+                <div class="bg-white shadow-sm rounded-lg border border-primary-100">
+                    <div class="px-6 py-4 border-b border-primary-100 flex items-center justify-between">
+                        <h2 class="text-lg font-medium text-primary-800">Complaint Information</h2>
+                        <span class="px-3 py-1 rounded-full text-xs font-medium
+                            @(Model.Status == "Open" ? "bg-blue-100 text-blue-800" : 
+                              Model.Status == "In Investigation" ? "bg-yellow-100 text-yellow-800" :
+                              Model.Status == "Resolved" ? "bg-green-100 text-green-800" :
+                              Model.Status == "Closed" ? "bg-gray-100 text-gray-800" :
+                              "bg-red-100 text-red-800")">
+                            @Model.Status
+                        </span>
+                    </div>
+                    <div class="px-6 py-4 space-y-4">
+                        <div>
+                            <h3 class="text-xl font-semibold text-primary-800 mb-2">@Model.ComplaintTitle</h3>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                                    @Model.ComplaintType
+                                </span>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium 
+                                    @(Model.Priority == "High" ? "bg-red-100 text-red-800" : 
+                                      Model.Priority == "Medium" ? "bg-yellow-100 text-yellow-800" : 
+                                      "bg-green-100 text-green-800")">
+                                    Priority: @Model.Priority
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="text-sm font-medium text-neutral-700">Description:</label>
+                            <p class="mt-1 text-sm text-neutral-600 whitespace-pre-line">@Model.ComplaintDescription</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 pt-4 border-t border-primary-100">
+                            <div>
+                                <label class="text-sm font-medium text-neutral-700">Complaint Date:</label>
+                                <p class="text-sm text-neutral-600">@Model.ComplaintDate.ToString("MMM dd, yyyy")</p>
+                            </div>
+                            @if (Model.ResolvedDate.HasValue)
+                            {
+                                <div>
+                                    <label class="text-sm font-medium text-neutral-700">Resolved Date:</label>
+                                    <p class="text-sm text-neutral-600">@Model.ResolvedDate.Value.ToString("MMM dd, yyyy")</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+               
+
+            
+                <!-- Teacher Information Card -->
+                @if (Model.TeacherId.HasValue && Model.Teacher != null)
+                {
+                    <div class="bg-white shadow-sm rounded-lg border border-primary-100">
+                        <div class="px-6 py-4 border-b border-primary-100">
+                            <h2 class="text-lg font-medium text-primary-800">Related Teacher</h2>
+                        </div>
+                        <div class="px-6 py-4">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
+                                    <span class="text-lg font-bold text-orange-800">@Model.Teacher.FullName?.Substring(0, 1).ToUpper()</span>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-base font-medium text-primary-800">@Model.Teacher.FullName</h3>
+                                    <p class="text-sm text-neutral-500">@Model.Teacher.Role</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Teacher Comments Card -->
+                <div class="bg-white shadow-sm rounded-lg border border-primary-100">
+                    <div class="px-6 py-4 border-b border-primary-100">
+                        <h2 class="text-lg font-medium text-primary-800">Teacher Comments</h2>
+                    </div>
+                    <div class="px-6 py-4">
+                        @if (hasTeacherComments)
+                        {
+                            <div class="space-y-3">
+                                <p class="text-sm text-neutral-600 whitespace-pre-line">@Model.TeacherComments</p>
+                                @if (Model.TeacherCommentDate.HasValue)
+                                {
+                                    <p class="text-xs text-neutral-500">
+                                        Added on @Model.TeacherCommentDate.Value.ToString("MMM dd, yyyy hh:mm tt")
+                                    </p>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                <div class="flex items-center">
+                                    <svg class="h-5 w-5 text-yellow-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                    <span class="text-sm text-yellow-700">Teacher has not added comments yet</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Resolution Comments Card -->
+                @if (isResolved && !string.IsNullOrWhiteSpace(Model.ResolutionComments))
+                {
+                    <div class="bg-white shadow-sm rounded-lg border border-primary-100">
+                        <div class="px-6 py-4 border-b border-primary-100">
+                            <h2 class="text-lg font-medium text-primary-800">Resolution Comments</h2>
+                        </div>
+                        <div class="px-6 py-4">
+                            <div class="space-y-3">
+                                <p class="text-sm text-neutral-600 whitespace-pre-line">@Model.ResolutionComments</p>
+                                @if (Model.ResolvedDate.HasValue)
+                                {
+                                    <p class="text-xs text-neutral-500">
+                                        Resolved on @Model.ResolvedDate.Value.ToString("MMM dd, yyyy")
+                                        @if (!string.IsNullOrWhiteSpace(Model.ResolvedBy))
+                                        {
+                                            <span> by @Model.ResolvedBy</span>
+                                        }
+                                    </p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @if (isResolved && !string.IsNullOrWhiteSpace(Model.ResolutionDetails))
+                {
+                    <div class="bg-white shadow-sm rounded-lg border border-primary-100">
+                        <div class="px-6 py-4 border-b border-primary-100">
+                            <h2 class="text-lg font-medium text-primary-800">Resolution Details</h2>
+                        </div>
+                        <div class="px-6 py-4">
+                            <p class="text-sm text-neutral-600 whitespace-pre-line">@Model.ResolutionDetails</p>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Sidebar - Right Column -->
+            <div class="lg:col-span-1 space-y-6">
+                
+                
+                <!-- Actions Card (Teacher Only) -->
+                @if (isTeacher && Model.TeacherId.HasValue)
+                {
+                    <div class="bg-white shadow-sm rounded-lg border border-primary-100">
+                        <div class="px-6 py-4 border-b border-primary-100">
+                            <h2 class="text-lg font-medium text-primary-800">Actions</h2>
+                        </div>
+                        <div class="px-6 py-4 space-y-3">
+                            <button onclick="showAddCommentModal(@Model.Id, @(hasTeacherComments ? "true" : "false"))" 
+                                    class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-gradient-primary hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-400 transition-colors duration-200">
+                                <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                                @(hasTeacherComments ? "Update Comment" : "Add Comment")
+                            </button>
+                        </div>
+                    </div>
+                }
+
+                <!-- Student Information Card -->
+                <div class="bg-white shadow-sm rounded-lg border border-primary-100">
+                    <div class="px-6 py-4 border-b border-primary-100">
+                        <h2 class="text-lg font-medium text-primary-800">Student Information</h2>
+                    </div>
+                    <div class="px-6 py-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="font-medium text-neutral-700">Name:</span>
+                                <span class="text-neutral-600">@Model.Student?.StudentName</span>
+                            </div>
+                            <div>
+                                <span class="font-medium text-neutral-700">Class & Section:</span>
+                                <span class="text-neutral-600">@Model.Student?.ClassObj?.Name - @Model.Student?.SectionObj?.Name</span>
+                            </div>
+                            <div>
+                                <span class="font-medium text-neutral-700">Campus:</span>
+                                <span class="text-neutral-600">@Model.Campus?.Name</span>
+                            </div>
+                            <div>
+                                <span class="font-medium text-neutral-700">Father's Name:</span>
+                                <span class="text-neutral-600">@Model.Student?.FatherName</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Reporter Information Card -->
+                @if (!Model.IsAnonymous && !string.IsNullOrWhiteSpace(Model.ReportedBy))
+                {
+                    <div class="bg-white shadow-sm rounded-lg border border-primary-100">
+                        <div class="px-6 py-4 border-b border-primary-100">
+                            <h2 class="text-lg font-medium text-primary-800">Reporter Information</h2>
+                        </div>
+                        <div class="px-6 py-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <span class="font-medium text-neutral-700">Reported By:</span>
+                                    <span class="text-neutral-600">@Model.ReportedBy</span>
+                                </div>
+                                <div>
+                                    <span class="font-medium text-neutral-700">Reporter Type:</span>
+                                    <span class="text-neutral-600">@Model.ReporterType</span>
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(Model.ReporterPhone))
+                                {
+                                    <div>
+                                        <span class="font-medium text-neutral-700">Phone:</span>
+                                        <span class="text-neutral-600">@Model.ReporterPhone</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(Model.ReporterEmail))
+                                {
+                                    <div>
+                                        <span class="font-medium text-neutral-700">Email:</span>
+                                        <span class="text-neutral-600">@Model.ReporterEmail</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (Model.IsAnonymous)
+                {
+                    <div class="bg-white shadow-sm rounded-lg border border-primary-100">
+                        <div class="px-6 py-4 border-b border-primary-100">
+                            <h2 class="text-lg font-medium text-primary-800">Reporter Information</h2>
+                        </div>
+                        <div class="px-6 py-4">
+                            <div class="bg-primary-50 border border-blue-200 rounded-lg p-4">
+                                <div class="flex items-center">
+                                    <svg class="h-5 w-5 text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <span class="text-sm text-blue-700">This complaint was submitted anonymously</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/sweetalert2/sweetalert2.min.js"></script>
+    
+    <script>
+        // Admin function to show resolve modal
+        function showResolveModal(complaintId) {
+            Swal.fire({
+                title: 'Resolve Complaint',
+                html: `
+                    <div class="text-left space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-2">Resolution Details</label>
+                            <textarea id="resolutionDetails" class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400" rows="4" placeholder="Describe how this complaint was resolved..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-neutral-700 mb-2">Resolution Comments</label>
+                            <textarea id="resolutionComments" class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400" rows="3" placeholder="Additional comments..."></textarea>
+                        </div>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Resolve',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                preConfirm: () => {
+                    const details = document.getElementById('resolutionDetails').value;
+                    const comments = document.getElementById('resolutionComments').value;
+                    
+                    if (!details.trim()) {
+                        Swal.showValidationMessage('Please provide resolution details');
+                        return false;
+                    }
+                    
+                    return { details, comments };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    resolveComplaint(complaintId, result.value.details, result.value.comments);
+                }
+            });
+        }
+
+        function resolveComplaint(complaintId, details, comments) {
+            fetch('@Url.Action("Resolve", "StudentComplaint")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                },
+                body: JSON.stringify({
+                    id: complaintId,
+                    resolutionDetails: details,
+                    resolutionComments: comments
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Complaint has been resolved successfully.',
+                        icon: 'success',
+                        confirmButtonColor: '#10b981'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: data.message || 'Failed to resolve complaint.',
+                        icon: 'error',
+                        confirmButtonColor: '#ef4444'
+                    });
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'An error occurred while resolving the complaint.',
+                    icon: 'error',
+                    confirmButtonColor: '#ef4444'
+                });
+            });
+        }
+
+        function requestTeacherComment(complaintId, teacherName) {
+            Swal.fire({
+                title: 'Request Teacher Comment',
+                text: `Send a notification to ${teacherName} to add their comments on this complaint?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Send Request',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#0891b2',
+                cancelButtonColor: '#6b7280'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Notification has been sent to the teacher.',
+                        icon: 'success',
+                        confirmButtonColor: '#10b981'
+                    });
+                }
+            });
+        }
+
+        // Teacher function to show add/update comment modal
+        function showAddCommentModal(complaintId, hasExistingComment) {
+            Swal.fire({
+                title: hasExistingComment ? 'Update Comment' : 'Add Comment',
+                html: `
+                    <div class="text-left">
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">Your Comments</label>
+                        <textarea id="teacherComment" class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400" rows="6" placeholder="Add your comments about this complaint...">@(hasTeacherComments ? Model.TeacherComments : "")</textarea>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: hasExistingComment ? 'Update' : 'Submit',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#0891b2',
+                cancelButtonColor: '#6b7280',
+                preConfirm: () => {
+                    const comment = document.getElementById('teacherComment').value;
+                    
+                    if (!comment.trim()) {
+                        Swal.showValidationMessage('Please provide your comments');
+                        return false;
+                    }
+                    
+                    return comment;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    submitTeacherComment(complaintId, result.value);
+                }
+            });
+        }
+
+        function submitTeacherComment(complaintId, comment) {
+            fetch(`@Url.Action("AddTeacherComment", "StudentComplaint")?id=${complaintId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                },
+                body: JSON.stringify({
+                    comments: comment
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Your comment has been added successfully.',
+                        icon: 'success',
+                        confirmButtonColor: '#10b981'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: data.message || 'Failed to add comment.',
+                        icon: 'error',
+                        confirmButtonColor: '#ef4444'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error submitting comment:', error);
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'An error occurred while adding your comment.',
+                    icon: 'error',
+                    confirmButtonColor: '#ef4444'
+                });
+            });
+        }
+    </script>
+}

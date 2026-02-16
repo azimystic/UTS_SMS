@@ -1,0 +1,203 @@
+@{
+    ViewData["Title"] = "Reports";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="text-dark mb-1">📊 Report Generation</h2>
+            <p class="text-muted">Generate various reports using .docx templates</p>
+        </div>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- Award Sheet Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="icon-box bg-primary bg-opacity-10 text-primary rounded-3 p-3 me-3">
+                            <i class="fas fa-award fa-2x"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0">Award Sheet</h5>
+                            <small class="text-muted">Test-wise marks entry sheet</small>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted small">
+                        Generate an award sheet for a specific subject test with student names and marks columns.
+                    </p>
+                    <a asp-action="AwardSheet" class="btn btn-primary btn-sm w-100">
+                        <i class="fas fa-file-pdf me-2"></i>Generate
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Class Exam Report Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="icon-box bg-success bg-opacity-10 text-success rounded-3 p-3 me-3">
+                            <i class="fas fa-table fa-2x"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0">Class Exam Report</h5>
+                            <small class="text-muted">Broadsheet / Class Summary</small>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted small">
+                        Generate a broadsheet showing all students with subject-wise marks, total, percentage, and position.
+                    </p>
+                    <a asp-action="ClassExamReport" class="btn btn-success btn-sm w-100">
+                        <i class="fas fa-file-pdf me-2"></i>Generate
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Report Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="icon-box bg-info bg-opacity-10 text-info rounded-3 p-3 me-3">
+                            <i class="fas fa-user-graduate fa-2x"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0">Student Report Card</h5>
+                            <small class="text-muted">Individual student report</small>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted small">
+                        Generate a report card for a single student showing all subjects for a specific exam.
+                    </p>
+                    <a asp-action="StudentReportCard" class="btn btn-info btn-sm w-100">
+                        <i class="fas fa-file-pdf me-2"></i>Generate
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Card with History -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="icon-box bg-warning bg-opacity-10 text-warning rounded-3 p-3 me-3">
+                            <i class="fas fa-history fa-2x"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0">Report Card with History</h5>
+                            <small class="text-muted">Report with past results</small>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted small">
+                        Generate a report card with focus exam at the top and historical exam results below.
+                    </p>
+                    <a asp-action="ReportCardHistory" class="btn btn-warning btn-sm w-100">
+                        <i class="fas fa-file-pdf me-2"></i>Generate
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Report Card -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="icon-box bg-danger bg-opacity-10 text-danger rounded-3 p-3 me-3">
+                            <i class="fas fa-print fa-2x"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0">Bulk Report Card</h5>
+                            <small class="text-muted">Class-wise bulk printing</small>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted small">
+                        Generate report cards for all students in a class/section and download as a single PDF with multiple pages.
+                    </p>
+                    <a asp-action="BulkReportCard" class="btn btn-danger btn-sm w-100">
+                        <i class="fas fa-file-pdf me-2"></i>Generate
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 border-2 border-secondary">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="icon-box bg-secondary bg-opacity-10 text-secondary rounded-3 p-3 me-3">
+                            <i class="fas fa-book fa-2x"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-0">Template Guide</h5>
+                            <small class="text-muted">Placeholder documentation</small>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted small">
+                        View the documentation to learn which placeholders to use in your .docx templates.
+                    </p>
+                    <a href="https://github.com/azimystic/SMS/blob/main/REPORT_TEMPLATES_GUIDE.md" target="_blank" class="btn btn-secondary btn-sm w-100">
+                        <i class="fas fa-file-alt me-2"></i>View Guide
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="alert alert-info border-0 shadow-sm" role="alert">
+                <h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Requirements</h6>
+                <ul class="mb-0 small">
+                    <li>Place your .docx templates in <code>wwwroot/reports/</code> directory</li>
+                    <li>LibreOffice must be installed on the server for PDF conversion</li>
+                    <li>Use placeholders like <code>{student_name}</code> in your templates</li>
+                    <li>Refer to the Template Guide for complete placeholder reference</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .icon-box {
+        width: 64px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+</style>

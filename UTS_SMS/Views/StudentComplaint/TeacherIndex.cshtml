@@ -1,0 +1,375 @@
+@model IEnumerable<SMS.Models.StudentComplaint>
+
+@{
+    ViewData["Title"] = "My Assigned Complaints - Teacher View";
+    var statusFilter = ViewBag.StatusFilter as string ?? "";
+    var teacher = ViewBag.Teacher as Employee;
+}
+
+<div class="min-h-screen bg-neutral-50">
+    <!-- Header Section -->
+    <div class="bg-white shadow-sm border-b border-primary-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-2xl font-bold text-primary-800 sm:text-3xl">📋 My Assigned Complaints</h1>
+                    <p class="mt-1 text-sm text-neutral-500">
+                        View and respond to student complaints involving you
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teacher Info Card -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="bg-white shadow-sm rounded-lg border border-primary-100 mb-6 p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
+                    <span class="text-lg font-bold text-orange-800">@teacher?.FullName?.Substring(0, 1).ToUpper()</span>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-lg font-medium text-primary-800">@teacher?.FullName</h3>
+                    <p class="text-sm text-neutral-500">Teacher | @teacher?.Role</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="bg-white rounded-lg shadow-sm border border-primary-100 p-4 mb-6">
+            <form method="get" class="flex flex-col sm:flex-row gap-4">
+                <div class="flex-1">
+                    <label for="status" class="block text-sm font-medium text-neutral-700 mb-1">Status</label>
+                    <select id="status" name="status" class="block w-full rounded-md border-primary-200 shadow-sm focus:border-primary-400 focus:ring-primary-400 text-sm">
+                        <option value="">All Statuses</option>
+                        <option value="Open" selected="@(statusFilter == "Open")">Open</option>
+                        <option value="In Investigation" selected="@(statusFilter == "In Investigation")">In Investigation</option>
+                        <option value="Resolved" selected="@(statusFilter == "Resolved")">Resolved</option>
+                        <option value="Closed" selected="@(statusFilter == "Closed")">Closed</option>
+                    </select>
+                </div>
+                <div class="flex items-end gap-2">
+                    <button type="submit" class="px-4 py-2 bg-gradient-primary text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-400 text-sm">
+                        🔍 Filter
+                    </button>
+                    <a href="@Url.Action("TeacherIndex")" class="px-4 py-2 bg-gray-300 text-neutral-700 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 text-sm">
+                        🔄 Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Summary Stats -->
+        @if (Model.Any())
+        {
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-primary-100">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-primary-100">
+                            <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-neutral-600">Total Complaints</p>
+                            <p class="text-2xl font-bold text-primary-800">@Model.Count()</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-primary-100">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-warning-light">
+                            <svg class="w-8 h-8 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-neutral-600">Pending Response</p>
+                            <p class="text-2xl font-bold text-primary-800">@Model.Count(c => string.IsNullOrWhiteSpace(c.TeacherComments) && c.Status != "Resolved")</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-primary-100">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-success-light">
+                            <svg class="w-8 h-8 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-neutral-600">Resolved</p>
+                            <p class="text-2xl font-bold text-primary-800">@Model.Count(c => c.Status == "Resolved")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Complaints List -->
+        <div class="space-y-4">
+            @if (Model.Any())
+            {
+                @foreach (var complaint in Model)
+                {
+                    <div class="bg-white shadow-sm rounded-lg border border-primary-100 overflow-hidden hover:shadow-md transition-shadow">
+                        <div class="p-6">
+                            <!-- Header -->
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <h3 class="text-lg font-semibold text-primary-800">@complaint.ComplaintTitle</h3>
+                                        @{
+                                            var statusClass = complaint.Status switch
+                                            {
+                                                "Open" => "bg-primary-100 text-primary-800",
+                                                "In Investigation" => "bg-warning-light text-yellow-800",
+                                                "Resolved" => "bg-success-light text-success",
+                                                "Escalated" => "bg-error-light text-error",
+                                                _ => "bg-neutral-100 text-primary-800"
+                                            };
+                                        }
+                                        <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full @statusClass">
+                                            @complaint.Status
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center gap-4 text-sm text-neutral-600">
+                                        <span>📅 @complaint.ComplaintDate.ToString("MMM dd, yyyy")</span>
+                                        <span>👨‍🎓 @complaint.Student?.StudentName (@complaint.Student?.ClassObj?.Name - @complaint.Student?.SectionObj?.Name)</span>
+                                        <span class="inline-flex px-2 py-1 text-xs rounded-full 
+                                            @(complaint.Priority == "High" ? "bg-error-light text-error" : 
+                                              complaint.Priority == "Medium" ? "bg-warning-light text-yellow-800" : 
+                                              "bg-success-light text-success")">
+                                            @complaint.Priority Priority
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="mb-4">
+                                <p class="text-sm text-neutral-700 whitespace-pre-wrap">@complaint.ComplaintDescription</p>
+                            </div>
+
+                            <!-- Teacher Comments Section -->
+                            @if (!string.IsNullOrWhiteSpace(complaint.TeacherComments))
+                            {
+                                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+                                    <div class="flex items-start">
+                                        <svg class="h-5 w-5 text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
+                                        </svg>
+                                        <div class="ml-3 flex-1">
+                                            <p class="text-sm font-medium text-blue-800">Your Response</p>
+                                            <p class="text-sm text-blue-700 mt-1 whitespace-pre-wrap">@complaint.TeacherComments</p>
+                                            <p class="text-xs text-blue-600 mt-2">Added on @complaint.TeacherCommentDate?.ToString("MMM dd, yyyy 'at' hh:mm tt")</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            else if (complaint.Status != "Resolved")
+                            {
+                                <div class="bg-warning-light border-l-4 border-warning p-4 mb-4">
+                                    <div class="flex items-start">
+                                        <svg class="h-5 w-5 text-warning mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                        </svg>
+                                        <div class="ml-3">
+                                            <p class="text-sm font-medium text-warning">Response Required</p>
+                                            <p class="text-sm text-yellow-700 mt-1">Please add your comments to explain the situation.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Resolution Comments (if resolved) -->
+                            @if (!string.IsNullOrWhiteSpace(complaint.ResolutionComments))
+                            {
+                                <div class="bg-success-light border-l-4 border-success p-4 mb-4">
+                                    <div class="flex items-start">
+                                        <svg class="h-5 w-5 text-success mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <div class="ml-3 flex-1">
+                                            <p class="text-sm font-medium text-success">Resolution by Admin</p>
+                                            <p class="text-sm text-green-700 mt-1 whitespace-pre-wrap">@complaint.ResolutionComments</p>
+                                            <p class="text-xs text-green-600 mt-2">Resolved by @complaint.ResolvedBy on @complaint.ResolvedDate?.ToString("MMM dd, yyyy")</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Actions -->
+                            <div class="flex gap-3 pt-4 border-t border-primary-100">
+                                <a asp-action="Details" asp-route-id="@complaint.Id" 
+                                   class="inline-flex items-center px-4 py-2 border border-primary-200 rounded-lg shadow-sm text-sm font-medium text-primary-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-400">
+                                    <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                    View Details
+                                </a>
+                                @if (string.IsNullOrWhiteSpace(complaint.TeacherComments) && complaint.Status != "Resolved")
+                                {
+                                    <button onclick="showCommentModal(@complaint.Id, this.getAttribute('data-title'))" 
+                                            data-title="@Html.Raw(System.Text.Json.JsonSerializer.Serialize(complaint.ComplaintTitle))"
+                                            class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-primary hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-400">
+                                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
+                                        </svg>
+                                        Add Response
+                                    </button>
+                                }
+                                else if (!string.IsNullOrWhiteSpace(complaint.TeacherComments) && complaint.Status != "Resolved")
+                                {
+                                    <button onclick="showCommentModal(@complaint.Id, this.getAttribute('data-title'), this.getAttribute('data-comments'))" 
+                                            data-title="@Html.Raw(System.Text.Json.JsonSerializer.Serialize(complaint.ComplaintTitle))"
+                                            data-comments="@Html.Raw(System.Text.Json.JsonSerializer.Serialize(complaint.TeacherComments))"
+                                            class="inline-flex items-center px-4 py-2 border border-primary-200 rounded-lg shadow-sm text-sm font-medium text-primary-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-400">
+                                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
+                                        Edit Response
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="bg-white shadow-sm rounded-lg border border-primary-100">
+                    <div class="p-12 text-center">
+                        <svg class="mx-auto h-16 w-16 text-neutral-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <h3 class="text-lg font-medium text-primary-800 mb-2">No Complaints Found</h3>
+                        <p class="text-neutral-600">
+                            You don't have any assigned complaints at the moment.
+                        </p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- SweetAlert2 Library -->
+<script src="~/lib/sweetalert2/sweetalert2.min.js"></script>
+<link rel="stylesheet" href="~/lib/sweetalert2/sweetalert2.min.css" />
+
+<script>
+// CSRF Token setup
+const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
+// Show comment modal
+async function showCommentModal(id, titleJson, existingCommentJson = null) {
+    const title = titleJson ? JSON.parse(titleJson) : '';
+    const existingComment = existingCommentJson ? JSON.parse(existingCommentJson) : '';
+    
+    const { value: comments } = await Swal.fire({
+        title: existingComment ? 'Edit Your Response' : 'Add Your Response',
+        html: `
+            <div class="text-left">
+                <p class="mb-4 text-sm text-neutral-600"><strong>Complaint:</strong> ${escapeHtml(title)}</p>
+                <label class="block text-sm font-medium text-neutral-700 mb-2">Your Comments *</label>
+                <textarea id="teacherComments" class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400" 
+                          rows="6" placeholder="Provide your explanation or defense regarding this complaint...">${escapeHtml(existingComment)}</textarea>
+                <p class="mt-2 text-xs text-neutral-500">Your comments will be visible to the admin and the student who filed the complaint.</p>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: existingComment ? 'Update Response' : 'Submit Response',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true,
+        customClass: {
+            confirmButton: 'px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 ml-2',
+            cancelButton: 'px-4 py-2 bg-gray-300 text-neutral-700 rounded-lg hover:bg-gray-400'
+        },
+        buttonsStyling: false,
+        preConfirm: () => {
+            const comments = document.getElementById('teacherComments').value.trim();
+            if (!comments) {
+                Swal.showValidationMessage('Please provide your comments');
+                return false;
+            }
+            return comments;
+        }
+    });
+    
+    if (comments) {
+        addTeacherComment(id, comments);
+    }
+}
+
+// Add teacher comment
+function addTeacherComment(id, comments) {
+    fetch(`/StudentComplaint/AddTeacherComment/${id}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken': token
+        },
+        body: JSON.stringify({ comments: comments })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                title: 'Success!',
+                text: data.message,
+                icon: 'success',
+                confirmButtonText: 'OK',
+                customClass: {
+                    confirmButton: 'px-4 py-2 bg-success text-white rounded-lg hover:bg-green-700'
+                },
+                buttonsStyling: false
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                title: 'Error',
+                text: data.message,
+                icon: 'error',
+                confirmButtonText: 'OK',
+                customClass: {
+                    confirmButton: 'px-4 py-2 bg-error text-white rounded-lg hover:bg-red-700'
+                },
+                buttonsStyling: false
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Error',
+            text: 'An error occurred while adding your comment',
+            icon: 'error',
+            confirmButtonText: 'OK',
+            customClass: {
+                confirmButton: 'px-4 py-2 bg-error text-white rounded-lg hover:bg-red-700'
+            },
+            buttonsStyling: false
+        });
+    });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text || '';
+    return div.innerHTML;
+}
+
+// Add CSRF token to the page for AJAX requests
+document.addEventListener('DOMContentLoaded', function() {
+    if (!document.querySelector('input[name="__RequestVerificationToken"]')) {
+        const form = document.createElement('form');
+        form.style.display = 'none';
+        form.innerHTML = '@Html.AntiForgeryToken()';
+        document.body.appendChild(form);
+    }
+});
+</script>

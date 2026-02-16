@@ -1,0 +1,729 @@
+@model IEnumerable<SMS.Models.StudentComplaint>
+
+@{
+    ViewData["Title"] = "All Student Complaints - Admin View";
+    var currentTab = ViewBag.CurrentTab as string ?? "incoming";
+    var statusFilter = ViewBag.StatusFilter as string ?? "";
+    var searchStudent = ViewBag.SearchStudent as string ?? "";
+    var selectedStudentId = ViewBag.SelectedStudentId as int?;
+    var students = ViewBag.Students as List<Student> ?? new List<Student>();
+    var campuses = ViewBag.Campuses as List<Campus> ?? new List<Campus>();
+}
+
+<div class="min-h-screen ">
+    <!-- Header Section -->
+    <div class=" shadow-sm border-b border-primary-100">
+        <div class="  mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-2xl font-bold text-primary-800 sm:text-3xl">Student Complaints</h1>
+                    <p class="mt-1 text-sm text-neutral-500">
+                        Manage and track all student complaints across campuses
+                    </p>
+                </div>
+                
+                <div class="mt-4 lg:mt-0">
+                    <a asp-action="AdminCreate" 
+                       class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-primary hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-400 transition-colors duration-200">
+                        <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Register Complaint
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+   
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Tab Navigation - Moved above filters -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
+            <nav class="flex" aria-label="Tabs">
+                <a href="@Url.Action("AdminIndex", new { tab = "incoming", status = statusFilter })"
+                   class="group relative flex-1 py-4 px-6 text-center font-medium text-sm transition-all duration-200 @(currentTab == "incoming" ? "text-primary-700 bg-primary-50" : "text-gray-600 hover:text-primary-600 hover:bg-gray-50")">
+                    <div class="flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                        </svg>
+                        <span>Incoming Complaints</span>
+                        <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-semibold @(currentTab == "incoming" ? "bg-primary-600 text-white" : "bg-gray-200 text-gray-700 group-hover:bg-primary-100 group-hover:text-primary-700")">
+                            @Model.Count(c => c.ReporterType == "Student" || c.ReporterType == "Teacher")
+                        </span>
+                    </div>
+                    @if (currentTab == "incoming")
+                    {
+                        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-500 to-primary-600 rounded-t"></div>
+                    }
+                </a>
+                <div class="w-px bg-gray-200"></div>
+                <a href="@Url.Action("AdminIndex", new { tab = "outgoing", status = statusFilter })"
+                   class="group relative flex-1 py-4 px-6 text-center font-medium text-sm transition-all duration-200 @(currentTab == "outgoing" ? "text-primary-700 bg-primary-50" : "text-gray-600 hover:text-primary-600 hover:bg-gray-50")">
+                    <div class="flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                        <span>Outgoing Complaints</span>
+                        <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-semibold @(currentTab == "outgoing" ? "bg-primary-600 text-white" : "bg-gray-200 text-gray-700 group-hover:bg-primary-100 group-hover:text-primary-700")">
+                            @Model.Count(c => c.ReporterType == "Admin")
+                        </span>
+                    </div>
+                    @if (currentTab == "outgoing")
+                    {
+                        <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-500 to-primary-600 rounded-t"></div>
+                    }
+                </a>
+            </nav>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
+            <div class="bg-gradient-to-r from-gray-50 to-white px-6 py-3 border-b border-gray-200">
+                <div class="flex items-center space-x-2">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                    </svg>
+                    <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">Filter Complaints</h3>
+                </div>
+            </div>
+            
+            <form method="get" class="p-6">
+                <input type="hidden" name="tab" value="@currentTab" />
+
+                <div class="flex flex-col md:flex-row gap-4">
+                    <!-- Status Filter -->
+                    <div class="flex-1">
+                        <label for="status" class="block text-sm font-medium text-gray-700 mb-2">
+                            Status
+                        </label>
+                        <div class="relative">
+                            <select id="status" name="status"
+                                    class="appearance-none block w-full pl-4 pr-10 py-3 text-base border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
+                                <option value="">All Statuses</option>
+                                <option value="Open" selected="@(statusFilter == "Open" || string.IsNullOrEmpty(statusFilter))">Open</option>
+                                <option value="In Investigation" selected="@(statusFilter == "In Investigation")">Investigating</option>
+                                <option value="Resolved" selected="@(statusFilter == "Resolved")">Resolved</option>
+                                <option value="Closed" selected="@(statusFilter == "Closed")">Closed</option>
+                                <option value="Escalated" selected="@(statusFilter == "Escalated")">Escalated</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search Input -->
+                    <div class="flex-1">
+                        <label for="searchStudent" class="block text-sm font-medium text-gray-700 mb-2">
+                            Search Name
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                            <input type="text" id="searchStudent" name="searchStudent" value="@searchStudent"
+                                   placeholder="Type student name..."
+                                   class="block w-full pl-10 pr-4 py-3 text-base border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors">
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex items-end gap-3">
+                        <button type="submit"
+                                class="inline-flex justify-center items-center px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white font-medium text-base rounded-lg hover:from-primary-700 hover:to-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 shadow-sm transition-all">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                            </svg>
+                            Apply
+                        </button>
+
+                        <a href="@Url.Action("AdminIndex", new { tab = currentTab })"
+                           class="inline-flex justify-center items-center px-4 py-3 border border-gray-300 bg-white text-gray-700 font-medium text-base rounded-lg hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 shadow-sm transition-all group"
+                           title="Clear All Filters">
+                            <svg class="w-5 h-5 group-hover:rotate-90 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Complaints List -->
+        <div class="bg-white shadow-sm rounded-lg border border-primary-100 overflow-hidden">
+            @if (Model.Any())
+            {
+                <!-- Desktop View -->
+                <div class="hidden lg:block overflow-x-auto">
+                    <table class="min-w-full divide-y divide-primary-100">
+                        <thead class="bg-neutral-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Student</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Complaint</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Type</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Reporter</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Priority</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-primary-100">
+                            @foreach (var complaint in Model)
+                            {
+                                <tr class="hover:bg-neutral-50">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-10 w-10">
+                                                <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                                                    <span class="text-sm font-medium text-primary-800">@complaint.Student?.StudentName?.Substring(0, 1).ToUpper()</span>
+                                                </div>
+                                            </div>
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-primary-800">@complaint.Student?.StudentName</div>
+                                                <div class="text-sm text-neutral-500">@complaint.Student?.ClassObj?.Name - @complaint.Student?.SectionObj?.Name</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm text-primary-800 font-medium">@complaint.ComplaintTitle</div>
+                                        <div class="text-sm text-neutral-500">@(complaint.ComplaintDescription.Length > 100 ? complaint.ComplaintDescription.Substring(0, 100) + "..." : complaint.ComplaintDescription)</div>
+                                        @if (complaint.Teacher != null)
+                                        {
+                                            <div class="mt-1 text-xs text-orange-600">Teacher: @complaint.Teacher.FullName</div>
+                                        }
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-neutral-100 text-primary-800">
+                                            @complaint.ComplaintType
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        @{
+                                            var reporterClass = complaint.ReporterType switch
+                                            {
+                                                "Student" => "bg-success-light text-success",
+                                                "Admin" => "bg-purple-100 text-purple-800",
+                                                "Teacher" => "bg-orange-100 text-orange-800",
+                                                _ => "bg-neutral-100 text-primary-800"
+                                            };
+                                        }
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full @reporterClass">
+                                            @complaint.ReporterType
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                                            @(complaint.Priority == "High" ? "bg-error-light text-error" : 
+                                              complaint.Priority == "Medium" ? "bg-warning-light text-yellow-800" : 
+                                              "bg-success-light text-success")">
+                                            @complaint.Priority
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                                            @(complaint.Status == "Open" ? "bg-primary-100 text-primary-800" : 
+                                              complaint.Status == "In Investigation" ? "bg-warning-light text-yellow-800" : 
+                                              complaint.Status == "Resolved" ? "bg-success-light text-success" : 
+                                              complaint.Status == "Escalated" ? "bg-error-light text-error" :
+                                              "bg-neutral-100 text-primary-800")">
+                                            @complaint.Status
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-primary-800">
+                                        @complaint.ComplaintDate.ToString("MMM dd, yyyy")
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex space-x-2">
+                                            <a asp-action="Details" asp-route-id="@complaint.Id" class="text-primary-600 hover:text-primary-800" title="View Details">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                </svg>
+                                            </a>
+                                            @if (complaint.Status != "Resolved" && complaint.Status != "Closed")
+                                            {
+                                                <button onclick="showResolveModal(@complaint.Id, '@complaint.ComplaintTitle', @(complaint.TeacherId.HasValue ? "true" : "false"), @(string.IsNullOrWhiteSpace(complaint.TeacherComments) ? "false" : "true"))" class="text-success hover:text-success" title="Resolve Complaint">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                </button>
+                                            }
+                                            <button onclick="softDeleteComplaint(@complaint.Id, '@complaint.ComplaintTitle')" class="text-error hover:text-error" title="Delete Complaint">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile View -->
+                <div class="lg:hidden divide-y divide-primary-100">
+                    @foreach (var complaint in Model)
+                    {
+                        <div class="p-4">
+                            <!-- Student Info -->
+                            <div class="flex items-start mb-3">
+                                <div class="flex-shrink-0 h-10 w-10">
+                                    <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                                        <span class="text-sm font-medium text-primary-800">@complaint.Student?.StudentName?.Substring(0, 1).ToUpper()</span>
+                                    </div>
+                                </div>
+                                <div class="ml-3 flex-1 min-w-0">
+                                    <div class="text-sm font-medium text-primary-800 truncate">@complaint.Student?.StudentName</div>
+                                    <div class="text-xs text-neutral-500 truncate">@complaint.Student?.ClassObj?.Name - @complaint.Student?.SectionObj?.Name</div>
+                                    @if (complaint.Teacher != null)
+                                    {
+                                        <div class="text-xs text-orange-600 mt-1">👨‍🏫 @complaint.Teacher.FullName</div>
+                                    }
+                                </div>
+                                <div class="ml-2 flex-shrink-0">
+                                    @{
+                                        var mobileStatusClass = complaint.Status switch
+                                        {
+                                            "Open" => "bg-primary-100 text-primary-800",
+                                            "In Investigation" => "bg-warning-light text-yellow-800",
+                                            "Resolved" => "bg-success-light text-success",
+                                            "Escalated" => "bg-error-light text-error",
+                                            _ => "bg-neutral-100 text-primary-800"
+                                        };
+                                    }
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full @mobileStatusClass">
+                                        @complaint.Status
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Complaint Info -->
+                            <div class="mb-3">
+                                <h3 class="text-sm font-medium text-primary-800 mb-1">@complaint.ComplaintTitle</h3>
+                                <p class="text-xs text-neutral-600 break-words">@(complaint.ComplaintDescription.Length > 150 ? complaint.ComplaintDescription.Substring(0, 150) + "..." : complaint.ComplaintDescription)</p>
+                            </div>
+
+                            <!-- Tags and Actions -->
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div class="flex flex-wrap gap-1">
+                                    <span class="inline-flex px-2 py-1 text-xs rounded-full bg-neutral-100 text-primary-800">
+                                        @complaint.ComplaintType
+                                    </span>
+                                    @{
+                                        var mobilePriorityClass = complaint.Priority switch
+                                        {
+                                            "High" => "bg-error-light text-error",
+                                            "Medium" => "bg-warning-light text-yellow-800",
+                                            "Low" => "bg-success-light text-success",
+                                            _ => "bg-neutral-100 text-primary-800"
+                                        };
+                                        var mobileReporterClass = complaint.ReporterType switch
+                                        {
+                                            "Student" => "bg-success-light text-success",
+                                            "Admin" => "bg-purple-100 text-purple-800",
+                                            "Teacher" => "bg-orange-100 text-orange-800",
+                                            _ => "bg-neutral-100 text-primary-800"
+                                        };
+                                    }
+                                    <span class="inline-flex px-2 py-1 text-xs rounded-full @mobilePriorityClass">
+                                        @complaint.Priority
+                                    </span>
+                                    <span class="inline-flex px-2 py-1 text-xs rounded-full @mobileReporterClass">
+                                        @complaint.ReporterType
+                                    </span>
+                                </div>
+                                
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs text-neutral-500">@complaint.ComplaintDate.ToString("MMM dd")</span>
+                                    <div class="flex space-x-1">
+                                        <a asp-action="Details" asp-route-id="@complaint.Id" class="text-primary-600 hover:text-primary-800" title="View">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                            </svg>
+                                        </a>
+                                        @if (complaint.Status != "Resolved" && complaint.Status != "Closed")
+                                        {
+                                            <button onclick="showResolveModal(@complaint.Id, '@complaint.ComplaintTitle', @(complaint.TeacherId.HasValue ? "true" : "false"), @(string.IsNullOrWhiteSpace(complaint.TeacherComments) ? "false" : "true"))" class="text-success hover:text-success" title="Resolve">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                            </button>
+                                        }
+                                        <button onclick="softDeleteComplaint(@complaint.Id, '@complaint.ComplaintTitle')" class="text-error hover:text-error" title="Delete">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-primary-800">No complaints found</h3>
+                    <p class="mt-1 text-sm text-neutral-500">No student complaints match your current filters.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- SweetAlert2 Library -->
+<script src="~/lib/sweetalert2/sweetalert2.min.js"></script>
+<link rel="stylesheet" href="~/lib/sweetalert2/sweetalert2.min.css" />
+
+<script>
+// CSRF Token setup
+const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
+// Show resolve modal with SweetAlert
+async function showResolveModal(id, title, hasTeacher, hasTeacherComments) {
+    // First, check complaint type (incoming vs outgoing) and teacher comments
+    if (hasTeacher && !hasTeacherComments) {
+        // Scenario B: Incoming complaint with teacher but NO comments
+        // Show bell icon/button to send reminder
+        const { value: action } = await Swal.fire({
+            title: 'Teacher Comments Required',
+            html: `
+                <div class="text-left">
+                    <p class="mb-4 text-sm text-neutral-600">This complaint involves a teacher who has not yet added their comments.</p>
+                    <div class="bg-warning-light border border-yellow-300 rounded-lg p-4 mb-4">
+                        <div class="flex items-start">
+                            <svg class="w-6 h-6 text-warning mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            <div>
+                                <h4 class="text-sm font-medium text-yellow-800">Action Required</h4>
+                                <p class="text-xs text-yellow-700 mt-1">Teacher input is needed before this complaint can be properly resolved.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-neutral-700 mb-3">What would you like to do?</p>
+                </div>
+            `,
+            icon: 'warning',
+            showDenyButton: true,
+            showCancelButton: true,
+            confirmButtonText: '<svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>Send Reminder',
+            denyButtonText: 'Proceed Anyway',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+               customClass: {
+        confirmButton: 'px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700',
+        // Added ml-3 (margin-left) to push it away from the first button
+        denyButton: 'px-4 py-2 bg-warning text-white rounded-lg hover:bg-yellow-600 ml-3',
+        // Added ml-3 (margin-left) to push it away from the middle button
+        cancelButton: 'px-4 py-2 bg-gray-300 text-neutral-700 rounded-lg hover:bg-gray-400 ml-3'
+    },
+            buttonsStyling: false
+        });
+        
+        if (action === true) {
+            // Send reminder to teacher
+            sendTeacherReminder(id);
+            return;
+        } else if (action === false) {
+            // Proceed anyway with override
+            proceedWithResolution(id, title, true);
+            return;
+        } else {
+            // Cancelled
+            return;
+        }
+    } else if (hasTeacher && hasTeacherComments) {
+        // Scenario B: Incoming complaint with teacher AND comments exist
+        // Fetch and show teacher comments in modal for review
+        const response = await fetch(`/StudentComplaint/GetTeacherComments?id=${id}`);
+        const data = await response.json();
+        
+        if (data.success && data.hasComments) {
+            const { value: proceed } = await Swal.fire({
+                title: 'Teacher Comments - Review',
+                html: `
+                    <div class="text-left">
+                        <p class="mb-4 text-sm text-neutral-600"><strong>Complaint:</strong> ${title}</p>
+                        <div class="bg-blue-50 border border-primary-200 rounded-lg p-4 mb-4">
+                            <div class="flex items-start mb-2">
+                                <svg class="w-5 h-5 text-primary-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-primary-800">${data.teacherName}</p>
+                                    <p class="text-xs text-neutral-500">${data.teacherCommentDate}</p>
+                                </div>
+                            </div>
+                            <div class="bg-white rounded p-3 mt-2">
+                                <p class="text-sm text-neutral-700 whitespace-pre-wrap">${data.teacherComments}</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-success mb-3">✓ Teacher has provided their input. You can now proceed with resolution.</p>
+                    </div>
+                `,
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: 'Proceed to Resolve',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true,
+                customClass: {
+                    confirmButton: 'px-4 py-2 bg-success text-white rounded-lg hover:bg-green-700 ml-2',
+                    cancelButton: 'px-4 py-2 bg-gray-300 text-neutral-700 rounded-lg hover:bg-gray-400'
+                },
+                buttonsStyling: false
+            });
+            
+            if (proceed) {
+                proceedWithResolution(id, title, false);
+            }
+            return;
+        }
+    }
+    
+    // Scenario A: Outgoing complaint (no teacher) OR other cases
+    // Allow resolution immediately
+    proceedWithResolution(id, title, false);
+}
+
+// Send reminder notification to teacher
+function sendTeacherReminder(id) {
+    fetch(`/StudentComplaint/SendTeacherReminder/${id}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken': token
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                title: 'Reminder Sent!',
+                html: `
+                    <div class="text-center">
+                        <svg class="w-16 h-16 text-success mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                        </svg>
+                        <p class="text-sm text-neutral-600">${data.message}</p>
+                        <p class="text-xs text-neutral-500 mt-2">The teacher will be notified to add their comments.</p>
+                    </div>
+                `,
+                icon: 'success',
+                confirmButtonText: 'OK',
+                customClass: {
+                    confirmButton: 'px-4 py-2 bg-success text-white rounded-lg hover:bg-green-700'
+                },
+                buttonsStyling: false
+            });
+        } else {
+            Swal.fire({
+                title: 'Error',
+                text: data.message,
+                icon: 'error',
+                confirmButtonText: 'OK',
+                customClass: {
+                    confirmButton: 'px-4 py-2 bg-error text-white rounded-lg hover:bg-red-700'
+                },
+                buttonsStyling: false
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Error',
+            text: 'An error occurred while sending the reminder',
+            icon: 'error',
+            confirmButtonText: 'OK',
+            customClass: {
+                confirmButton: 'px-4 py-2 bg-error text-white rounded-lg hover:bg-red-700'
+            },
+            buttonsStyling: false
+        });
+    });
+}
+
+// Proceed with complaint resolution
+async function proceedWithResolution(id, title, override = false) {
+    const { value: comments } = await Swal.fire({
+        title: 'Resolve Complaint',
+        html: `
+            <div class="text-left">
+                <p class="mb-4 text-sm text-neutral-600"><strong>Complaint:</strong> ${title}</p>
+                <label class="block text-sm font-medium text-neutral-700 mb-2">Resolution Comments *</label>
+                <textarea id="resolutionComments" class="w-full px-3 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400" 
+                          rows="5" placeholder="Provide details about how this complaint was resolved..."></textarea>
+                <p class="mt-2 text-xs text-neutral-500">These comments will be visible to both the student and the teacher (if involved).</p>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Resolve Complaint',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true,
+        customClass: {
+            confirmButton: 'px-4 py-2 bg-success text-white rounded-lg hover:bg-green-700 ml-2',
+            cancelButton: 'px-4 py-2 bg-gray-300 text-neutral-700 rounded-lg hover:bg-gray-400'
+        },
+        buttonsStyling: false,
+        preConfirm: () => {
+            const comments = document.getElementById('resolutionComments').value.trim();
+            if (!comments) {
+                Swal.showValidationMessage('Please provide resolution comments');
+                return false;
+            }
+            return comments;
+        }
+    });
+    
+    if (comments) {
+        resolveComplaint(id, comments, override);
+    }
+}
+
+// Resolve complaint with comments
+function resolveComplaint(id, comments, override = false) {
+    fetch(`/StudentComplaint/ResolveComplaint/${id}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken': token
+        },
+        body: JSON.stringify({ 
+            resolutionComments: comments,
+            overrideTeacherComment: override
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                title: 'Success!',
+                text: data.message,
+                icon: 'success',
+                confirmButtonText: 'OK',
+                customClass: {
+                    confirmButton: 'px-4 py-2 bg-success text-white rounded-lg hover:bg-green-700'
+                },
+                buttonsStyling: false
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire({
+                title: 'Error',
+                text: data.message,
+                icon: 'error',
+                confirmButtonText: 'OK',
+                customClass: {
+                    confirmButton: 'px-4 py-2 bg-error text-white rounded-lg hover:bg-red-700'
+                },
+                buttonsStyling: false
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Error',
+            text: 'An error occurred while resolving the complaint',
+            icon: 'error',
+            confirmButtonText: 'OK',
+            customClass: {
+                confirmButton: 'px-4 py-2 bg-error text-white rounded-lg hover:bg-red-700'
+            },
+            buttonsStyling: false
+        });
+    });
+}
+
+// Soft delete complaint with SweetAlert
+function softDeleteComplaint(id, title) {
+    Swal.fire({
+        title: 'Delete Complaint?',
+        html: `<p>Are you sure you want to delete this complaint?</p><p class="mt-2 font-medium">"${title}"</p><p class="mt-2 text-error text-sm">This action cannot be undone.</p>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Delete',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true,
+        customClass: {
+            confirmButton: 'px-4 py-2 bg-error text-white rounded-lg hover:bg-red-700 ml-2',
+            cancelButton: 'px-4 py-2 bg-gray-300 text-neutral-700 rounded-lg hover:bg-gray-400'
+        },
+        buttonsStyling: false
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/StudentComplaint/SoftDelete/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'Deleted!',
+                        text: data.message,
+                        icon: 'success',
+                        confirmButtonText: 'OK',
+                        customClass: {
+                            confirmButton: 'px-4 py-2 bg-success text-white rounded-lg hover:bg-green-700'
+                        },
+                        buttonsStyling: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: data.message,
+                        icon: 'error',
+                        confirmButtonText: 'OK',
+                        customClass: {
+                            confirmButton: 'px-4 py-2 bg-error text-white rounded-lg hover:bg-red-700'
+                        },
+                        buttonsStyling: false
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'An error occurred while deleting the complaint',
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                    customClass: {
+                        confirmButton: 'px-4 py-2 bg-error text-white rounded-lg hover:bg-red-700'
+                    },
+                    buttonsStyling: false
+                });
+            });
+        }
+    });
+}
+
+// Add CSRF token to the page for AJAX requests
+document.addEventListener('DOMContentLoaded', function() {
+    if (!document.querySelector('input[name="__RequestVerificationToken"]')) {
+        const form = document.createElement('form');
+        form.style.display = 'none';
+        form.innerHTML = '@Html.AntiForgeryToken()';
+        document.body.appendChild(form);
+    }
+});
+</script>

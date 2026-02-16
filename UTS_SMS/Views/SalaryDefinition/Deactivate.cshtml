@@ -1,0 +1,49 @@
+﻿@model SMS.Models.SalaryDefinition
+
+@{
+    ViewData["Title"] = "Deactivate Salary";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8 text-center">
+            <svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+            <h1 class="text-3xl font-bold text-primary-800">⚠️ Deactivate Salary</h1>
+            <p class="text-neutral-600 mt-2">
+                Are you sure you want to deactivate the salary for <strong>@Model.Employee?.FullName</strong>?
+            </p>
+        </div>
+
+        <!-- Details -->
+        <div class="bg-white rounded-2xl shadow-sms-xl p-6 mb-6">
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <div><strong>Employee:</strong> @Model.Employee?.FullName</div>
+                <div><strong>Gross Salary:</strong> ₹@Model.GrossSalary.ToString("N2")</div>
+                <div><strong>Net Salary:</strong> ₹@Model.NetSalary.ToString("N2")</div>
+                <div class="col-span-2"><strong>Status:</strong> Active</div>
+            </div>
+        </div>
+
+        <!-- Confirmation Form -->
+        <form asp-action="DeactivateConfirmed" method="post" class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <input type="hidden" name="id" value="@Model.Id" />
+            @Html.AntiForgeryToken()
+
+            <button type="submit" class="bg-error hover:bg-red-700 text-white font-medium py-3 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-sms-lg flex items-center justify-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                </svg>
+                Yes, Deactivate
+            </button>
+            <a asp-action="Index" class="bg-neutral-100 hover:bg-primary-100 text-primary-800 font-medium py-3 px-8 rounded-xl transition-all duration-300 flex items-center justify-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                Cancel
+            </a>
+        </form>
+    </div>
+</div>

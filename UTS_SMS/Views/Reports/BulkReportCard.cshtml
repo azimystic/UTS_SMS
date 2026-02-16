@@ -1,0 +1,317 @@
+@model SMS.ViewModels.BulkReportCardViewModel
+@{
+    ViewData["Title"] = "Bulk Report Card";
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-primary-800 flex items-center">
+                <svg class="w-8 h-8 mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                </svg>
+                Bulk Report Card Generator
+            </h1>
+            <p class="text-neutral-600 mt-2">Generate report cards for entire class in one merged PDF</p>
+        </div>
+
+        <!-- Main Form Card -->
+        <div class="bg-white rounded-2xl shadow-sms-xl p-6 md:p-8">
+            <form id="bulkReportForm" asp-action="GenerateBulkReportCard" method="post" target="_blank">
+                @Html.AntiForgeryToken()
+
+                <div class="space-y-6">
+                    <!-- Exam Category and Exam Name Row -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-primary-800 mb-2">
+                                <svg class="w-5 h-5 inline mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                </svg>
+                                Exam Category <span class="text-red-500">*</span>
+                            </label>
+                            <select asp-for="ExamCategoryId" 
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all" 
+                                    id="examCategorySelect" required>
+                                <option value="">-- Select Exam Category --</option>
+                                @foreach (var category in Model.ExamCategories)
+                                {
+                                    <option value="@category.Id">@category.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-primary-800 mb-2">
+                                <svg class="w-5 h-5 inline mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Exam Name <span class="text-red-500">*</span>
+                            </label>
+                            <select asp-for="ExamId" 
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all" 
+                                    id="examSelect" required>
+                                <option value="">-- Select Exam --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Class and Section Row -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-primary-800 mb-2">
+                                <svg class="w-5 h-5 inline mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                </svg>
+                                Class <span class="text-red-500">*</span>
+                            </label>
+                            <select asp-for="ClassId" 
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all" 
+                                    id="classSelect" required>
+                                <option value="">-- Select Class --</option>
+                                @foreach (var cls in Model.Classes)
+                                {
+                                    <option value="@cls.Id">@cls.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-primary-800 mb-2">
+                                <svg class="w-5 h-5 inline mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                                Section <span class="text-red-500">*</span>
+                            </label>
+                            <select asp-for="SectionId" 
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all" 
+                                    id="sectionSelect" required>
+                                <option value="">-- Select Section --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Warning Notice -->
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-yellow-600 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            <div class="text-sm text-yellow-800">
+                                <p class="font-semibold">Large File Generation</p>
+                                <p class="mt-1">This process generates individual report cards for all students and may take several minutes depending on class size. Please wait...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex items-center justify-between pt-4 border-t">
+                        <a asp-action="Index" 
+                           class="text-gray-600 hover:text-gray-800 font-medium flex items-center transition-colors">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            </svg>
+                            Back to Reports
+                        </a>
+                        
+                        <button type="submit" 
+                                id="generateBtn"
+                                class="bg-gradient-primary hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-semibold shadow-sms-md hover:shadow-sms-lg transition-all duration-300 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                            </svg>
+                            <span id="btnText">Generate Bulk Report Cards PDF</span>
+                            <svg class="w-5 h-5 ml-2 animate-spin hidden" id="loadingIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Info Card -->
+        <div class="mt-6 bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <div class="flex items-start">
+                <svg class="w-6 h-6 text-purple-600 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div class="text-sm text-purple-800">
+                    <p class="font-semibold mb-2">Bulk Report Card Features:</p>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li>Generates individual report cards for each student in the class</li>
+                        <li>All reports merged into a single PDF file</li>
+                        <li>Each student gets their own page with complete details</li>
+                        <li>Perfect for mass distribution to parents</li>
+                        <li>Processing time depends on number of students (typically 1-5 minutes)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-gradient-subtle {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .shadow-sms-md {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .shadow-sms-lg {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .shadow-sms-xl {
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    .text-primary-800 { color: #2d3748; }
+    .text-primary-600 { color: #4a5568; }
+    .text-neutral-600 { color: #718096; }
+
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .animate-spin {
+        animation: spin 1s linear infinite;
+    }
+</style>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Load exams when exam category changes
+        $('#examCategorySelect').change(function() {
+            var categoryId = $(this).val();
+            $('#examSelect').empty().append('<option value="">-- Select Exam --</option>');
+            
+            if (categoryId) {
+                $.get('@Url.Action("GetExams", "Reports")', { examCategoryId: categoryId }, function(data) {
+                    $.each(data, function(index, exam) {
+                        $('#examSelect').append($('<option></option>').val(exam.id).text(exam.name));
+                    });
+                });
+            }
+        });
+
+        // Load sections when class changes
+        $('#classSelect').change(function() {
+            var classId = $(this).val();
+            $('#sectionSelect').empty().append('<option value="">-- Select Section --</option>');
+            
+            if (classId) {
+                $.get('@Url.Action("GetSections", "Reports")', { classId: classId }, function(data) {
+                    $.each(data, function(index, section) {
+                        $('#sectionSelect').append($('<option></option>').val(section.id).text(section.name));
+                    });
+                });
+            }
+        });
+
+        // Form submission with validation and loading state
+        $('#bulkReportForm').submit(function(e) {
+            e.preventDefault();
+            
+            const examCategoryId = $('#examCategorySelect').val();
+            const examId = $('#examSelect').val();
+            const classId = $('#classSelect').val();
+            const sectionId = $('#sectionSelect').val();
+
+            if (!examCategoryId || !examId || !classId || !sectionId) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Missing Information',
+                    text: 'Please fill in all required fields.',
+                    confirmButtonColor: '#667eea'
+                });
+                return false;
+            }
+
+            // Show loading state with custom message
+            const btn = $('#generateBtn');
+            const btnText = $('#btnText');
+            const loadingIcon = $('#loadingIcon');
+            
+            btn.prop('disabled', true);
+            btnText.text('Generating Reports...');
+            loadingIcon.removeClass('hidden');
+
+            // Show progress alert
+            Swal.fire({
+                title: 'Generating Reports',
+                html: 'Creating report cards for all students...<br><small>This may take a few minutes</small>',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Create a hidden iframe to submit the form
+            const iframe = $('<iframe name="pdfFrame" style="display:none;"></iframe>');
+            $('body').append(iframe);
+            
+            // Set form target to iframe
+            this.target = 'pdfFrame';
+            
+            // Submit the form
+            this.submit();
+
+            // Reset button state after a longer delay (bulk processing takes time)
+            setTimeout(function() {
+                btn.prop('disabled', false);
+                btnText.text('Generate Bulk Report Cards PDF');
+                loadingIcon.addClass('hidden');
+                
+                // Show success message
+                Swal.fire({
+                    icon: 'success',
+                    title: 'PDF Generated!',
+                    text: 'All report cards have been generated and merged. Check your new tab/window.',
+                    confirmButtonColor: '#667eea',
+                    timer: 4000
+                });
+            }, 5000);
+
+            return false;
+        });
+    });
+
+    @if (TempData["Error"] != null)
+    {
+        <text>
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: '@TempData["Error"]',
+            confirmButtonColor: '#667eea'
+        });
+        </text>
+    }
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <text>
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: '@TempData["SuccessMessage"]',
+            confirmButtonColor: '#667eea',
+            timer: 3000
+        });
+        </text>
+    }
+</script>

@@ -1,0 +1,1174 @@
+@model SMS.Controllers.StudentDashboardController.StudentDashboardViewModel
+
+@{
+    ViewData["Title"] = "Student Dashboard";
+    var userName = Model.StudentName ?? "Student";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SMS</title>
+
+    <!-- Fonts - Offline -->
+    <link rel="stylesheet" href="~/fonts/inter-all.css" asp-append-version="true" />
+
+    <!-- Tailwind CSS - Offline -->
+    <link rel="stylesheet" href="~/lib/tailwindcss/tailwind.min.css" asp-append-version="true" />
+
+    <!-- Apache ECharts - Offline -->
+    <script src="~/lib/echarts/echarts.min.js" asp-append-version="true"></script>
+
+    <!-- Font Awesome - Offline -->
+    <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" asp-append-version="true" />
+    
+    <!-- SweetAlert2 - Offline -->
+    <link rel="stylesheet" href="~/lib/sweetalert2/sweetalert2.min.css" asp-append-version="true" />
+    <script src="~/lib/sweetalert2/sweetalert2.min.js" asp-append-version="true"></script>
+
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(180deg, #F5F1E8 0%, #E8E4D9 50%, #FFFEF9 100%);
+            min-height: 100vh;
+        }
+
+        .card-gradient {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .card-dark {
+            background: linear-gradient(135deg, #2D2D2D 0%, #1a1a1a 100%);
+        }
+
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .hover-lift {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15);
+        }
+
+        .cursor-pointer {
+            cursor: pointer;
+        }
+
+        .swal2-popup {
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .swal2-html-container {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Modern Full-Screen Dashboard with Gradient Background -->
+    <div class="gradient-bg">
+        <div class="max-w-[1600px] mx-auto p-4 sm:p-6">
+
+            <!-- Welcome Section with Student Profile -->
+            <div class="rounded-3xl shadow-lg mb-6 hover-lift overflow-hidden relative" style="height: 320px;">
+                <!-- Background with blur effect -->
+                <div class="absolute inset-0 z-0">
+                    @if (!string.IsNullOrEmpty(Model.ProfilePicture))
+                    {
+                        <img src="/@Model.ProfilePicture" alt="@Model.StudentName" class="w-full h-full object-cover blur-lg scale-110 opacity-40" />
+                    }
+                    else
+                    {
+                        <div class="w-full h-full bg-gradient-to-br from-[#FFD700]/40 to-[#FFA500]/40"></div>
+                    }
+                </div>
+                
+                <!-- Content -->
+                <div class="relative z-10 flex flex-col items-center justify-center h-full p-6 bg-white/60 backdrop-blur-sm">
+                    <!-- Profile Picture - Square and Large -->
+                    <div class="w-48 h-48 rounded-3xl bg-white shadow-xl flex items-center justify-center overflow-hidden mb-4">
+                        @if (!string.IsNullOrEmpty(Model.ProfilePicture))
+                        {
+                            <img src="/@Model.ProfilePicture" alt="@Model.StudentName" class="w-full h-full object-cover" />
+                        }
+                        else
+                        {
+                            <i class="fas fa-user-graduate text-6xl text-[#2D2D2D]"></i>
+                        }
+                    </div>
+                    
+                    <!-- Student Details -->
+                    <div class="text-center">
+                        <h1 class="text-2xl sm:text-3xl font-bold text-[#2D2D2D] mb-3">@Model.StudentName</h1>
+                        <div class="flex flex-wrap gap-3 justify-center">
+                            <div class="px-4 py-2 bg-white/90 backdrop-blur-sm rounded-lg shadow">
+                                <span class="text-xs font-medium text-gray-600">Class:</span>
+                                <span class="text-sm font-bold text-[#2D2D2D] ml-1">@Model.ClassName - @Model.SectionName</span>
+                            </div>
+                            <div class="px-4 py-2 bg-white/90 backdrop-blur-sm rounded-lg shadow">
+                                <span class="text-xs font-medium text-gray-600">Roll No:</span>
+                                <span class="text-sm font-bold text-[#2D2D2D] ml-1">@Model.StudentId</span>
+                            </div>
+                            <div class="px-4 py-2 bg-white/90 backdrop-blur-sm rounded-lg shadow">
+                                <span class="text-xs font-medium text-gray-600">Attendance:</span>
+                                <span class="text-sm font-bold text-[#4CAF50] ml-1">@Model.AttendancePercentage%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Dashboard Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+
+                <!-- Left Column - Charts and Analytics -->
+                <div class="lg:col-span-8 space-y-6">
+
+                    <!-- Calendar - Moved to Top -->
+                    <div class="card-dark rounded-3xl shadow-lg p-6 hover-lift">
+                        <h3 class="text-lg font-bold text-white mb-4">Calendar & Events</h3>
+                        <div id="dashboardCalendar"></div>
+                        <div id="calendarEvents" class="mt-4 space-y-2">
+                            @foreach (var evt in Model.CalendarEvents.Where(e => !e.Title.ToLower().Contains("follow")).Take(5))
+                            {
+                                <div class="flex items-center gap-3 p-3 @(evt.IsHoliday ? "bg-red-900/40" : "bg-gray-700") rounded-xl cursor-pointer hover:bg-opacity-80 transition event-item" 
+                                     data-event-date="@evt.StartDate.ToString("yyyy-MM-dd")"
+                                     data-event-title="@evt.Title"
+                                     data-event-description="@evt.Description"
+                                     title="@evt.Description">
+                                    <div class="text-xl">@(evt.IsHoliday ? "🏖️" : "📅")</div>
+                                    <div class="flex-1">
+                                        <div class="text-sm font-medium text-white">@evt.Title</div>
+                                        <div class="text-xs text-gray-300">@evt.StartDate.ToString("MMM dd, yyyy")</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Attendance Trends Chart -->
+                    <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xl font-bold text-[#2D2D2D]">Attendance Trends</h3>
+                            <div class="flex gap-2">
+                                <button class="attendance-period-btn px-3 py-1 text-sm bg-[#FFD700] text-[#2D2D2D] rounded-lg font-medium" data-period="thisYear">This Year</button>
+                                <button class="attendance-period-btn px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-lg font-medium" data-period="lastYear">Last Year</button>
+                            </div>
+                        </div>
+                        <div id="attendanceTrendsChart" style="width: 100%; height: 350px;"></div>
+                        
+                        <!-- Attendance Stats -->
+                        <div class="grid grid-cols-3 gap-4 mt-4">
+                            <div class="text-center p-3 bg-blue-50 rounded-lg">
+                                <div class="text-2xl font-bold text-[#2D2D2D]" id="totalDays">0</div>
+                                <div class="text-xs text-gray-600">Total Days</div>
+                            </div>
+                            <div class="text-center p-3 bg-green-50 rounded-lg">
+                                <div class="text-2xl font-bold text-[#4CAF50]" id="presentDays">0</div>
+                                <div class="text-xs text-gray-600">Present</div>
+                            </div>
+                            <div class="text-center p-3 bg-red-50 rounded-lg">
+                                <div class="text-2xl font-bold text-[#ef4444]" id="absentDays">0</div>
+                                <div class="text-xs text-gray-600">Absent</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exam Analysis Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Subject-wise Analysis -->
+                        <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-bold text-[#2D2D2D]">Subject-wise Analysis</h3>
+                                <select id="subjectExamCategory" class="px-3 py-1 text-sm bg-gray-100 rounded-lg border-none">
+                                    <option value="">All Categories</option>
+                                    @foreach (var category in Model.ExamAnalysis.ExamCategories)
+                                    {
+                                        <option value="@category.Id">@category.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div id="subjectWiseChart" style="width: 100%; height: 300px;"></div>
+                        </div>
+
+                        <!-- Exam-wise Analysis -->
+                        <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-bold text-[#2D2D2D]">Exam-wise Analysis</h3>
+                                <select id="examCategory" class="px-3 py-1 text-sm bg-gray-100 rounded-lg border-none">
+                                    <option value="">All Categories</option>
+                                    @foreach (var category in Model.ExamAnalysis.ExamCategories)
+                                    {
+                                        <option value="@category.Id">@category.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div id="examWiseChart" style="width: 100%; height: 300px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column - Quick Info Cards -->
+                <div class="lg:col-span-4 space-y-6">
+
+                    <!-- Today's Homework/Diary -->
+                    <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                        <h3 class="text-lg font-bold text-[#2D2D2D] mb-4">📓 Today's Homework</h3>
+                        <div class="space-y-3 max-h-96 overflow-y-auto">
+                            @if (Model.TodayHomework.Any())
+                            {
+                                @foreach (var hw in Model.TodayHomework)
+                                {
+                                    <div class="p-3 bg-blue-50 rounded-xl cursor-pointer hover:bg-blue-100 transition-colors" onclick="window.location.href='/Diary/Details/@hw.Id'">
+                                        <div class="font-medium text-[#2D2D2D] text-sm">@hw.SubjectName</div>
+                                        <div class="text-xs text-gray-600 mb-1">@hw.TeacherName</div>
+                                        @if (!string.IsNullOrEmpty(hw.Homework))
+                                        {
+                                            <div class="text-sm text-[#2D2D2D] mt-2">
+                                                <i class="fas fa-book text-blue-600 mr-1"></i>
+                                                @hw.Homework
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-sm text-gray-500 text-center py-4">No homework for today</div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Today's Timetable - Horizontal Row Layout -->
+                    @if (Model.TodayTimetable.Any())
+                    {
+                        <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                            <h3 class="text-lg font-bold text-[#2D2D2D] mb-4">Today's Schedule</h3>
+                            <div class="flex gap-3 overflow-x-auto pb-2" style="scrollbar-width: thin;">
+                                @foreach (var slot in Model.TodayTimetable)
+                                {
+                                    <div class="min-w-[180px] p-3 @(slot.IsBreak ? "bg-yellow-50 border-2 border-yellow-300" : "bg-green-50 border-2 border-green-300") rounded-xl flex-shrink-0">
+                                        <div class="text-center">
+                                            <div class="font-semibold text-[#2D2D2D] text-sm mb-2">
+                                                @if (slot.IsZeroPeriod)
+                                                {
+                                                    <span class="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded mr-1">Zero</span>
+                                                }
+                                                @if (slot.IsBreak)
+                                                {
+                                                    <span class="text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded mr-1">Break</span>
+                                                }
+                                                @slot.SubjectName
+                                            </div>
+                                            @if (!string.IsNullOrEmpty(slot.TeacherName))
+                                            {
+                                                <div class="text-xs text-gray-600 mb-2">@slot.TeacherName</div>
+                                            }
+                                            <div class="text-xs text-gray-500 border-t border-gray-300 pt-2 mt-2">
+                                                <div>@slot.StartTime</div>
+                                                <div>to</div>
+                                                <div>@slot.EndTime</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Tomorrow's Timetable -->
+                    @if (Model.TomorrowTimetable.Any())
+                    {
+                        <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                            <h3 class="text-lg font-bold text-[#2D2D2D] mb-4">📅 Tomorrow's Schedule</h3>
+                            <div class="space-y-2 max-h-60 overflow-y-auto">
+                                @foreach (var slot in Model.TomorrowTimetable)
+                                {
+                                    <div class="p-2 @(slot.IsBreak ? "bg-yellow-50" : "bg-blue-50") rounded-lg">
+                                        <div class="flex justify-between items-center">
+                                            <div class="flex-1">
+                                                <div class="font-medium text-[#2D2D2D] text-xs">
+                                                    @if (slot.IsZeroPeriod)
+                                                    {
+                                                        <span class="text-xs bg-purple-200 text-purple-800 px-1 py-0.5 rounded mr-1">Zero</span>
+                                                    }
+                                                    @slot.SubjectName
+                                                </div>
+                                            </div>
+                                            <div class="text-xs text-gray-500 ml-2">@slot.StartTime</div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Fee Details -->
+                    <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold text-[#2D2D2D]">Fee Details</h3>
+                            <div class="flex gap-2">
+                                <button class="fee-period-btn px-3 py-1 text-xs bg-[#FFD700] text-[#2D2D2D] rounded-lg font-medium" data-period="thisMonth">This Month</button>
+                                <button class="fee-period-btn px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded-lg font-medium" data-period="lastMonth">Last Month</button>
+                            </div>
+                        </div>
+                        <div id="feeDetailsContent">
+                            @if (Model.FeeDetails.ThisMonthFee != null)
+                            {
+                                var totalPayable = Model.FeeDetails.ThisMonthFee.TuitionFee + 
+                                                   Model.FeeDetails.ThisMonthFee.AdmissionFee + 
+                                                   Model.FeeDetails.ThisMonthFee.MiscallaneousCharges + 
+                                                   Model.FeeDetails.ThisMonthFee.Fine + 
+                                                   Model.FeeDetails.ThisMonthFee.PreviousDues;
+                                var totalPaid = Model.FeeDetails.ThisMonthFee.Transactions?.Sum(t => t.AmountPaid) ?? 0;
+                                var remaining = totalPayable - totalPaid;
+                                
+                                <div class="space-y-3">
+                                    <!-- Fee Breakdown -->
+                                    <div class="bg-blue-50 rounded-xl p-3">
+                                        <div class="text-xs font-bold text-gray-700 mb-2">Fee Breakdown</div>
+                                        <div class="space-y-1 text-xs">
+                                            @if (Model.FeeDetails.ThisMonthFee.TuitionFee > 0)
+                                            {
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Tuition Fee:</span>
+                                                    <span class="font-semibold">@Model.FeeDetails.ThisMonthFee.TuitionFee.ToString("C")</span>
+                                                </div>
+                                            }
+                                            @if (Model.FeeDetails.ThisMonthFee.AdmissionFee > 0)
+                                            {
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Admission Fee:</span>
+                                                    <span class="font-semibold">@Model.FeeDetails.ThisMonthFee.AdmissionFee.ToString("C")</span>
+                                                </div>
+                                            }
+                                            @if (Model.FeeDetails.ThisMonthFee.MiscallaneousCharges > 0)
+                                            {
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Miscellaneous:</span>
+                                                    <span class="font-semibold">@Model.FeeDetails.ThisMonthFee.MiscallaneousCharges.ToString("C")</span>
+                                                </div>
+                                            }
+                                            @if (Model.FeeDetails.ThisMonthFee.Fine > 0)
+                                            {
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Fine:</span>
+                                                    <span class="font-semibold">@Model.FeeDetails.ThisMonthFee.Fine.ToString("C")</span>
+                                                </div>
+                                            }
+                                            @if (Model.FeeDetails.ThisMonthFee.PreviousDues > 0)
+                                            {
+                                                <div class="flex justify-between">
+                                                    <span class="text-gray-600">Previous Dues:</span>
+                                                    <span class="font-semibold">@Model.FeeDetails.ThisMonthFee.PreviousDues.ToString("C")</span>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex justify-between p-3 bg-gray-50 rounded-xl">
+                                        <span class="text-sm text-gray-600">Total Payable:</span>
+                                        <span class="text-sm font-bold text-[#2D2D2D]">@totalPayable.ToString("C")</span>
+                                    </div>
+                                    <div class="flex justify-between p-3 bg-gray-50 rounded-xl">
+                                        <span class="text-sm text-gray-600">Amount Paid:</span>
+                                        <span class="text-sm font-bold text-[#4CAF50]">@totalPaid.ToString("C")</span>
+                                    </div>
+                                    <div class="flex justify-between p-3 bg-gray-50 rounded-xl">
+                                        <span class="text-sm text-gray-600">Remaining:</span>
+                                        <span class="text-sm font-bold text-[#ef4444]">@remaining.ToString("C")</span>
+                                    </div>
+                                    @if (totalPaid >= totalPayable)
+                                    {
+                                        <div class="p-3 bg-green-50 rounded-xl text-center">
+                                            <span class="text-sm font-bold text-[#4CAF50]">✓ Paid in Full</span>
+                                            <button onclick="printVoucher(@Model.FeeDetails.ThisMonthFee.Id)" class="mt-2 w-full px-3 py-2 bg-[#4CAF50] text-white rounded-lg text-sm">
+                                                Print Voucher
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div id="manualFeeCalculation" class="space-y-3">
+                                    <!-- Manual fee calculation will be loaded here -->
+                                    <div class="text-center py-4 text-gray-500">Loading fee details...</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Assigned Duties -->
+                    <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                        <h3 class="text-lg font-bold text-[#2D2D2D] mb-4">Assigned Duties</h3>
+                        <div class="space-y-3 max-h-64 overflow-y-auto">
+                            @if (Model.AssignedDuties.Any())
+                            {
+                                @foreach (var duty in Model.AssignedDuties.Take(5))
+                                {
+                                    <div class="p-3 bg-purple-50 rounded-xl">
+                                        <div class="text-sm font-semibold text-[#2D2D2D]">@duty.DutyTitle</div>
+                                        <div class="text-xs text-gray-600 mt-1">@duty.Description</div>
+                                        <div class="flex items-center justify-between mt-2">
+                                            <span class="text-xs px-2 py-0.5 rounded @(duty.Priority == "High" ? "bg-red-100 text-red-700" : duty.Priority == "Medium" ? "bg-yellow-100 text-yellow-700" : "bg-blue-100 text-blue-700")">
+                                                @duty.Priority
+                                            </span>
+                                            <span class="text-xs text-gray-500">@duty.StartDate.ToString("MMM dd")</span>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-sm text-gray-500 text-center py-4">No assigned duties</div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- To-Do List -->
+                    <div class="card-dark rounded-3xl shadow-lg p-6 hover-lift">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold text-white">To-Do List</h3>
+                            <button onclick="showAddTodoModal()" class="px-3 py-1 bg-[#FFD700] text-[#2D2D2D] rounded-lg text-xs font-medium hover:bg-[#FFC700] transition">
+                                <i class="fas fa-plus mr-1"></i> Add
+                            </button>
+                        </div>
+                        <div id="todoListContainer" class="space-y-3 max-h-96 overflow-y-auto">
+                            @foreach (var todo in Model.ToDoList)
+                            {
+                                <div class="flex items-start gap-3 p-3 @(todo.IsCompleted ? "bg-gray-800" : "bg-gray-700") rounded-xl">
+                                    <div class="w-5 h-5 rounded @(todo.IsCompleted ? "bg-[#4CAF50]" : "border-2 border-gray-400") flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        @if (todo.IsCompleted)
+                                        {
+                                            <i class="fas fa-check text-xs text-white"></i>
+                                        }
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="text-sm font-medium text-white @(todo.IsCompleted ? "line-through" : "")">@todo.Title</div>
+                                        <div class="text-xs text-gray-400">@todo.Description</div>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span class="text-xs px-2 py-0.5 rounded @(todo.Priority == "High" ? "bg-red-500/20 text-red-300" : todo.Priority == "Medium" ? "bg-yellow-500/20 text-yellow-300" : "bg-blue-500/20 text-blue-300")">@todo.Priority</span>
+                                            <span class="text-xs text-gray-400">@todo.DueDate.ToString("MMM dd")</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Complaints -->
+                    <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                        <h3 class="text-lg font-bold text-[#2D2D2D] mb-4">My Complaints</h3>
+                        <div class="space-y-3 max-h-64 overflow-y-auto">
+                            @if (Model.Complaints.Any())
+                            {
+                                @foreach (var complaint in Model.Complaints.Take(5))
+                                {
+                                    <div class="p-3 bg-gray-50 rounded-xl">
+                                        <div class="font-semibold text-gray-800 text-sm">@complaint.Title</div>
+                                        <div class="text-xs text-gray-600 mt-1">@complaint.Description</div>
+                                        <div class="flex items-center justify-between mt-2">
+                                            <span class="px-2 py-0.5 rounded text-xs @(complaint.Status == "Open" ? "bg-yellow-100 text-yellow-700" : complaint.Status == "Resolved" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700")">
+                                                @complaint.Status
+                                            </span>
+                                            <span class="text-xs text-gray-500">@complaint.ComplaintDate.ToString("MMM dd")</span>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-sm text-gray-500 text-center py-4">No complaints</div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Teacher of the Month -->
+                    @if (Model.TeacherOfMonth != null)
+                    {
+                        <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                            <h3 class="text-lg font-bold text-[#2D2D2D] mb-4">🏆 Teacher of the Month</h3>
+                            <div class="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl p-6 text-white">
+                                <div class="flex items-center gap-4 mb-4">
+                                    <div class="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-3xl">
+                                        🥇
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="text-xl font-bold">@Model.TeacherOfMonth.TeacherName</div>
+                                        <div class="text-sm opacity-90">@Model.TeacherOfMonth.CampusName</div>
+                                    </div>
+                                </div>
+                                <div class="bg-white/20 rounded-xl p-4 backdrop-blur-sm">
+                                    <div class="text-center">
+                                        <div class="text-4xl font-bold">@Model.TeacherOfMonth.Score.ToString("F1")</div>
+                                        <div class="text-sm opacity-90">out of 20.0 points</div>
+                                        <div class="text-xs opacity-75 mt-2">@DateTime.ParseExact(Model.TeacherOfMonth.Month.ToString(), "M", null).ToString("MMMM") @Model.TeacherOfMonth.Year</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- My Awards & Positions -->
+                    <div class="card-dark rounded-3xl shadow-lg p-6 hover-lift">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold text-white">🏆 My Awards & Positions</h3>
+                            @if (Model.StudentAwards.Count > 3)
+                            {
+                                <button id="showMoreAwardsBtn" class="px-3 py-1 bg-[#FFD700] text-[#2D2D2D] rounded-lg text-xs font-medium hover:bg-[#FFC700] transition">
+                                    Show More
+                                </button>
+                            }
+                        </div>
+                        <div id="awardsContainer" class="space-y-3 max-h-96 overflow-y-auto">
+                            @if (Model.StudentAwards.Any())
+                            {
+                                @foreach (var award in Model.StudentAwards.Take(3))
+                                {
+                                    <div class="award-item p-4 rounded-xl cursor-pointer hover:scale-105 transition-transform duration-200"
+                                         style="background: linear-gradient(135deg, @(award.Position <= 3 ? "#FFD700" : award.Position <= 6 ? "#3b82f6" : "#ea580c") 0%, @(award.Position <= 3 ? "#FFA500" : award.Position <= 6 ? "#1e40af" : "#c2410c") 100%);">
+                                        <div class="flex items-center gap-3">
+                                            <div class="text-4xl">@award.AwardIcon</div>
+                                            <div class="flex-1">
+                                                <div class="flex items-center justify-between mb-1">
+                                                    <span class="text-white font-bold text-lg">@award.Award</span>
+                                                    <span class="bg-white/30 text-white px-2 py-1 rounded-full text-xs font-bold">#@award.Position</span>
+                                                </div>
+                                                <div class="text-white/90 text-sm font-medium">@award.ExamCategoryName - @award.ExamName</div>
+                                                <div class="flex items-center justify-between mt-2">
+                                                    <span class="text-white/80 text-xs">Academic Year: @award.AcademicYear</span>
+                                                    <span class="bg-white/20 text-white px-2 py-1 rounded text-xs font-bold">@award.FinalPercentage%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                
+                                @* Hidden awards for "Show More" *@
+                                @if (Model.StudentAwards.Count > 3)
+                                {
+                                    <div id="moreAwards" class="hidden space-y-3">
+                                        @foreach (var award in Model.StudentAwards.Skip(3))
+                                        {
+                                            <div class="award-item p-4 rounded-xl cursor-pointer hover:scale-105 transition-transform duration-200"
+                                                 style="background: linear-gradient(135deg, @(award.Position <= 3 ? "#FFD700" : award.Position <= 6 ? "#3b82f6" : "#ea580c") 0%, @(award.Position <= 3 ? "#FFA500" : award.Position <= 6 ? "#1e40af" : "#c2410c") 100%);">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="text-4xl">@award.AwardIcon</div>
+                                                    <div class="flex-1">
+                                                        <div class="flex items-center justify-between mb-1">
+                                                            <span class="text-white font-bold text-lg">@award.Award</span>
+                                                            <span class="bg-white/30 text-white px-2 py-1 rounded-full text-xs font-bold">#@award.Position</span>
+                                                        </div>
+                                                        <div class="text-white/90 text-sm font-medium">@award.ExamCategoryName - @award.ExamName</div>
+                                                        <div class="flex items-center justify-between mt-2">
+                                                            <span class="text-white/80 text-xs">Academic Year: @award.AcademicYear</span>
+                                                            <span class="bg-white/20 text-white px-2 py-1 rounded text-xs font-bold">@award.FinalPercentage%</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-sm text-gray-400 text-center py-8">
+                                    <div class="text-4xl mb-2">🎯</div>
+                                    <div>No awards yet. Keep striving for excellence!</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Attendance data from server - will be loaded via AJAX for monthly breakdown
+        const studentId = @Model.StudentId;
+        
+        // Subject-wise exam data
+        const subjectWiseData = @Html.Raw(Json.Serialize(Model.ExamAnalysis.SubjectWiseData));
+        
+        // Exam-wise data
+        const examWiseData = @Html.Raw(Json.Serialize(Model.ExamAnalysis.ExamWiseData));
+
+        // Calendar events data
+        const calendarEvents = @Html.Raw(Json.Serialize(Model.CalendarEvents));
+
+        // Initialize charts
+        function initializeCharts() {
+            initAttendanceTrends('thisYear');
+            initSubjectWiseChart();
+            initExamWiseChart();
+            initCalendar();
+        }
+
+        // Attendance Trends Chart - Line Graph
+        async function initAttendanceTrends(period) {
+            const chartDom = document.getElementById('attendanceTrendsChart');
+            const myChart = echarts.init(chartDom);
+            
+            // Fetch attendance data for the year
+            const year = period === 'thisYear' ? new Date().getFullYear() : new Date().getFullYear() - 1;
+            
+            // For now, use placeholder data - in production, fetch from server
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const presentData = [];
+            const absentData = [];
+            const totalData = [];
+            
+            // Generate sample data - replace with actual API call
+            for (let i = 0; i < 12; i++) {
+                const total = Math.floor(Math.random() * 10) + 20; // 20-30 days per month
+                const present = Math.floor(Math.random() * total * 0.3) + Math.floor(total * 0.7); // 70-100% present
+                const absent = total - present;
+                totalData.push(total);
+                presentData.push(present);
+                absentData.push(absent);
+            }
+            
+            // Update stats with yearly totals
+            const totalDays = totalData.reduce((a, b) => a + b, 0);
+            const totalPresent = presentData.reduce((a, b) => a + b, 0);
+            const totalAbsent = absentData.reduce((a, b) => a + b, 0);
+            
+            document.getElementById('totalDays').textContent = totalDays;
+            document.getElementById('presentDays').textContent = totalPresent;
+            document.getElementById('absentDays').textContent = totalAbsent;
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function(params) {
+                        let result = params[0].axisValueLabel + '<br/>';
+                        params.forEach(param => {
+                            result += param.marker + param.seriesName + ': ' + param.value;
+                            if (param.seriesName === 'Present' || param.seriesName === 'Absent') {
+                                const total = totalData[param.dataIndex];
+                                result += ' (Cap: ' + total + ')';
+                            }
+                            result += '<br/>';
+                        });
+                        return result;
+                    }
+                },
+                legend: {
+                    data: ['Present', 'Absent'],
+                    bottom: 0
+                },
+                xAxis: {
+                    type: 'category',
+                    data: months,
+                    axisLabel: {
+                        rotate: 0
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: 'Days'
+                },
+                series: [
+                    {
+                        name: 'Present',
+                        type: 'line',
+                        data: presentData,
+                        smooth: true,
+                        itemStyle: { color: '#4CAF50' },
+                        areaStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: 'rgba(76, 175, 80, 0.3)' },
+                                { offset: 1, color: 'rgba(76, 175, 80, 0.05)' }
+                            ])
+                        }
+                    },
+                    {
+                        name: 'Absent',
+                        type: 'line',
+                        data: absentData,
+                        smooth: true,
+                        itemStyle: { color: '#ef4444' },
+                        areaStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: 'rgba(239, 68, 68, 0.3)' },
+                                { offset: 1, color: 'rgba(239, 68, 68, 0.05)' }
+                            ])
+                        }
+                    }
+                ]
+            };
+
+            myChart.setOption(option);
+        }
+
+        // Subject-wise Chart - Filter by category and student subjects
+        function initSubjectWiseChart(categoryId = '') {
+            const chartDom = document.getElementById('subjectWiseChart');
+            const myChart = echarts.init(chartDom);
+
+            // Filter data by category if selected
+            let filteredData = subjectWiseData;
+            if (categoryId) {
+                filteredData = subjectWiseData.filter(d => 
+                    d.examResults.some(e => e.categoryName === categoryId)
+                );
+            }
+
+            const subjects = filteredData.map(d => d.subjectName);
+            const averages = filteredData.map(d => d.averagePercentage.toFixed(2));
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function(params) {
+                        const subjectIdx = params[0].dataIndex;
+                        const subject = filteredData[subjectIdx];
+                        let result = subject.subjectName + '<br/>';
+                        result += 'Average: ' + subject.averagePercentage.toFixed(2) + '%<br/><br/>';
+                        result += 'Individual Tests:<br/>';
+                        subject.examResults.forEach(exam => {
+                            result += exam.examName + ': ' + exam.obtainedMarks + '/' + exam.totalMarks + ' (' + exam.percentage.toFixed(2) + '%)<br/>';
+                        });
+                        return result;
+                    }
+                },
+                xAxis: {
+                    type: 'category',
+                    data: subjects,
+                    axisLabel: {
+                        rotate: 45,
+                        interval: 0
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    max: 100,
+                    name: 'Percentage'
+                },
+                series: [{
+                    data: averages,
+                    type: 'bar',
+                    itemStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: '#FFD700' },
+                            { offset: 1, color: '#FFA500' }
+                        ])
+                    }
+                }]
+            };
+
+            myChart.setOption(option);
+        }
+
+        // Exam-wise Chart - Filter by category
+        function initExamWiseChart(categoryId = '') {
+            const chartDom = document.getElementById('examWiseChart');
+            const myChart = echarts.init(chartDom);
+
+            // Filter data by category if selected
+            let filteredData = examWiseData;
+            if (categoryId) {
+                filteredData = examWiseData.filter(d => d.categoryName === categoryId);
+            }
+
+            const exams = filteredData.map(d => d.examName);
+            const percentages = filteredData.map(d => d.overallPercentage.toFixed(2));
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function(params) {
+                        const examIdx = params[0].dataIndex;
+                        const exam = filteredData[examIdx];
+                        let result = exam.examName + '<br/>';
+                        result += 'Overall: ' + exam.overallPercentage.toFixed(2) + '%<br/><br/>';
+                        result += 'Subject Breakdown:<br/>';
+                        exam.subjectResults.forEach(subject => {
+                            result += subject.subjectName + ': ' + subject.obtainedMarks + '/' + subject.totalMarks + ' (' + subject.percentage.toFixed(2) + '%)<br/>';
+                        });
+                        return result;
+                    }
+                },
+                xAxis: {
+                    type: 'category',
+                    data: exams,
+                    axisLabel: {
+                        rotate: 45,
+                        interval: 0
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    max: 100,
+                    name: 'Percentage'
+                },
+                series: [{
+                    data: percentages,
+                    type: 'bar',
+                    itemStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: '#4CAF50' },
+                            { offset: 1, color: '#2E7D32' }
+                        ])
+                    }
+                }]
+            };
+
+            myChart.setOption(option);
+        }
+
+        // Calendar initialization with dark theme
+        function initCalendar() {
+            const calendarDiv = document.getElementById('dashboardCalendar');
+            const today = new Date();
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+
+            let calendarHTML = '<div class="mb-4"><h4 class="text-sm font-medium text-white">' + 
+                              new Date(currentYear, currentMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) + 
+                              '</h4></div><div class="grid grid-cols-7 gap-2">';
+
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            days.forEach((day, index) => {
+                const textColor = index === 0 ? 'text-red-400' : 'text-gray-300';
+                calendarHTML += `<div class="text-center text-xs font-medium ${textColor}">${day}</div>`;
+            });
+
+            for (let i = 0; i < firstDay; i++) {
+                calendarHTML += '<div></div>';
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const currentDate = new Date(currentYear, currentMonth, day);
+                const isSunday = currentDate.getDay() === 0;
+                const isToday = day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
+                
+                // Check if there are events on this day
+                const dateStr = currentDate.toISOString().split('T')[0];
+                const hasEvent = calendarEvents.some(e => {
+                    const eventDate = new Date(e.startDate);
+                    return eventDate.toISOString().split('T')[0] === dateStr;
+                });
+                
+                let bgClass = '';
+                if (isToday) {
+                    bgClass = 'bg-[#FFD700] text-[#2D2D2D] font-bold';
+                } else if (hasEvent) {
+                    bgClass = 'bg-blue-600 text-white';
+                } else if (isSunday) {
+                    bgClass = 'bg-red-900/40 text-red-300';
+                } else {
+                    bgClass = 'hover:bg-gray-700 text-gray-300';
+                }
+                
+                calendarHTML += `<div class="text-center p-2 rounded-lg ${bgClass} text-sm cursor-pointer calendar-day" data-date="${dateStr}">${day}</div>`;
+            }
+
+            calendarHTML += '</div>';
+            calendarDiv.innerHTML = calendarHTML;
+            
+            // Add click handlers to calendar days
+            document.querySelectorAll('.calendar-day').forEach(dayEl => {
+                dayEl.addEventListener('click', function() {
+                    const date = this.dataset.date;
+                    showDateEvents(date);
+                });
+            });
+        }
+
+        // Show events for a specific date
+        function showDateEvents(date) {
+            const dateEvents = calendarEvents.filter(e => {
+                const eventDate = new Date(e.startDate);
+                return eventDate.toISOString().split('T')[0] === date;
+            });
+            
+            if (dateEvents.length === 0) {
+                return;
+            }
+            
+            let eventsHtml = '<div class="space-y-3">';
+            dateEvents.forEach(evt => {
+                eventsHtml += `
+                    <div class="p-3 ${evt.isHoliday ? 'bg-red-50' : 'bg-blue-50'} rounded-lg">
+                        <div class="font-semibold text-gray-800">${evt.title}</div>
+                        ${evt.description ? `<div class="text-sm text-gray-600 mt-1">${evt.description}</div>` : ''}
+                        <div class="text-xs text-gray-500 mt-2">${new Date(evt.startDate).toLocaleDateString()}</div>
+                    </div>
+                `;
+            });
+            eventsHtml += '</div>';
+            
+            Swal.fire({
+                title: 'Events on ' + new Date(date).toLocaleDateString(),
+                html: eventsHtml,
+                confirmButtonColor: '#FFD700',
+                width: '500px'
+            });
+        }
+
+        // Add ToDo Modal
+        function showAddTodoModal() {
+            Swal.fire({
+                title: 'Add To-Do Item',
+                html: `
+                    <div class="space-y-4 text-left">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                            <input type="text" id="todoTitle" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Enter title" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <textarea id="todoDescription" class="w-full px-3 py-2 border border-gray-300 rounded-lg" rows="3" placeholder="Enter description"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Due Date *</label>
+                            <input type="date" id="todoDueDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg" value="${new Date().toISOString().split('T')[0]}" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Priority *</label>
+                            <select id="todoPriority" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="Low">Low</option>
+                                <option value="Medium" selected>Medium</option>
+                                <option value="High">High</option>
+                            </select>
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Add To-Do',
+                confirmButtonColor: '#FFD700',
+                cancelButtonText: 'Cancel',
+                preConfirm: () => {
+                    const title = document.getElementById('todoTitle').value;
+                    const description = document.getElementById('todoDescription').value;
+                    const dueDate = document.getElementById('todoDueDate').value;
+                    const priority = document.getElementById('todoPriority').value;
+                    
+                    if (!title) {
+                        Swal.showValidationMessage('Title is required');
+                        return false;
+                    }
+                    
+                    if (!dueDate) {
+                        Swal.showValidationMessage('Due date is required');
+                        return false;
+                    }
+                    
+                    return { title, description, dueDate, priority };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    addTodoItem(result.value);
+                }
+            });
+        }
+
+        // Add todo item via AJAX
+        function addTodoItem(todoData) {
+            // Show loading
+            Swal.fire({
+                title: 'Adding To-Do...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Make AJAX call to add todo
+            fetch('/StudentDashboard/AddTodo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(todoData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Add the new todo to the list without reloading
+                    const todoContainer = document.getElementById('todoListContainer');
+                    const priorityClass = todoData.priority === 'High' ? 'bg-red-500/20 text-red-300' : 
+                                         todoData.priority === 'Medium' ? 'bg-yellow-500/20 text-yellow-300' : 
+                                         'bg-blue-500/20 text-blue-300';
+                    
+                    const newTodoHtml = `
+                        <div class="flex items-start gap-3 p-3 bg-gray-700 rounded-xl">
+                            <div class="w-5 h-5 rounded border-2 border-gray-400 flex items-center justify-center flex-shrink-0 mt-0.5"></div>
+                            <div class="flex-1">
+                                <div class="text-sm font-medium text-white">${todoData.title}</div>
+                                <div class="text-xs text-gray-400">${todoData.description || ''}</div>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-xs px-2 py-0.5 rounded ${priorityClass}">${todoData.priority}</span>
+                                    <span class="text-xs text-gray-400">${new Date(todoData.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    todoContainer.insertAdjacentHTML('afterbegin', newTodoHtml);
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'To-Do Added!',
+                        text: 'Your to-do item has been added successfully.',
+                        confirmButtonColor: '#FFD700'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message || 'Failed to add to-do item.',
+                        confirmButtonColor: '#FFD700'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to add to-do item. Please try again.',
+                    confirmButtonColor: '#FFD700'
+                });
+            });
+        }
+
+        // Attendance period selector
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.attendance-period-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const period = this.dataset.period;
+                    
+                    document.querySelectorAll('.attendance-period-btn').forEach(b => {
+                        b.classList.remove('bg-[#FFD700]', 'text-[#2D2D2D]');
+                        b.classList.add('bg-gray-200', 'text-gray-700');
+                    });
+                    this.classList.remove('bg-gray-200', 'text-gray-700');
+                    this.classList.add('bg-[#FFD700]', 'text-[#2D2D2D]');
+                    
+                    initAttendanceTrends(period);
+                });
+            });
+
+            // Exam category selectors
+            document.getElementById('subjectExamCategory').addEventListener('change', function() {
+                const categoryId = this.value;
+                initSubjectWiseChart(categoryId);
+            });
+
+            document.getElementById('examCategory').addEventListener('change', function() {
+                const categoryId = this.value;
+                initExamWiseChart(categoryId);
+            });
+
+            // Fee period selector
+            document.querySelectorAll('.fee-period-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const period = this.dataset.period;
+                    
+                    document.querySelectorAll('.fee-period-btn').forEach(b => {
+                        b.classList.remove('bg-[#FFD700]', 'text-[#2D2D2D]');
+                        b.classList.add('bg-gray-200', 'text-gray-700');
+                    });
+                    this.classList.remove('bg-gray-200', 'text-gray-700');
+                    this.classList.add('bg-[#FFD700]', 'text-[#2D2D2D]');
+                    
+                    // Load fee data for selected period
+                    loadFeeDetails(period);
+                });
+            });
+
+            // Event hover handlers
+            document.querySelectorAll('.event-item').forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                    const description = this.dataset.eventDescription;
+                    if (description) {
+                        this.title = description;
+                    }
+                });
+                
+                item.addEventListener('click', function() {
+                    const date = this.dataset.eventDate;
+                    showDateEvents(date);
+                });
+            });
+            
+            // Awards "Show More" functionality
+            const showMoreAwardsBtn = document.getElementById('showMoreAwardsBtn');
+            if (showMoreAwardsBtn) {
+                showMoreAwardsBtn.addEventListener('click', function() {
+                    const moreAwards = document.getElementById('moreAwards');
+                    if (moreAwards.classList.contains('hidden')) {
+                        moreAwards.classList.remove('hidden');
+                        this.textContent = 'Show Less';
+                    } else {
+                        moreAwards.classList.add('hidden');
+                        this.textContent = 'Show More';
+                    }
+                });
+            }
+
+            initializeCharts();
+
+            // Make charts responsive
+            window.addEventListener('resize', function() {
+                echarts.getInstanceByDom(document.getElementById('attendanceTrendsChart'))?.resize();
+                echarts.getInstanceByDom(document.getElementById('subjectWiseChart'))?.resize();
+                echarts.getInstanceByDom(document.getElementById('examWiseChart'))?.resize();
+            });
+        });
+
+        // Show diary details
+        function showDiaryDetails(diaryId) {
+            // This would fetch and display full diary details in a modal
+            Swal.fire({
+                title: 'Diary Details',
+                text: 'Loading diary details...',
+                confirmButtonColor: '#FFD700'
+            });
+        }
+
+        // Print voucher
+        function printVoucher(billingId) {
+            window.open('/Billing/PrintVoucher/' + billingId, '_blank');
+        }
+
+        // Load fee details for selected period
+        function loadFeeDetails(period) {
+            // This would be implemented to fetch and display fee details
+            console.log('Loading fee details for:', period);
+        }
+    </script>
+
+</body>
+</html>

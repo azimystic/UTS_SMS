@@ -1,0 +1,162 @@
+@model SMS.ViewModels.ReportCardHistoryViewModel
+@{
+    ViewData["Title"] = "Report Card with History";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-dark mb-1">📜 Report Card with History</h2>
+                    <p class="text-muted">Generate report card with previous exam results</p>
+                </div>
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Reports
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-sliders-h me-2"></i>Report Parameters</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="GenerateReportCardHistory" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Search Student <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="studentSearch" placeholder="Search by name, CNIC, or roll number...">
+                                    <button class="btn btn-outline-secondary" type="button" id="searchBtn">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                                <div id="searchResults" class="list-group mt-2" style="display: none;"></div>
+                                <input type="hidden" asp-for="StudentId" id="studentIdInput" />
+                                <span asp-validation-for="StudentId" class="text-danger"></span>
+                                <div id="selectedStudent" class="alert alert-success mt-2" style="display: none;">
+                                    <strong>Selected:</strong> <span id="selectedStudentName"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Exam Category <span class="text-danger">*</span></label>
+                                <select asp-for="ExamCategoryId" class="form-select" id="examCategorySelect">
+                                    <option value="">-- Select Exam Category --</option>
+                                    @foreach (var category in Model.ExamCategories)
+                                    {
+                                        <option value="@category.Id">@category.Name</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="ExamCategoryId" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Focus Exam <span class="text-danger">*</span></label>
+                                <select asp-for="FocusExamId" class="form-select" id="examSelect">
+                                    <option value="">-- Select Exam --</option>
+                                </select>
+                                <span asp-validation-for="FocusExamId" class="text-danger"></span>
+                                <small class="text-muted">This exam will appear at the top</small>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-warning btn-lg text-dark">
+                                <i class="fas fa-file-pdf me-2"></i>Generate Report with History
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Information</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-3">
+                        <strong>Report Card with History</strong> shows:
+                    </p>
+                    <ul class="small mb-3">
+                        <li>Focus exam details at the top</li>
+                        <li>Historical exam results below</li>
+                        <li>Performance trend analysis</li>
+                    </ul>
+                    <p class="small mb-3">
+                        This helps parents see the student's progress over time.
+                    </p>
+                    <div class="alert alert-warning small mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Requires <code>ReportCardHistory.docx</code> template
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Student search
+            $('#searchBtn, #studentSearch').on('click keypress', function(e) {
+                if (e.type === 'click' || e.which === 13) {
+                    e.preventDefault();
+                    var searchTerm = $('#studentSearch').val();
+                    if (searchTerm.length >= 2) {
+                        $.post('@Url.Action("SearchStudent", "Reports")', { searchTerm: searchTerm }, function(response) {
+                            if (response.success && response.students.length > 0) {
+                                var html = '';
+                                $.each(response.students, function(index, student) {
+                                    html += '<a href="#" class="list-group-item list-group-item-action student-item" data-id="' + student.id + '" data-name="' + student.studentName + '">';
+                                    html += '<strong>' + student.studentName + '</strong> - ' + student.fatherName + '<br>';
+                                    html += '<small class="text-muted">' + student.className + ' - ' + student.sectionName;
+                                    if (student.rollNumber) html += ' | Roll: ' + student.rollNumber;
+                                    html += '</small></a>';
+                                });
+                                $('#searchResults').html(html).show();
+                            } else {
+                                $('#searchResults').html('<div class="list-group-item">No students found</div>').show();
+                            }
+                        });
+                    }
+                }
+            });
+
+            $(document).on('click', '.student-item', function(e) {
+                e.preventDefault();
+                var studentId = $(this).data('id');
+                var studentName = $(this).data('name');
+                $('#studentIdInput').val(studentId);
+                $('#selectedStudentName').text(studentName);
+                $('#selectedStudent').show();
+                $('#searchResults').hide();
+            });
+
+            // Load exams when category changes
+            $('#examCategorySelect').change(function() {
+                var categoryId = $(this).val();
+                $('#examSelect').empty().append('<option value="">-- Select Exam --</option>');
+                
+                if (categoryId) {
+                    $.get('@Url.Action("GetExams", "Reports")', { examCategoryId: categoryId }, function(data) {
+                        $.each(data, function(index, exam) {
+                            $('#examSelect').append($('<option></option>').val(exam.id).text(exam.name));
+                        });
+                    });
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,346 @@
+@model SMS.ViewModels.StudentReportCardViewModel
+@{
+    ViewData["Title"] = "Student Report Card";
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-primary-800 flex items-center">
+                <svg class="w-8 h-8 mr-3 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Student Report Card
+            </h1>
+            <p class="text-neutral-600 mt-2">Generate individual student report card with detailed performance</p>
+        </div>
+
+        <!-- Main Form Card -->
+        <div class="bg-white rounded-2xl shadow-sms-xl p-6 md:p-8">
+            <form id="studentReportForm" asp-action="GenerateStudentReportCard" method="post" target="_blank">
+                @Html.AntiForgeryToken()
+
+                <div class="space-y-6">
+                    <!-- Student Search -->
+                    <div>
+                        <label class="block text-sm font-semibold text-primary-800 mb-2">
+                            <svg class="w-5 h-5 inline mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            Search Student <span class="text-red-500">*</span>
+                        </label>
+                        <div class="flex gap-2">
+                            <input type="text" 
+                                   class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all" 
+                                   id="reportCardStudentSearch" 
+                                   placeholder="Search by name, CNIC, or roll number...">
+                            <button class="px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-all" 
+                                    type="button" 
+                                    id="reportCardSearchBtn">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="reportCardSearchResults" class="mt-2 bg-white border border-gray-200 rounded-lg overflow-hidden hidden"></div>
+                        <input type="hidden" asp-for="StudentId" id="reportCardStudentIdInput" />
+                        <div id="reportCardSelectedStudent" class="mt-3 p-4 bg-green-50 border border-green-200 rounded-lg hidden">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <strong class="text-green-800">Selected:</strong>
+                                <span id="reportCardSelectedStudentName" class="ml-2 text-green-700"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exam Category and Exam Name Row -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-primary-800 mb-2">
+                                <svg class="w-5 h-5 inline mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                </svg>
+                                Exam Category <span class="text-red-500">*</span>
+                            </label>
+                            <select asp-for="ExamCategoryId" 
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all" 
+                                    id="reportCardExamCategorySelect" required>
+                                <option value="">-- Select Exam Category --</option>
+                                @foreach (var category in Model.ExamCategories)
+                                {
+                                    <option value="@category.Id">@category.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-primary-800 mb-2">
+                                <svg class="w-5 h-5 inline mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                Exam Name <span class="text-red-500">*</span>
+                            </label>
+                            <select asp-for="ExamId" 
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all" 
+                                    id="reportCardExamSelect" required>
+                                <option value="">-- Select Exam --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex items-center justify-between pt-4 border-t">
+                        <a asp-action="Index" 
+                           class="text-gray-600 hover:text-gray-800 font-medium flex items-center transition-colors">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            </svg>
+                            Back to Reports
+                        </a>
+                        
+                        <button type="submit" 
+                                id="reportCardGenerateBtn"
+                                class="bg-gradient-primary hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-semibold shadow-sms-md hover:shadow-sms-lg transition-all duration-300 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span id="reportCardBtnText">Generate Report Card PDF</span>
+                            <svg class="w-5 h-5 ml-2 animate-spin hidden" id="reportCardLoadingIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Info Card -->
+        <div class="mt-6 bg-cyan-50 border border-cyan-200 rounded-lg p-4">
+            <div class="flex items-start">
+                <svg class="w-6 h-6 text-cyan-600 mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div class="text-sm text-cyan-800">
+                    <p class="font-semibold mb-2">Student Report Card Features:</p>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li>Individual student performance for selected exam</li>
+                        <li>Subject-wise marks, grades, and percentages</li>
+                        <li>Total marks, overall percentage, and class position</li>
+                        <li>Professional format for parent distribution</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-gradient-subtle {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .shadow-sms-md {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .shadow-sms-lg {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .shadow-sms-xl {
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    .text-primary-800 { color: #2d3748; }
+    .text-primary-600 { color: #4a5568; }
+    .text-neutral-600 { color: #718096; }
+
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .animate-spin {
+        animation: spin 1s linear infinite;
+    }
+
+    #reportCardSearchResults {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .student-item {
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .student-item:hover {
+        background-color: #f3f4f6;
+    }
+
+    .student-item:last-child {
+        border-bottom: none;
+    }
+</style>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Student search
+        function performSearch() {
+            var searchTerm = $('#reportCardStudentSearch').val();
+            if (searchTerm.length >= 2) {
+                $.post('@Url.Action("SearchStudent", "Reports")', { searchTerm: searchTerm }, function(response) {
+                    if (response.success && response.students.length > 0) {
+                        var html = '';
+                        $.each(response.students, function(index, student) {
+                            html += '<div class="student-item" data-id="' + student.id + '" data-name="' + student.studentName + '">';
+                            html += '<div class="font-semibold text-gray-800">' + student.studentName + '</div>';
+                            html += '<div class="text-sm text-gray-600">' + student.fatherName + '</div>';
+                            html += '<div class="text-xs text-gray-500 mt-1">' + student.className + ' - ' + student.sectionName;
+                            if (student.rollNumber) html += ' | Roll: ' + student.rollNumber;
+                            html += '</div></div>';
+                        });
+                        $('#reportCardSearchResults').html(html).removeClass('hidden');
+                    } else {
+                        $('#reportCardSearchResults').html('<div class="p-4 text-center text-gray-500">No students found</div>').removeClass('hidden');
+                    }
+                });
+            }
+        }
+
+        $('#reportCardSearchBtn').click(performSearch);
+        
+        $('#reportCardStudentSearch').keypress(function(e) {
+            if (e.which === 13) {
+                e.preventDefault();
+                performSearch();
+            }
+        });
+
+        $(document).on('click', '.student-item', function() {
+            var studentId = $(this).data('id');
+            var studentName = $(this).data('name');
+            $('#reportCardStudentIdInput').val(studentId);
+            $('#reportCardSelectedStudentName').text(studentName);
+            $('#reportCardSelectedStudent').removeClass('hidden');
+            $('#reportCardSearchResults').addClass('hidden');
+        });
+
+        // Load exams when category changes
+        $('#reportCardExamCategorySelect').change(function() {
+            var categoryId = $(this).val();
+            $('#reportCardExamSelect').empty().append('<option value="">-- Select Exam --</option>');
+            
+            if (categoryId) {
+                $.get('@Url.Action("GetExams", "Reports")', { examCategoryId: categoryId }, function(data) {
+                    $.each(data, function(index, exam) {
+                        $('#reportCardExamSelect').append($('<option></option>').val(exam.id).text(exam.name));
+                    });
+                });
+            }
+        });
+
+        // Form submission with validation and loading state
+        $('#studentReportForm').submit(function(e) {
+            e.preventDefault();
+            
+            const studentId = $('#reportCardStudentIdInput').val();
+            const examCategoryId = $('#reportCardExamCategorySelect').val();
+            const examId = $('#reportCardExamSelect').val();
+
+            if (!studentId) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Student Not Selected',
+                    text: 'Please search and select a student first.',
+                    confirmButtonColor: '#667eea'
+                });
+                return false;
+            }
+
+            if (!examCategoryId || !examId) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Missing Information',
+                    text: 'Please select exam category and exam name.',
+                    confirmButtonColor: '#667eea'
+                });
+                return false;
+            }
+
+            // Show loading state
+            const btn = $('#reportCardGenerateBtn');
+            const btnText = $('#reportCardBtnText');
+            const loadingIcon = $('#reportCardLoadingIcon');
+            
+            btn.prop('disabled', true);
+            btnText.text('Generating PDF...');
+            loadingIcon.removeClass('hidden');
+
+            // Create a hidden iframe to submit the form
+            const iframe = $('<iframe name="pdfFrame" style="display:none;"></iframe>');
+            $('body').append(iframe);
+            
+            // Set form target to iframe
+            this.target = 'pdfFrame';
+            
+            // Submit the form
+            this.submit();
+
+            // Reset button state after a delay
+            setTimeout(function() {
+                btn.prop('disabled', false);
+                btnText.text('Generate Report Card PDF');
+                loadingIcon.addClass('hidden');
+                
+                // Show success message
+                Swal.fire({
+                    icon: 'success',
+                    title: 'PDF Generated!',
+                    text: 'The student report card has been generated. Check your new tab/window.',
+                    confirmButtonColor: '#667eea',
+                    timer: 3000
+                });
+            }, 2000);
+
+            return false;
+        });
+    });
+
+    @if (TempData["Error"] != null)
+    {
+        <text>
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: '@TempData["Error"]',
+            confirmButtonColor: '#667eea'
+        });
+        </text>
+    }
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <text>
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: '@TempData["SuccessMessage"]',
+            confirmButtonColor: '#667eea',
+            timer: 3000
+        });
+        </text>
+    }
+</script>

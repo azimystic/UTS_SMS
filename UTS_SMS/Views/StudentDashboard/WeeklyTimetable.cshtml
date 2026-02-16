@@ -1,0 +1,136 @@
+@using SMS.Controllers
+@model StudentDashboardController.WeeklyTimetableViewModel
+
+@{
+    ViewData["Title"] = "Weekly Timetable";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <!-- Full Width Container -->
+    <div class="w-full">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-primary-800">My Weekly Timetable</h1>
+            <p class="text-neutral-600 mt-2">@Model.ClassName @Model.SectionName - Week of @Model.WeekStart.ToString("MMM dd") to @Model.WeekEnd.ToString("MMM dd, yyyy")</p>
+        </div>
+
+        @if (ViewBag.Message != null)
+        {
+            <div class="bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-xl">
+                <p>@ViewBag.Message</p>
+            </div>
+        }
+        else
+        {
+            <!-- Horizontal Timetable Grid - Full Width -->
+            <div class="bg-white rounded-2xl shadow-sms-xl overflow-hidden">
+                <div class="overflow-x-auto">
+                    @{
+                        // Group slots by period number and day
+                        var periodGroups = Model.WeeklySlots
+                            .GroupBy(s => s.PeriodNumber)
+                            .OrderBy(g => g.Key)
+                            .ToList();
+                        
+                        var days = new[] { 1, 2, 3, 4, 5 }; // Monday to Friday
+                        var dayNames = new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday" };
+                        var today = DateTime.Today; // Calculate once outside loops
+                    }
+                    
+                    <table class="w-full border-collapse">
+                        <thead class=" text-white" style="
+                               background: #1F2125;">
+                            <tr>
+                                <th class="px-4 py-4 text-left text-sm font-semibold uppercase tracking-wider border-r border-blue-400">
+                                    Period / Time
+                                </th>
+                                @foreach (var (dayName, index) in dayNames.Select((name, idx) => (name, idx)))
+                                {
+                                    var dayDate = Model.WeekStart.AddDays(index);
+                                    var isToday = dayDate.Date == today;
+                                    <th class="px-4 py-4 text-center text-sm font-semibold uppercase tracking-wider border-r border-blue-400 @(isToday ? "bg-blue-700" : "")">
+                                        <div>@dayName</div>
+                                        <div class="text-xs font-normal mt-1">@dayDate.ToString("MMM dd")</div>
+                                        @if (isToday)
+                                        {
+                                            <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-400 text-blue-900">Today</span>
+                                        }
+                                    </th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-primary-100">
+                            @foreach (var periodGroup in periodGroups)
+                            {
+                                var periodNumber = periodGroup.Key;
+                                var firstSlot = periodGroup.First();
+                                
+                                // Create dictionary lookup for O(1) performance instead of O(n) FirstOrDefault
+                                var slotsByDay = periodGroup.ToDictionary(s => s.DayOfWeek, s => s);
+                                
+                                <tr class="hover:bg-primary-50 transition-all duration-300">
+                                    <!-- Period & Time Column -->
+                                    <td class="px-4 py-6 border-r border-primary-200 bg-neutral-50 align-top">
+                                        <div class="font-semibold text-primary-800">Period @periodNumber</div>
+                                        <div class="text-sm text-neutral-600 mt-1">@firstSlot.StartTime</div>
+                                        <div class="text-sm text-neutral-600">@firstSlot.EndTime</div>
+                                    </td>
+                                    
+                                    <!-- Day Columns -->
+                                    @foreach (var day in days)
+                                    {
+                                        var slot = slotsByDay.ContainsKey(day) ? slotsByDay[day] : null;
+                                        var cellClass = slot != null && slot.IsToday ? "bg-blue-50" : "";
+                                        if (slot != null && slot.HasSubstitution)
+                                        {
+                                            cellClass = "bg-yellow-50";
+                                        }
+                                        
+                                        <td class="px-4 py-6 border-r border-primary-200 align-top @cellClass">
+                                            @if (slot != null)
+                                            {
+                                                <div class="space-y-2">
+                                                    <!-- Subject -->
+                                                    <div class="font-medium text-primary-800">@slot.SubjectName</div>
+                                                    
+                                                    <!-- Teacher -->
+                                                    @if (slot.HasSubstitution)
+                                                    {
+                                                        <div class="text-sm">
+                                                            <div class="text-neutral-400 line-through">@slot.OriginalTeacherName</div>
+                                                            <div class="text-green-600 font-medium">@slot.SubstituteTeacherName</div>
+                                                        </div>
+                                                        <div class="mt-1">
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                                Substituted
+                                                            </span>
+                                                        </div>
+                                                        @if (!string.IsNullOrEmpty(slot.SubstituteReason))
+                                                        {
+                                                            <div class="text-xs text-neutral-500 mt-1">@slot.SubstituteReason</div>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="text-sm text-primary-800">@slot.OriginalTeacherName</div>
+                                                    }
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="text-sm text-neutral-400 italic">Free Period</div>
+                                            }
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+             
+        }
+ 
+    </div>
+</div>

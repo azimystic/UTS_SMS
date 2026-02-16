@@ -1,49 +1,2384 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using SMS.Services
+@inject UserManager<ApplicationUser> UserManager
+@inject ApplicationDbContext Context
+@inject MenuService MenuService
+
+@{
+    var currentUser = await UserManager.GetUserAsync(User);
+    int? studentId = null;
+    
+    // Get user roles for menu filtering
+    var userRoles = currentUser != null ? await UserManager.GetRolesAsync(currentUser) : new List<string>();
+    var appMenus = await MenuService.GetMenusForUserAsync(userRoles);
+
+    if (currentUser != null && User.IsInRole("Student"))
+    {
+        studentId = currentUser.StudentId;
+    }
+    
+    // Get active academic year - simplified
+    var activeAcademicYear = await Context.AcademicYear
+        .OrderByDescending(ay => ay.Year)
+        .FirstOrDefaultAsync();
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - UTS_SMS</title>
+    <title>@ViewData["Title"] - SMS</title>
+    
+    <!-- Outfit Font - Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <!-- Consolidated Theme CSS - Edit this file to change the entire app theme -->
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/UTS_SMS.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/SMS.styles.css" asp-append-version="true" />
+    <!-- Font Awesome Icons - Offline -->
+    <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" asp-append-version="true" />
+    
+    <style>
+        :root {
+            font-size: 80%;
+            --sidebar-collapsed: 80px;
+            --sidebar-expanded: 256px;
+            --topbar-height: 64px;
+        }
+        
+        * { box-sizing: border-box; }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            font-family: 'Outfit', sans-serif;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Corner-Flowing Gradient Background with 3D Continuous Effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at top left, rgba(255, 255, 255, 0.9) 0%, transparent 50%),
+                radial-gradient(circle at top right, rgba(244, 197, 66, 0.8) 0%, transparent 50%),
+                radial-gradient(circle at bottom left, rgba(244, 197, 66, 0.8) 0%, transparent 50%),
+                radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.9) 0%, transparent 50%),
+                linear-gradient(135deg, #E8E8E8 0%, #D4CFC5 100%);
+            background-size: 200% 200%;
+            animation: gradientMove 15s ease infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        /* Animated Gradient Background - Continuously Moving */
+        @@keyframes gradientMove {
+            0% {
+                background-position: 0% 50%, 100% 50%, 0% 100%, 100% 100%, 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%, 0% 50%, 100% 100%, 0% 100%, 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%, 100% 50%, 0% 100%, 100% 100%, 0% 50%;
+            }
+        }
+        
+        /* Fix ALL link colors to match CREXTIO theme */
+        a { color: #FBBF24 !important; text-decoration: none; }
+        a:hover { color: #F59E0B !important; }
+        h1 a, h2 a, h3 a, h4 a, h5 a, h6 a { color: #FBBF24 !important; }
+        
+        /* Page Loader - CREXTIO */
+        .page-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(253, 251, 247, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        .page-loader.active { display: flex; }
+        
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(251, 191, 36, 0.15);
+            border-top-color: #FBBF24;
+            border-right-color: #F59E0B;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @@keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* CREXTIO Sidebar - Deep Matte Charcoal */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            width: var(--sidebar-collapsed);
+            background: #1F2125;
+            color: #E5E7EB;
+            z-index: 1000;
+            overflow: hidden;
+            transition: width 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sidebar:hover { width: var(--sidebar-expanded); }
+        
+        .sidebar-header {
+            padding: 1.25rem 1rem;
+            background: rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80px;
+            border-bottom: 1px solid rgba(251, 191, 36, 0.1);
+        }
+        
+        .sidebar:hover .sidebar-header { justify-content: flex-start; padding-left: 1.5rem; }
+        
+        .sidebar-brand {
+            color: #E5E7EB !important;
+            text-decoration: none;
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+        }
+        
+        .sidebar-brand i { 
+            font-size: 2rem; 
+            color: #FBBF24; 
+            min-width: 48px; 
+            text-align: center; 
+        }
+        
+        .brand-text {
+            margin-left: 1rem;
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            color: #FBBF24 !important;
+            white-space: nowrap;
+        }
+        
+        .sidebar:hover .brand-text { opacity: 1; width: auto; }
+        
+        .sidebar-menu { flex: 1; padding: 1rem 0; overflow-y: auto; overflow-x: hidden; }
+        .sidebar-menu::-webkit-scrollbar { width: 4px; }
+        .sidebar-menu::-webkit-scrollbar-thumb { 
+            background: rgba(251, 191, 36, 0.2); 
+            border-radius: 4px; 
+        }
+        
+        .nav { list-style: none; padding: 0; margin: 0; }
+        .nav-item { margin: 0.2rem 0; }
+        
+        /* CREXTIO Navigation Links */
+        .nav-link {
+            color: #E5E7EB !important;
+            padding: 0.875rem 1rem;
+            margin: 0 0.75rem;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        
+        .nav-link:hover {
+            background: rgba(251, 191, 36, 0.1);
+            color: #FBBF24 !important;
+            transform: translateX(4px);
+        }
+        
+        .nav-link.active {
+            background: rgba(251, 191, 36, 0.15);
+            color: #FBBF24 !important;
+        }
+        
+        .nav-link i { 
+            width: 24px; 
+            text-align: center; 
+            font-size: 1.2rem; 
+            color: #9CA3AF; 
+            min-width: 24px; 
+            transition: color 0.2s ease;
+        }
+        
+        .nav-link:hover i,
+        .nav-link.active i { 
+            color: #FBBF24; 
+        }
+        
+        .link-text {
+            margin-left: 1rem;
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        
+        .sidebar:hover .link-text { opacity: 1; width: auto; }
+        
+        .submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: rgba(0,0,0,0.15);
+            border-radius: 8px;
+            margin: 0.2rem 0.75rem;
+        }
+        
+        .nav-item.has-submenu.open .submenu { max-height: 500px; }
+        
+        .submenu-link {
+            display: flex;
+            align-items: center;
+            padding: 0.6rem 1rem 0.6rem 2.5rem;
+            color: #D1D5DB !important;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        
+        .sidebar:hover .submenu-link { padding-left: 3.25rem; }
+        .submenu-link:hover { 
+            background: rgba(251, 191, 36, 0.1); 
+            color: #FBBF24 !important; 
+        }
+        .submenu-link i { 
+            width: 16px; 
+            margin-right: 0.5rem; 
+            font-size: 0.9rem; 
+            color: #9CA3AF; 
+        }
+        .submenu-link:hover i { color: #FBBF24; }
+        
+        .sidebar-footer {
+            padding: 1rem;
+            background: rgba(0,0,0,0.2);
+            border-top: 1px solid rgba(251, 191, 36, 0.1);
+        }
+        
+        .user-info { display: flex; align-items: center; justify-content: center; }
+        .sidebar:hover .user-info { justify-content: flex-start; }
+        
+        .user-avatar { font-size: 2rem; color: #FBBF24; min-width: 48px; text-align: center; }
+        .user-avatar a { color: inherit !important; }
+        
+        .user-details { margin-left: 0.5rem; opacity: 0; width: 0; overflow: hidden; transition: all 0.3s ease; }
+        .sidebar:hover .user-details { opacity: 1; width: auto; }
+        .user-name { font-weight: 600; color: #E5E7EB; font-size: 0.9rem; }
+        .user-role { font-size: 0.75rem; color: #9CA3AF; }
+        
+        .profile-link {
+            margin-left: auto;
+            color: #9CA3AF !important;
+            background: none;
+            border: none;
+            padding: 0.5rem;
+            cursor: pointer;
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+        }
+        .sidebar:hover .profile-link { opacity: 1; width: auto; }
+        .profile-link:hover { color: #FBBF24 !important; }
+        
+        .sidebar-close-btn { display: none; }
+        
+        /* CREXTIO Top Navbar - Browser Style */
+        .top-navbar {
+            position: sticky;
+            top: 0;
+            left: var(--sidebar-collapsed);
+            right: 0;
+            height: var(--topbar-height);
+            background: #1F2125;
+            border-bottom: 1px solid rgba(251, 191, 36, 0.1);
+            display: flex;
+            align-items: center;
+            padding: 0 1.5rem;
+            gap: 1rem;
+            z-index: 900;
+            transition: left 0.3s ease;
+        }
+        
+        .sidebar:hover + .main-wrapper .top-navbar { left: var(--sidebar-expanded); }
+        
+        .nav-control-btn {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #9CA3AF;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-control-btn:hover {
+            background: rgba(251, 191, 36, 0.2);
+            border-color: #FBBF24;
+            color: #FBBF24;
+        }
+        
+        .breadcrumbs {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #9CA3AF;
+            font-size: 0.875rem;
+        }
+        
+        .breadcrumbs a {
+            color: #9CA3AF !important;
+            transition: color 0.2s ease;
+        }
+        
+        .breadcrumbs a:hover {
+            color: #FBBF24 !important;
+        }
+        
+        .breadcrumbs-separator {
+            color: #6B7280;
+        }
+        
+        .search-bar {
+            flex: 1;
+            max-width: 400px;
+            position: relative;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 0.5rem 1rem 0.5rem 2.5rem;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            background: rgba(0, 0, 0, 0.2);
+            color: #E5E7EB;
+            transition: all 0.2s ease;
+        }
+        
+        .search-input::placeholder {
+            color: #6B7280;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #FBBF24;
+            background: rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.1);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 0.875rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9CA3AF;
+        }
+        
+        .search-results {
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            left: 0;
+            right: 0;
+            background: #1F2125;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            border-radius: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            display: none;
+            z-index: 1000;
+        }
+        
+        .search-results.show {
+            display: block;
+        }
+        
+        .search-results::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .search-results::-webkit-scrollbar-thumb {
+            background: rgba(251, 191, 36, 0.2);
+            border-radius: 3px;
+        }
+        
+        .search-result-group {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(251, 191, 36, 0.1);
+        }
+        
+        .search-result-group:last-child {
+            border-bottom: none;
+        }
+        
+        .search-result-controller {
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            color: #FBBF24;
+            font-size: 0.875rem;
+            background: rgba(251, 191, 36, 0.05);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .search-result-controller:hover {
+            background: rgba(251, 191, 36, 0.1);
+        }
+        
+        .search-result-controller i {
+            font-size: 0.75rem;
+            color: #9CA3AF;
+        }
+        
+        .search-result-views {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+        }
+        
+        .search-result-view {
+            padding: 0.375rem 0.75rem;
+            background: rgba(251, 191, 36, 0.1);
+            color: #E5E7EB;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .search-result-view:hover {
+            background: rgba(251, 191, 36, 0.2);
+            color: #FBBF24 !important;
+            transform: translateY(-1px);
+        }
+        
+        .search-no-results {
+            padding: 2rem 1rem;
+            text-align: center;
+            color: #6B7280;
+        }
+        
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-left: auto;
+        }
+        
+        .bell-icon {
+            position: relative;
+            background: transparent;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #9CA3AF;
+            transition: all 0.2s ease;
+        }
+        
+        .bell-icon:hover {
+            background: rgba(251, 191, 36, 0.1);
+            color: #FBBF24;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 8px;
+            height: 8px;
+            background: #EF4444;
+            border-radius: 50%;
+            border: 2px solid #1F2125;
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            padding: 0.375rem 0.5rem;
+            border-radius: 9999px;
+            transition: background 0.2s ease;
+        }
+        
+        .user-menu:hover {
+            background: rgba(251, 191, 36, 0.1);
+        }
+        
+        .user-menu-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #FBBF24;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        
+        /* Notification Dropdown */
+        .notification-dropdown {
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            right: 1.5rem;
+            width: 400px;
+            max-height: 600px;
+            background: #1F2125;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+        }
+        
+        .notification-dropdown.show {
+            display: flex;
+        }
+        
+        .notification-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(251, 191, 36, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+        }
+        
+        .notification-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #E5E7EB;
+        }
+        
+        .notification-badge-count {
+            background: #FBBF24;
+            color: #1F2125;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .notification-tabs {
+            display: flex;
+            padding: 0.5rem 1rem;
+            gap: 0.5rem;
+            border-bottom: 1px solid rgba(251, 191, 36, 0.1);
+            background: rgba(0, 0, 0, 0.15);
+        }
+        
+        .notification-tab {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border: none;
+            background: transparent;
+            color: #9CA3AF;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .notification-tab:hover {
+            background: rgba(251, 191, 36, 0.1);
+            color: #E5E7EB;
+        }
+        
+        .notification-tab.active {
+            background: rgba(251, 191, 36, 0.15);
+            color: #FBBF24;
+        }
+        
+        .notification-list {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 450px;
+        }
+        
+        .notification-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .notification-list::-webkit-scrollbar-thumb {
+            background: rgba(251, 191, 36, 0.2);
+            border-radius: 3px;
+        }
+        
+        .notification-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(251, 191, 36, 0.3);
+        }
+        
+        .notification-item {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(251, 191, 36, 0.05);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+        
+        .notification-item:hover {
+            background: rgba(251, 191, 36, 0.05);
+        }
+        
+        .notification-item.unread {
+            background: rgba(251, 191, 36, 0.08);
+        }
+        
+        .notification-item.unread:hover {
+            background: rgba(251, 191, 36, 0.12);
+        }
+        
+        .notification-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 0.875rem;
+        }
+        
+        .notification-icon.complaint {
+            background: rgba(239, 68, 68, 0.15);
+            color: #EF4444;
+        }
+        
+        .notification-icon.fee {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22C55E;
+        }
+        
+        .notification-icon.exam {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3B82F6;
+        }
+        
+        .notification-icon.marks {
+            background: rgba(168, 85, 247, 0.15);
+            color: #A855F7;
+        }
+        
+        .notification-icon.reminder {
+            background: rgba(249, 115, 22, 0.15);
+            color: #F97316;
+        }
+        
+        .notification-icon.general {
+            background: rgba(251, 191, 36, 0.15);
+            color: #FBBF24;
+        }
+        
+        .notification-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .notification-text {
+            color: #E5E7EB;
+            font-size: 0.875rem;
+            line-height: 1.4;
+            margin-bottom: 0.25rem;
+        }
+        
+        .notification-time {
+            color: #6B7280;
+            font-size: 0.75rem;
+        }
+        
+        .notification-subject {
+            margin-bottom: 0.25rem;
+        }
+        
+        .notification-meta {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.25rem;
+            font-size: 0.75rem;
+            color: #9CA3AF;
+        }
+        
+        .notification-sender {
+            color: #FBBF24;
+        }
+        
+        .notification-attachment {
+            color: #6B7280;
+        }
+        
+        .message-attachments {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(251, 191, 36, 0.1);
+        }
+        
+        .message-attachments h4 {
+            color: #E5E7EB;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .message-attachments ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .message-attachments li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .message-attachments a {
+            color: #FBBF24;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .message-attachments a:hover {
+            text-decoration: underline;
+        }
+        
+        .notification-empty {
+            padding: 2rem 1.25rem;
+            text-align: center;
+            color: #6B7280;
+        }
+        
+        .notification-footer {
+            padding: 0.75rem 1.25rem;
+            border-top: 1px solid rgba(251, 191, 36, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+        }
+        
+        .notification-view-all {
+            display: block;
+            width: 100%;
+            padding: 0.5rem;
+            text-align: center;
+            color: #FBBF24;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        
+        .notification-view-all:hover {
+            background: rgba(251, 191, 36, 0.1);
+            color: #FBBF24;
+        }
+        
+        /* Main Content */
+        .main-wrapper {
+            margin-left: var(--sidebar-collapsed);
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+            background: transparent;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .main-content {
+            padding: 1rem 1.5rem;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        
+        .container-fluid { 
+            max-width: 100%;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        
+        main {
+            background: transparent;
+            padding: 0;
+        }
+        
+        /* Mobile Top Bar - CREXTIO */
+        .mobile-topbar {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--topbar-height);
+            background: #1F2125;
+            padding: 0 1rem;
+            z-index: 1100;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .sidebar-toggle-btn {
+            background: rgba(251, 191, 36, 0.15);
+            border: none;
+            border-radius: 8px;
+            color: #FBBF24;
+            width: 40px;
+            height: 40px;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .sidebar-toggle-btn:hover {
+            background: rgba(251, 191, 36, 0.25);
+        }
+        
+        .mobile-brand { color: #E5E7EB; font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem; }
+        .mobile-brand i { color: #FBBF24; }
+        
+        .mobile-logout {
+            background: rgba(251, 191, 36, 0.15);
+            border: none;
+            border-radius: 8px;
+            color: #E5E7EB;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s ease;
+        }
+        .mobile-logout:hover {
+            background: rgba(251, 191, 36, 0.25);
+        }
+        .mobile-logout i { color: #FBBF24; }
+        
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            top: var(--topbar-height);
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+        
+        /* Mobile Responsive - CREXTIO */
+        @@media (max-width: 992px) {
+            :root { font-size: 100%; }
+            
+            .mobile-topbar { display: flex; }
+            .top-navbar { display: none; }
+            
+            .sidebar {
+                top: var(--topbar-height);
+                height: calc(100vh - var(--topbar-height));
+                left: -280px;
+                width: 280px;
+            }
+            
+            .sidebar:hover { width: 280px; }
+            .sidebar.show { left: 0; }
+            .sidebar.show .brand-text,
+            .sidebar.show .link-text,
+            .sidebar.show .user-details,
+            .sidebar.show .profile-link { opacity: 1; width: auto; }
+            .sidebar.show .submenu-link { padding-left: 3.25rem; }
+            
+            .sidebar-close-btn {
+                display: block;
+                background: none;
+                border: none;
+                color: #E5E7EB;
+                font-size: 1.3rem;
+                cursor: pointer;
+                margin-left: auto;
+            }
+            
+            .sidebar-header { justify-content: space-between; padding: 1rem; }
+            
+            .sidebar.show + .sidebar-backdrop { display: block; }
+            
+            .main-wrapper {
+                margin-left: 0;
+                margin-top: var(--topbar-height);
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+            
+            /* Mobile Form Improvements */
+            .form-control, .sms-input, input, select, textarea {
+                font-size: 16px !important;
+                padding: 12px 14px !important;
+                min-height: 44px;
+                border-radius: 12px;
+                width: 100%;
+            }
+            
+            .btn {
+                font-size: 16px !important;
+                padding: 12px 20px !important;
+                min-height: 44px;
+                border-radius: 12px;
+                width: 100%;
+            }
+            
+            /* Mobile Tables */
+            .table {
+                font-size: 14px;
+            }
+            
+            .table thead {
+                display: none;
+            }
+            
+            .table tbody tr {
+                display: block;
+                margin-bottom: 1rem;
+                border: 1px solid #E5E7EB;
+                border-radius: 12px;
+                padding: 0.75rem;
+                background: rgba(255, 255, 255, 0.85);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                box-shadow: 0 1px 4px rgba(251, 191, 36, 0.1);
+            }
+            
+            .table tbody td {
+                display: block;
+                text-align: right;
+                padding: 0.5rem !important;
+                border: none;
+                position: relative;
+                padding-left: 50% !important;
+            }
+            
+            .table tbody td:before {
+                content: attr(data-label);
+                position: absolute;
+                left: 0.75rem;
+                width: 45%;
+                padding-right: 10px;
+                text-align: left;
+                font-weight: 600;
+                color: #111827;
+            }
+            
+            /* Mobile Cards - Keep background for content separation */
+            .card, .sms-card {
+                background: rgba(255, 255, 255, 0.85);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                box-shadow: 0 2px 8px rgba(251, 191, 36, 0.08);
+                margin-bottom: 1rem;
+                border-radius: 16px;
+                padding: 1.25rem;
+                border: 1px solid rgba(255, 255, 255, 0.5);
+            }
+            
+            .card-header, .sms-card-header {
+                padding: 1rem;
+                font-size: 18px;
+                background: transparent;
+                border-bottom: 2px solid #E5E7EB;
+                margin-bottom: 1rem;
+            }
+            
+            .card-body {
+                padding: 0;
+            }
+            
+            /* Mobile Spacing */
+            h1 { font-size: 1.75rem !important; margin-bottom: 1rem; }
+            h2 { font-size: 1.5rem !important; margin-bottom: 0.875rem; }
+            h3 { font-size: 1.25rem !important; margin-bottom: 0.75rem; }
+            h4 { font-size: 1.1rem !important; margin-bottom: 0.625rem; }
+            
+            /* Form groups spacing */
+            .form-group, .sms-form-group {
+                margin-bottom: 1.25rem;
+            }
+            
+            /* Labels */
+            label {
+                font-size: 15px;
+                font-weight: 600;
+                color: #111827;
+                margin-bottom: 0.5rem;
+                display: block;
+            }
+            
+            /* Prevent zoom on input focus iOS */
+            input[type="text"],
+            input[type="email"],
+            input[type="password"],
+            input[type="tel"],
+            input[type="number"],
+            input[type="date"],
+            select,
+            textarea {
+                font-size: 16px !important;
+            }
+            
+            /* Better touch targets for links inside content */
+            a {
+                padding: 0.25rem 0;
+                display: inline-block;
+            }
+            
+            /* Remove all Bootstrap container padding */
+            .container, 
+            .container-fluid, 
+            .container-lg, 
+            .container-md, 
+            .container-sm, 
+            .container-xl, 
+            .container-xxl {
+                padding-right: 0 !important;
+                padding-left: 0 !important;
+            }
+        }
+        
+        /* Extra Small Mobile (< 576px) */
+        @@media (max-width: 576px) {
+            .main-content {
+                padding: 0.5rem;
+            }
+            
+            .card, .sms-card {
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            h1 { font-size: 1.5rem !important; }
+            h2 { font-size: 1.25rem !important; }
+            h3 { font-size: 1.125rem !important; }
+        }
+        
+        /* Tablet Responsive */
+        @@media (min-width: 768px) and (max-width: 992px) {
+            :root { font-size: 90%; }
+            
+            .main-content {
+                padding: 1.5rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">UTS_SMS</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
+    <!-- Page Loader -->
+    <div class="page-loader" id="pageLoader">
+        <div class="loader-spinner"></div>
+    </div>
+    
+    <!-- Mobile Top Bar -->
+    <div class="mobile-topbar">
+        <button class="sidebar-toggle-btn" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="mobile-brand">
+            <i class="fas fa-school"></i>
+            <span>SMS</span>
+        </div>
+        <form asp-controller="Account" asp-action="Logout" method="post" style="margin:0;">
+            <button type="submit" class="mobile-logout">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </button>
+        </form>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            @{
+                var dashboardController = "Home";
+                var dashboardAction = "Index";
+                
+                if (User.IsInRole("Admin"))
+                {
+                    dashboardController = "Admin";
+                    dashboardAction = "Dashboard";
+                }
+                else if (User.IsInRole("Teacher"))
+                {
+                    dashboardController = "Teacher";
+                    dashboardAction = "Dashboard";
+                }
+                else if (User.IsInRole("Student"))
+                {
+                    dashboardController = "StudentDashboard";
+                    dashboardAction = "Dashboard";
+                }
+                
+                var campusName = currentUser?.Campus?.Name ?? "SMS";
+            }
+            <a class="sidebar-brand" asp-controller="@dashboardController" asp-action="@dashboardAction">
+                <i class="fas fa-school"></i>
+                <span class="brand-text">@campusName</span>
+            </a>
+            <button class="sidebar-close-btn" onclick="toggleSidebar()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="sidebar-menu">
+            <ul class="nav flex-column">
+
+                <!-- Students Menu - Admin Only-->
+                @if (User.IsInRole("Admin"))
+                {
+                    <li class="nav-item has-submenu">
+                        <a class="nav-link" href="#" onclick="toggleSubmenu(event, this)">
+                            <i class="fas fa-users"></i>
+                            <span class="link-text">Students</span>
+                        </a>
+                        <ul class="submenu">
+                            <li><a class="submenu-link" asp-controller="Students" asp-action="Index"><i class="fas fa-list"></i><span>All Students</span></a></li>
+                            <li><a class="submenu-link" asp-controller="Students" asp-action="Create"><i class="fas fa-plus"></i><span>Add Student</span></a></li>
+                            <li><a class="submenu-link" asp-controller="Family" asp-action="Index"><i class="fas fa-users"></i><span>View Families</span></a></li>
+
+                        </ul>
+                    </li>
+                }
+   
+
+                 <!-- Employees Menu - Admin Only-->
+                @if (User.IsInRole("Admin"))
+                {
+                    <li class="nav-item has-submenu">
+                        <a class="nav-link" href="#" onclick="toggleSubmenu(event, this)">
+                            <i class="fas fa-user-tie"></i>
+                            <span class="link-text">Employees</span>
+                        </a>
+                        <ul class="submenu">
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li><a class="submenu-link" asp-controller="Employees" asp-action="Index"><i class="fas fa-list"></i><span>All Employees</span></a></li>
+                                <li><a class="submenu-link" asp-controller="Employees" asp-action="Create"><i class="fas fa-plus"></i><span>Add Employee</span></a></li>
+                            }
+                        </ul>
+                    </li>
+                }
+    
+                
+                <!-- Attendance Menu-->
+                <li class="nav-item has-submenu">
+                    <a class="nav-link" href="#" onclick="toggleSubmenu(event, this)">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                        <span class="link-text">Attendance</span>
+                    </a>
+                    <ul class="submenu">
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li><a class="submenu-link" asp-controller="Attendance" asp-action="DailySummary"><i class="fas fa-calendar-day"></i><span>Student Summary</span></a></li>
+                            <li><a class="submenu-link" asp-controller="EmployeeAttendance" asp-action="DailySummary"><i class="fas fa-calendar-day"></i><span>Employee Summary</span></a></li>
+                            <li><a class="submenu-link" asp-controller="NamazAttendance" asp-action="Index"><i class="fas fa-calendar-day"></i><span>Namaz Summary</span></a></li>
+
+                        }
+                        @if (User.IsInRole("Teacher"))
+                        {
+                            <li><a class="submenu-link" asp-controller="Attendance" asp-action="Index"><i class="fas fa-check-circle"></i><span>Take Attendance</span></a></li>
+                        }
+                        @if (User.IsInRole("Student"))
+                        {
+                            <li><a class="submenu-link" asp-controller="Attendance" asp-action="History" asp-route-studentId="@studentId"><i class="fas fa-history"></i><span>My Attendance</span></a></li>
+                        }
                     </ul>
+                </li>
+
+                 <!-- Finance Menu-->
+                @if (User.IsInRole("Admin") || User.IsInRole("Accountant") || User.IsInRole("Student"))
+                {
+                    <li class="nav-item has-submenu">
+                        <a class="nav-link" href="#" onclick="toggleSubmenu(event, this)">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <span class="link-text">Finance</span>
+                        </a>
+                        <ul class="submenu">
+                            @if (User.IsInRole("Admin") || User.IsInRole("Accountant"))
+                            {
+                                <li><a class="submenu-link" asp-controller="Billing" asp-action="Index"><i class="fas fa-money-bill"></i><span>Collect Fees</span></a></li>
+                                <li><a class="submenu-link" asp-controller="Payroll" asp-action="Index"><i class="fas fa-money-bill"></i><span>Pay Salaries</span></a></li>
+                                <li><a class="submenu-link" asp-controller="Expense" asp-action="Index"><i class="fas fa-money-bill"></i><span>Add Expense</span></a></li>
+                                <li><a class="submenu-link" asp-controller="Asset" asp-action="Index"><i class="fas fa-money-bill"></i><span>Add Asset</span></a></li>
+                                <li><a class="submenu-link" asp-controller="StudentFineCharges" asp-action="Index"><i class="fas fa-money-bill"></i><span>Add Fine/Charges</span></a></li>
+                                <li><a class="submenu-link" asp-controller="BillingReports" asp-action="Transactions"><i class="fas fa-file-invoice"></i><span>Transaction History</span></a></li>
+                                <li><a class="submenu-link" asp-controller="BillingReports" asp-action="SearchInvoice"><i class="fas fa-file-invoice"></i><span>Search Invoice</span></a></li>
+                            }
+                             @if (User.IsInRole("Student"))
+                            {
+                             <li><a class="submenu-link" asp-controller="BillingReports" asp-action="Details"><i class="fas fa-file-invoice"></i><span>Fee History</span></a></li>
+                                
+                            }
+                        </ul>
+                    </li>
+                }
+      
+                
+                <!-- Certificates Menu - Admin Only-->
+                @if (User.IsInRole("Admin"))
+                {
+                    <li class="nav-item has-submenu">
+                        <a class="nav-link" href="#" onclick="toggleSubmenu(event, this)">
+                            <i class="fas fa-certificate"></i>
+                            <span class="link-text">Certificates</span>
+                        </a>
+                        <ul class="submenu">
+                            <li><a class="submenu-link" asp-controller="IssueCertificate" asp-action="Index"><i class="fas fa-file-alt"></i><span>Issue Certificate</span></a></li>
+                            <li><a class="submenu-link" asp-controller="CertificateSettings" asp-action="Index"><i class="fas fa-cog"></i><span>Certificate Settings</span></a></li>
+                        </ul>
+                    </li>
+                }
+                
+                <!-- Reports Menu - Admin Only-->
+                @if (User.IsInRole("Admin"))
+                {
+                    <li class="nav-item has-submenu">
+                        <a class="nav-link" href="#" onclick="toggleSubmenu(event, this)">
+                            <i class="fas fa-chart-bar"></i>
+                            <span class="link-text">Reports</span>
+                        </a>
+                        <ul class="submenu">
+                            <li><a class="submenu-link" asp-controller="BillingReports" asp-action="Index"><i class="fas fa-list"></i><span>Fee Reports</span></a></li>
+                            <li><a class="submenu-link" asp-controller="PayrollReports" asp-action="Index"><i class="fas fa-file-alt"></i><span>Payroll Reports</span></a></li>
+                        </ul>
+                    </li>
+                }
+                
+                <!-- Exam Reports Menu - Admin and Teacher-->
+                @if (User.IsInRole("Admin") || User.IsInRole("Teacher"))
+                {
+                    <li class="nav-item has-submenu">
+                        <a class="nav-link" href="#" onclick="toggleSubmenu(event, this)">
+                            <i class="fas fa-file-pdf"></i>
+                            <span class="link-text">Exam Reports</span>
+                        </a>
+                        <ul class="submenu">
+                            <li><a class="submenu-link" asp-controller="Reports" asp-action="AwardSheet"><i class="fas fa-award"></i><span>Award Sheet</span></a></li>
+                            <li><a class="submenu-link" asp-controller="Reports" asp-action="ClassExamReport"><i class="fas fa-table"></i><span>Class Exam Report</span></a></li>
+                            <li><a class="submenu-link" asp-controller="Reports" asp-action="StudentReportCard"><i class="fas fa-user-graduate"></i><span>Student Report Card</span></a></li>
+                            <li><a class="submenu-link" asp-controller="Reports" asp-action="ReportCardHistory"><i class="fas fa-history"></i><span>Report Card History</span></a></li>
+                            <li><a class="submenu-link" asp-controller="Reports" asp-action="BulkReportCard"><i class="fas fa-print"></i><span>Bulk Report Cards</span></a></li>
+                        </ul>
+                    </li>
+                }
+                
+                
+               <!-- Exam Menu-->
+                @if (User.IsInRole("Admin") || User.IsInRole("Teacher"))
+                {
+                    <li class="nav-item has-submenu">
+                        <a class="nav-link" href="#" onclick="toggleSubmenu(event, this)">
+                            <i class="fas fa-graduation-cap"></i>
+                            <span class="link-text">Exams</span>
+                        </a>
+                        <ul class="submenu">
+                           
+                               @if (User.IsInRole("Admin") || User.IsInRole("Teacher"))
+                                {
+                                    <li><a class="submenu-link" asp-controller="ExamMarks" asp-action="Entry"><i class="fas fa-edit"></i><span>Add Marks</span></a></li>
+                                }
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li><a class="submenu-link" asp-controller="ExamMarks" asp-action="Analysis"><i class="fas fa-chart-line"></i><span>Exam Analysis</span></a></li>
+
+                                <li><a class="submenu-link" asp-controller="ExamDateSheet" asp-action="Index"><i class="fas fa-calendar-alt"></i><span>Exam Date Sheet</span></a></li>
+                                <li><a class="submenu-link" asp-controller="TestReturn" asp-action="Index"><i class="fas fa-file-alt"></i><span>Test Returns</span></a></li>
+
+                                <li><a class="submenu-link" asp-controller="StudentPosition" asp-action="Index"><i class="fas fa-calendar-alt"></i><span>Positions</span></a></li>
+
+                            }
+                         </ul>
+                    </li>
+                }
+   
+                
+                 <!-- Settings Menu-->
+                @if (User.IsInRole("Admin"))
+                {
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="ManageDefinition" asp-action="Index">
+                            <i class="fas fa-cogs"></i>
+                            <span class="link-text">School Settings</span>
+                        </a>
+                    </li>
+                }
+   
+                
+                <!-- Teacher of MOnth Menu-->
+                @if (User.IsInRole("Admin"))
+                {
+                <li class="nav-item">
+                        <a class="nav-link" asp-controller="TeacherPerformance" asp-action="Index">
+                            <i class="fas fa-trophy"></i>
+                            <span class="link-text">Teacher of Month</span>
+                        </a>
+                    </li>
+                }  
+                  
+                
+                 <!-- Timetable Menu-->
+                @if (User.IsInRole("Admin") || User.IsInRole("Teacher") || User.IsInRole("Student") )
+                {
+                    <li class="nav-item has-submenu">
+                        <a class="nav-link" href="#" onclick="toggleSubmenu(event, this)">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span class="link-text">Timetable</span>
+                        </a>
+                        <ul class="submenu">
+                            @if (User.IsInRole("Student"))
+                            {
+                                <li><a class="submenu-link" asp-controller="StudentDashboard" asp-action="WeeklyTimetable"><i class="fas fa-calendar-week"></i><span>My Timetable</span></a></li>
+                            }
+                            @if (User.IsInRole("Admin") || User.IsInRole("Teacher"))
+                           {
+                            <li><a class="submenu-link" asp-controller="Timetables" asp-action="SchoolTimetable"><i class="fas fa-school"></i><span>View Timetable</span></a></li>
+                           }
+                           @if (User.IsInRole("Admin")){
+                            <li><a class="submenu-link" asp-controller="Timetables" asp-action="Index"><i class="fas fa-table"></i><span>Add/Edit Timetable</span></a></li>
+                            <li><a class="submenu-link" asp-controller="Substitutions" asp-action="Index"><i class="fas fa-exchange-alt"></i><span>Substitutions</span></a></li>
+                            }
+                        </ul>
+                    </li>
+                }
+       
+                
+                <!-- Timeline Menu - Admin Only-->
+                @if (User.IsInRole("Admin"))
+                {
+                    <li class="nav-item has-submenu">
+                        <a class="nav-link" href="#" onclick="toggleSubmenu(event, this)">
+                            <i class="fas fa-clock"></i>
+                            <span class="link-text">Timeline</span>
+                        </a>
+                        <ul class="submenu">
+                            <li><a class="submenu-link" asp-controller="Timetables" asp-action="RunningTimeTable"><i class="fas fa-calendar-check"></i><span>Running Timetable</span></a></li>
+                        </ul>
+                    </li>
+                }
+                
+                <!-- SRM Menu - Admin Only-->
+                
+                <li class="nav-item has-submenu">
+                        <a class="nav-link" href="#" onclick="toggleSubmenu(event, this)">
+                            <i class="fas fa-chart-bar"></i>
+                            <span class="link-text">SRM</span>
+                        </a>
+                        <ul class="submenu">
+                                @if (User.IsInRole("Admin"))
+                            {
+                             <li><a class="submenu-link" asp-controller="AdmissionInquiries" asp-action="Index"><i class="fas fa-user-plus"></i><span>Admission Inquiries</span></a></li>
+                            <li><a class="submenu-link" asp-controller="StudentComplaint" asp-action="AdminIndex"><i class="fas fa-comment-alt"></i><span>Student Complaints</span></a></li>
+                            <li><a class="submenu-link" asp-controller="AssignedDuties" asp-action="Index"><i class="fas fa-tasks"></i><span>Assigned Duties</span></a></li>
+                            <li><a class="submenu-link" asp-controller="SurveyQuestion" asp-action="Index"><i class="fas fa-question-circle"></i><span>Survey Questions</span></a></li>
+                            <li><a class="submenu-link" asp-controller="StudentSurvey" asp-action="Index"><i class="fas fa-poll-h"></i><span>Student Surveys</span></a></li>    
+                            }
+
+                            @if (User.IsInRole("Student"))
+                            {
+                                <li><a class="submenu-link" asp-controller="StudentComplaint" asp-action="Index"><i class="fas fa-comment-alt"></i><span>My Complaints</span></a></li>
+                                
+                            }
+                            @if (User.IsInRole("Teacher"))
+                            {
+                                <li><a class="submenu-link" asp-controller="StudentComplaint" asp-action="AdminCreate"><i class="fas fa-comment-alt"></i><span>Add Complaints</span></a></li>
+                                
+                            }
+
+                        </ul>
+                    </li>
+                
+
+
+                  <!-- Acadmeic Material Menu-->
+                <li class="nav-item has-submenu">
+                    <a class="nav-link" href="#" onclick="toggleSubmenu(event, this)">
+                        <i class="fas fa-book"></i>
+                        <span class="link-text">Academic Material</span>
+                    </a>
+                    <ul class="submenu">
+                        @if (User.IsInRole("Admin") || User.IsInRole("Teacher"))
+                        {
+                            <li><a class="submenu-link" asp-controller="AcademicMaterial" asp-action="Index"><i class="fas fa-edit"></i><span>View Academic Material</span></a></li>
+                        }
+                        @if (User.IsInRole("Student"))
+                        {
+                            <li><a class="submenu-link" asp-controller="academicMaterialstudent" asp-action="Index"><i class="fas fa-book-open"></i><span>View Academic Material</span></a></li>
+                        }
+                    </ul>
+                </li>
+
+                <!-- Diary Menu-->
+                <li class="nav-item has-submenu">
+                    <a class="nav-link" href="#" onclick="toggleSubmenu(event, this)">
+                        <i class="fas fa-book"></i>
+                        <span class="link-text">Diary</span>
+                    </a>
+                    <ul class="submenu">
+                        @if (User.IsInRole("Admin") || User.IsInRole("Teacher"))
+                        {
+                            <li><a class="submenu-link" asp-controller="Diary" asp-action="Index"><i class="fas fa-edit"></i><span>View Diaries</span></a></li>
+                        }
+                        @if (User.IsInRole("Student"))
+                        {
+                            <li><a class="submenu-link" asp-controller="Diary" asp-action="Index"><i class="fas fa-book-open"></i><span>My Diary</span></a></li>
+                        }
+                    </ul>
+                </li>
+
+                 <!-- Users Menu-->
+                @if (User.IsInRole("Admin"))
+                {
+                    <li class="nav-item has-submenu">
+                        <a class="nav-link" href="#" onclick="toggleSubmenu(event, this)">
+                            <i class="fas fa-user"></i>
+                            <span class="link-text">Users</span>
+                        </a>
+                        <ul class="submenu">
+                            <li><a class="submenu-link" asp-controller="Account" asp-action="Users"><i class="fas fa-list"></i><span>All Users</span></a></li>
+                            <li><a class="submenu-link" asp-controller="Account" asp-action="Register"><i class="fas fa-plus"></i><span>Add User</span></a></li>
+                        </ul>
+                    </li>
+                }
+                
+               
+            </ul>
+        </div>
+        
+        @* <div class="sidebar-footer">
+            @if (activeAcademicYear != null)
+            {
+                <div style="padding: 12px 16px; border-top: 1px solid rgba(255, 215, 0, 0.2); text-align: center;">
+                    <div class="user-details" style="width: 100%;">
+                        <div style="font-size: 11px; color: rgba(255, 215, 0, 0.7); text-transform: uppercase; letter-spacing: 0.5px;">Academic Year</div>
+                        <div style="font-size: 14px; font-weight: 600; color: #FFD700; margin-top: 2px;">@activeAcademicYear.Year</div>
+                    </div>
                 </div>
+            }
+        
+            <div class="user-info">
+                <div class="user-avatar">
+                    @if (!string.IsNullOrEmpty(currentUser?.AvatarUrl))
+                    {
+                        <a asp-controller="Profile" asp-action="Index" title="View Profile">
+                            <img src="@currentUser.AvatarUrl" 
+                                 alt="@currentUser.FullName" 
+                                 class="w-10 h-10 rounded-full object-cover border-2 border-gold-400 hover:border-gold-500 transition-all" 
+                                 style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #FFD700;"
+                                 onerror="this.onerror=null; this.src='/images/default-avatar.png'; this.style.display='none'; this.nextElementSibling.style.display='inline';" />
+                            <i class="fas fa-user-circle" style="display:none;"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Profile" asp-action="Index" title="Upload Profile Picture">
+                            <i class="fas fa-user-circle"></i>
+                        </a>
+                    }
+                </div>
+                <div class="user-details">
+                    <div class="user-name">@(currentUser?.FullName ?? User.Identity?.Name)</div>
+                    <div class="user-role">
+                        @{
+                            var roleClaim = User.Claims.FirstOrDefault(c => c.Type.Contains("role"));
+                            var role = roleClaim?.Value ?? "User";
+                        }
+                        @role
+                    </div>
+                </div>
+                <form asp-controller="Account" asp-action="Logout" method="post" style="display:inline;">
+                    <button type="submit" class="profile-link" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+        </div> *@
+    </div>
+    
+    <div class="sidebar-backdrop" onclick="toggleSidebar()"></div>
+    
+    <!-- Main Wrapper with Top Navbar -->
+    <div class="main-wrapper">
+        <!-- CREXTIO Top Navbar - Browser Style -->
+        <div class="top-navbar">
+            <!-- Browser Navigation Buttons -->
+            <button class="nav-control-btn" onclick="window.history.back()" title="Back">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="nav-control-btn" onclick="window.history.forward()" title="Forward">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+            
+            <!-- Breadcrumbs -->
+            <div class="breadcrumbs">
+                @{
+                    var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? "Home";
+                    var action = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+                    
+                    // Format controller name - remove "Controller" suffix if present and add spaces before capitals
+                    var parentName = System.Text.RegularExpressions.Regex.Replace(controller, "(\\B[A-Z])", " $1");
+                    
+                    // Determine if we should show the parent link
+                    var showParent = action != "Index";
+                }
+                
+                @if (showParent)
+                {
+                    <a asp-controller="@controller" asp-action="Index">@parentName</a>
+                    <span class="breadcrumbs-separator">/</span>
+                    <span>@(ViewData["Title"] ?? action)</span>
+                }
+                else
+                {
+                    <span>@(ViewData["Title"] ?? parentName)</span>
+                }
+            </div>
+            
+            <!-- Search Bar -->
+            <div class="search-bar">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search views and controllers..." />
+                <div class="search-results" id="searchResults"></div>
+            </div>
+            
+            <!-- Navigation Actions -->
+            <div class="nav-actions">
+                <!-- Notifications Bell -->
+                <div style="position: relative;">
+                    <button class="bell-icon" onclick="toggleNotifications()" title="Notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="notificationBadge" style="display: none;"></span>
+                    </button>
+                    
+                    <!-- Notification Dropdown -->
+                    <div class="notification-dropdown" id="notificationDropdown">
+                        <div class="notification-header">
+                            <span class="notification-title">Notifications</span>
+                            <span class="notification-badge-count" id="notificationCount">0</span>
+                        </div>
+                        
+                        <div class="notification-tabs">
+                            <button class="notification-tab active" onclick="filterNotifications('today')">Today</button>
+                            <button class="notification-tab" onclick="filterNotifications('earlier')">Earlier</button>
+                            <button class="notification-tab" onclick="filterNotifications('all')">All</button>
+                        </div>
+                        
+                        <div class="notification-list" id="notificationList">
+                            <div class="notification-empty">
+                                <i class="fas fa-bell-slash" style="font-size: 2rem; color: #6B7280; margin-bottom: 0.5rem;"></i>
+                                <p>No notifications yet</p>
+                            </div>
+                        </div>
+                        
+                        <div class="notification-footer">
+                            <a href="#" class="notification-view-all" onclick="markAllAsRead(); return false;">
+                                Mark all as read
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- MailBox Icon -->
+                <div style="position: relative;">
+                    <button class="bell-icon" onclick="toggleMailBox()" title="MailBox">
+                        <i class="fas fa-envelope"></i>
+                        <span class="notification-badge" id="mailboxBadge" style="display: none;"></span>
+                    </button>
+                    
+                    <!-- MailBox Dropdown -->
+                    <div class="notification-dropdown" id="mailboxDropdown">
+                        <div class="notification-header">
+                            <span class="notification-title">Messages</span>
+                            <span class="notification-badge-count" id="mailboxCount">0</span>
+                        </div>
+                        
+                        <div class="notification-tabs">
+                            <button class="notification-tab active" onclick="filterMessages('today')">Today</button>
+                            <button class="notification-tab" onclick="filterMessages('yesterday')">Yesterday</button>
+                            <button class="notification-tab" onclick="filterMessages('all')">All</button>
+                        </div>
+                        
+                        <div class="notification-list" id="mailboxList">
+                            <div class="notification-empty">
+                                <i class="fas fa-envelope-open" style="font-size: 2rem; color: #6B7280; margin-bottom: 0.5rem;"></i>
+                                <p>No messages yet</p>
+                            </div>
+                        </div>
+                        
+                        <div class="notification-footer">
+                            <a href="/MailBox/Compose" class="notification-view-all">
+                                Compose Message
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- User Menu -->
+                <a asp-controller="Profile" asp-action="Index" class="user-menu" title="View Profile">
+                    @if (!string.IsNullOrEmpty(currentUser?.AvatarUrl))
+                    {
+                        <img src="@currentUser.AvatarUrl" alt="@currentUser.FullName" class="user-menu-avatar" style="object-fit: cover;" />
+                    }
+                    else
+                    {
+                        <div class="user-menu-avatar">
+                            @(currentUser?.FullName?.Substring(0, 1).ToUpper() ?? "U")
+                        </div>
+                    }
+                </a>
+                
+                <!-- Logout Button -->
+                <form asp-controller="Account" asp-action="Logout" method="post" style="display:inline; margin:0;">
+                    <button type="submit" class="nav-control-btn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <div class="container-fluid">
+                <main role="main">
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - UTS_SMS - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    
+    <script>
+        // Page Loader Functions
+        function showLoader() {
+            document.getElementById('pageLoader').classList.add('active');
+        }
+        
+        function hideLoader() {
+            document.getElementById('pageLoader').classList.remove('active');
+        }
+        
+        // Hide loader on page load
+        window.addEventListener('load', function() {
+            hideLoader();
+        });
+        
+        // Show loader on link clicks (navigation)
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            if (!link) return;
+            
+            const href = link.getAttribute('href');
+            
+            // Skip if it's a hash link, javascript:, or has special attributes
+            if (!href || 
+                href.startsWith('#') || 
+                href.startsWith('javascript:') || 
+                link.hasAttribute('data-toggle') ||
+                link.hasAttribute('data-dismiss') ||
+                link.target === '_blank' ||
+                link.hasAttribute('onclick')) {
+                return;
+            }
+            
+            // Show loader for internal navigation
+            if (!href.includes('http://') && !href.includes('https://') && href !== '') {
+                showLoader();
+            }
+        });
+        
+        // Show loader on form submissions
+        document.addEventListener('submit', function(e) {
+            if (!e.target.hasAttribute('data-no-loader')) {
+                showLoader();
+            }
+        });
+        
+        // Hide loader on back/forward navigation
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                hideLoader();
+            }
+        });
+        
+        // Sidebar Toggle
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('show');
+        }
+        
+        // Submenu Toggle
+        function toggleSubmenu(event, element) {
+            event.preventDefault();
+            const parent = element.closest('.has-submenu');
+            const wasOpen = parent.classList.contains('open');
+            document.querySelectorAll('.has-submenu.open').forEach(item => item.classList.remove('open'));
+            if (!wasOpen) parent.classList.add('open');
+        }
+        
+        // Close sidebar on outside click (mobile)
+        document.addEventListener('click', function(e) {
+            const sidebar = document.querySelector('.sidebar');
+            const toggleBtn = document.querySelector('.sidebar-toggle-btn');
+            const notificationDropdown = document.getElementById('notificationDropdown');
+            const bellIcon = document.querySelector('.bell-icon');
+            
+            // Close sidebar
+            if (window.innerWidth <= 992 && !sidebar.contains(e.target) && e.target !== toggleBtn && !toggleBtn?.contains(e.target)) {
+                sidebar.classList.remove('show');
+            }
+            
+            // Close notification dropdown when clicking outside
+            if (notificationDropdown && !notificationDropdown.contains(e.target) && !bellIcon?.contains(e.target)) {
+                notificationDropdown.classList.remove('show');
+            }
+        });
+        
+        // Notification System
+        let notifications = [];
+        let currentFilter = 'today';
+        
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notificationDropdown');
+            dropdown.classList.toggle('show');
+            if (dropdown.classList.contains('show')) {
+                loadNotifications();
+            }
+        }
+        
+        function loadNotifications() {
+            fetch('/api/notifications')
+                .then(response => response.json())
+                .then(data => {
+                    notifications = data;
+                    updateNotificationBadge();
+                    renderNotifications();
+                })
+                .catch(error => {
+                    console.error('Error loading notifications:', error);
+                    // Show sample notifications if API fails (for development)
+                    notifications = getSampleNotifications();
+                    updateNotificationBadge();
+                    renderNotifications();
+                });
+        }
+        
+        function getSampleNotifications() {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            const twoDaysAgo = new Date(today);
+            twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+            
+            return [
+                {
+                    id: 3,
+                    type: 'exam',
+                    title: 'Upcoming Exam',
+                    message: 'Mathematics exam scheduled for Class 10-A tomorrow at 9:00 AM.',
+                    timestamp: yesterday,
+                    isRead: true
+                },
+                {
+                    id: 4,
+                    type: 'general',
+                    title: 'System Update',
+                    message: 'The school management system will undergo maintenance this weekend.',
+                    timestamp: twoDaysAgo,
+                    isRead: true
+                }
+            ];
+        }
+        
+        function updateNotificationBadge() {
+            const unreadCount = notifications.filter(n => !n.isRead).length;
+            const badge = document.getElementById('notificationBadge');
+            const countElement = document.getElementById('notificationCount');
+            
+            if (unreadCount > 0) {
+                badge.style.display = 'block';
+                countElement.textContent = unreadCount;
+            } else {
+                badge.style.display = 'none';
+                countElement.textContent = '0';
+            }
+        }
+        
+        function filterNotifications(filter) {
+            currentFilter = filter;
+            
+            // Update active tab
+            document.querySelectorAll('.notification-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            renderNotifications();
+        }
+        
+        function renderNotifications() {
+            const listElement = document.getElementById('notificationList');
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            
+            let filteredNotifications = notifications;
+            
+            if (currentFilter === 'today') {
+                filteredNotifications = notifications.filter(n => {
+                    const notifDate = new Date(n.timestamp);
+                    return notifDate >= today;
+                });
+            } else if (currentFilter === 'earlier') {
+                filteredNotifications = notifications.filter(n => {
+                    const notifDate = new Date(n.timestamp);
+                    return notifDate < today;
+                });
+            }
+            
+            if (filteredNotifications.length === 0) {
+                listElement.innerHTML = `
+                    <div class="notification-empty">
+                        <i class="fas fa-bell-slash" style="font-size: 2rem; color: #6B7280; margin-bottom: 0.5rem;"></i>
+                        <p>No notifications</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            listElement.innerHTML = filteredNotifications.map(notification => {
+                const icon = getNotificationIcon(notification.type);
+                const timeAgo = getTimeAgo(new Date(notification.timestamp));
+                const unreadClass = notification.isRead ? '' : 'unread';
+                
+                return `
+                    <div class="notification-item ${unreadClass}" onclick="markAsReadAndNavigate(${notification.id}, '${notification.actionUrl || ''}')">
+                        <div class="notification-icon ${notification.type}">
+                            <i class="${icon}"></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-text">
+                                <strong>${notification.title}</strong><br>
+                                ${notification.message}
+                            </div>
+                            <div class="notification-time">${timeAgo}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function getNotificationIcon(type) {
+            const icons = {
+                'complaint': 'fas fa-exclamation-circle',
+                'fee': 'fas fa-dollar-sign',
+                'exam': 'fas fa-graduation-cap',
+                'marks': 'fas fa-clipboard-check',
+                'reminder': 'fas fa-clock',
+                'general': 'fas fa-bell'
+            };
+            return icons[type] || icons['general'];
+        }
+        
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+            if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+            if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+            
+            return date.toLocaleDateString();
+        }
+        
+        function markAsRead(notificationId) {
+            const notification = notifications.find(n => n.id === notificationId);
+            if (notification) {
+                notification.isRead = true;
+                updateNotificationBadge();
+                renderNotifications();
+                
+                // Send to API
+                fetch(`/api/notifications/${notificationId}/read`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                }).catch(error => console.error('Error marking notification as read:', error));
+            }
+        }
+        
+        function markAsReadAndNavigate(notificationId, actionUrl) {
+            const notification = notifications.find(n => n.id === notificationId);
+            if (notification) {
+                notification.isRead = true;
+                updateNotificationBadge();
+                
+                // Send to API
+                fetch(`/api/notifications/${notificationId}/read`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                }).then(() => {
+                    // Close notification dropdown
+                    const dropdown = document.getElementById('notificationDropdown');
+                    dropdown.classList.remove('show');
+                    
+                    // Navigate to action URL if available
+                    if (actionUrl && actionUrl !== 'null' && actionUrl !== '') {
+                        window.location.href = actionUrl;
+                    }
+                }).catch(error => console.error('Error marking notification as read:', error));
+            }
+        }
+        
+        function markAllAsRead() {
+            notifications.forEach(n => n.isRead = true);
+            updateNotificationBadge();
+            renderNotifications();
+            
+            // Send to API
+            fetch('/api/notifications/mark-all-read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).catch(error => console.error('Error marking all as read:', error));
+        }
+        
+        // Load notifications on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadNotifications();
+            // Refresh notifications every 60 seconds
+            setInterval(loadNotifications, 60000);
+        });
+        
+        // ========================================
+        // MAILBOX FUNCTIONALITY
+        // ========================================
+        let messages = [];
+        let currentMessageFilter = 'all';
+        
+        function toggleMailBox() {
+            const dropdown = document.getElementById('mailboxDropdown');
+            dropdown.classList.toggle('show');
+            if (dropdown.classList.contains('show')) {
+                loadMessages();
+            }
+        }
+        
+        function loadMessages() {
+            fetch('/api/messages?timeFilter=' + currentMessageFilter)
+                .then(response => response.json())
+                .then(data => {
+                    messages = data;
+                    updateMailBoxBadge();
+                    renderMessages();
+                })
+                .catch(error => {
+                    console.error('Error loading messages:', error);
+                });
+        }
+        
+        function updateMailBoxBadge() {
+            const unreadCount = messages.filter(m => !m.isRead).length;
+            const badge = document.getElementById('mailboxBadge');
+            const countElement = document.getElementById('mailboxCount');
+            
+            if (unreadCount > 0) {
+                badge.style.display = 'block';
+                countElement.textContent = unreadCount;
+            } else {
+                badge.style.display = 'none';
+                countElement.textContent = '0';
+            }
+        }
+        
+        function filterMessages(filter) {
+            currentMessageFilter = filter;
+            
+            // Update active tab
+            const mailboxTabs = document.getElementById('mailboxDropdown').querySelectorAll('.notification-tab');
+            mailboxTabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            loadMessages();
+        }
+        
+        function renderMessages() {
+            const listElement = document.getElementById('mailboxList');
+            
+            if (messages.length === 0) {
+                listElement.innerHTML = `
+                    <div class="notification-empty">
+                        <i class="fas fa-envelope-open" style="font-size: 2rem; color: #6B7280; margin-bottom: 0.5rem;"></i>
+                        <p>No messages</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            listElement.innerHTML = messages.map(message => {
+                const timeAgo = getTimeAgo(new Date(message.sentDate));
+                const unreadClass = message.isRead ? '' : 'unread';
+                
+                return `
+                    <div class="notification-item ${unreadClass}" onclick="viewMessage(${message.id})">
+                        <div class="notification-icon general">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-subject">
+                                <strong>${escapeHtml(message.subject)}</strong>
+                            </div>
+                            <div class="notification-text">${escapeHtml(message.body)}</div>
+                            <div class="notification-meta">
+                                <span class="notification-sender">From: ${escapeHtml(message.senderName)}</span>
+                                ${message.attachmentCount > 0 ? `<span class="notification-attachment"><i class="fas fa-paperclip"></i> ${message.attachmentCount}</span>` : ''}
+                            </div>
+                            <div class="notification-time">${timeAgo}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function viewMessage(messageId) {
+            // Mark as read
+            fetch(`/api/messages/${messageId}/read`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(() => {
+                // Load message details
+                return fetch(`/api/messages/${messageId}/details`);
+            })
+            .then(response => response.json())
+            .then(message => {
+                showMessageModal(message);
+                // Reload messages to update read status
+                loadMessages();
+            })
+            .catch(error => console.error('Error viewing message:', error));
+        }
+        
+        function showMessageModal(message) {
+            const attachmentsHtml = message.attachments && message.attachments.length > 0
+                ? `<div class="message-attachments">
+                      <h4>Attachments:</h4>
+                      <ul>
+                        ${message.attachments.map(a => `
+                          <li>
+                            <a href="${a.filePath}" download="${a.fileName}" target="_blank">
+                              <i class="fas fa-paperclip"></i> ${escapeHtml(a.fileName)} (${formatFileSize(a.fileSize)})
+                            </a>
+                          </li>
+                        `).join('')}
+                      </ul>
+                   </div>`
+                : '';
+            
+            const modalHtml = `
+                <div id="messageModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 10000;">
+                    <div style="background: #1F2125; border-radius: 12px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; border: 1px solid rgba(251, 191, 36, 0.2);">
+                        <div style="padding: 1.5rem; border-bottom: 1px solid rgba(251, 191, 36, 0.1); display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="color: #E5E7EB; margin: 0;">${escapeHtml(message.subject)}</h3>
+                            <button onclick="closeMessageModal()" style="background: none; border: none; color: #9CA3AF; font-size: 1.5rem; cursor: pointer;">&times;</button>
+                        </div>
+                        <div style="padding: 1.5rem;">
+                            <div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(251, 191, 36, 0.1);">
+                                <div style="color: #9CA3AF; font-size: 0.875rem;">
+                                    <strong>From:</strong> ${escapeHtml(message.senderName)}<br>
+                                    <strong>Date:</strong> ${new Date(message.sentDate).toLocaleString()}
+                                </div>
+                            </div>
+                            <div style="color: #E5E7EB; line-height: 1.6; margin-bottom: 1rem;">
+                                ${message.body}
+                            </div>
+                            ${attachmentsHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+        
+        function closeMessageModal() {
+            const modal = document.getElementById('messageModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Load messages on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMessages();
+            // Refresh messages every 60 seconds
+            setInterval(loadMessages, 60000);
+        });
+        
+        // Add data-label attributes to table cells for mobile responsive
+        document.addEventListener('DOMContentLoaded', function() {
+            const tables = document.querySelectorAll('.table');
+            tables.forEach(table => {
+                const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+                table.querySelectorAll('tbody tr').forEach(row => {
+                    Array.from(row.cells).forEach((cell, index) => {
+                        if (headers[index]) {
+                            cell.setAttribute('data-label', headers[index]);
+                        }
+                    });
+                });
+            });
+        });
+        
+        // Search Functionality
+        let allViewsData = [];
+        
+        // Load all views data on page load
+        async function loadViewsData() {
+            try {
+                const response = await fetch('/api/Search/views');
+                if (!response.ok) {
+                    console.error('Failed to load views data:', response.status, response.statusText);
+                    return;
+                }
+                allViewsData = await response.json();
+            } catch (error) {
+                console.error('Error loading views data:', error);
+                // Optionally show user feedback
+                // alert('Search functionality is temporarily unavailable');
+            }
+        }
+        
+        // Initialize search
+        document.addEventListener('DOMContentLoaded', function() {
+            loadViewsData();
+            
+            const searchInput = document.getElementById('searchInput');
+            const searchResults = document.getElementById('searchResults');
+            
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    const query = e.target.value.trim().toLowerCase();
+                    
+                    if (query.length < 2) {
+                        searchResults.classList.remove('show');
+                        return;
+                    }
+                    
+                    performSearch(query);
+                });
+                
+                // Close search results when clicking outside
+                document.addEventListener('click', function(e) {
+                    const searchBar = document.querySelector('.search-bar');
+                    if (searchBar && !searchBar.contains(e.target)) {
+                        searchResults.classList.remove('show');
+                    }
+                });
+                
+                // Show results when focusing on search input with existing query
+                searchInput.addEventListener('focus', function(e) {
+                    const query = e.target.value.trim().toLowerCase();
+                    if (query.length >= 2) {
+                        performSearch(query);
+                    }
+                });
+            }
+        });
+        
+        function performSearch(query) {
+            const searchResults = document.getElementById('searchResults');
+            
+            // Check if data is loaded
+            if (!allViewsData || allViewsData.length === 0) {
+                searchResults.innerHTML = `
+                    <div class="search-no-results">
+                        <i class="fas fa-search" style="font-size: 2rem; color: #6B7280; margin-bottom: 0.5rem;"></i>
+                        <p>Loading search data...</p>
+                    </div>
+                `;
+                searchResults.classList.add('show');
+                return;
+            }
+            
+            // Filter controllers and views based on query
+            const filteredData = allViewsData.filter(item => {
+                // Safety check: ensure item and item.Controller exist
+                if (!item || !item.Controller) {
+                    return false;
+                }
+                
+                const controllerMatch = item.Controller.toLowerCase().includes(query);
+                const viewsMatch = item.Views && Array.isArray(item.Views) && 
+                                  item.Views.some(view => view && view.toLowerCase().includes(query));
+                return controllerMatch || viewsMatch;
+            }).map(item => {
+                // If controller matches, show all views
+                if (item.Controller.toLowerCase().includes(query)) {
+                    return item;
+                }
+                // If only views match, filter to matching views
+                return {
+                    Controller: item.Controller,
+                    Views: item.Views.filter(view => view && view.toLowerCase().includes(query))
+                };
+            });
+            
+            if (filteredData.length === 0) {
+                searchResults.innerHTML = `
+                    <div class="search-no-results">
+                        <i class="fas fa-search" style="font-size: 2rem; color: #6B7280; margin-bottom: 0.5rem;"></i>
+                        <p>No results found for "${query}"</p>
+                    </div>
+                `;
+                searchResults.classList.add('show');
+                return;
+            }
+            
+            // Render search results
+            searchResults.innerHTML = filteredData.map(item => {
+                const controllerUrl = getControllerIndexUrl(item.Controller);
+                // Escape HTML to prevent XSS
+                const escapeHtml = (text) => {
+                    const div = document.createElement('div');
+                    div.textContent = text;
+                    return div.innerHTML;
+                };
+                
+                // Show controller and all views in one line
+                const controllerName = escapeHtml(item.Controller);
+                const viewsHtml = item.Views.map(view => {
+                    const viewUrl = getViewUrl(item.Controller, view);
+                    return `<a href="${escapeHtml(viewUrl)}" class="search-result-view">${escapeHtml(view)}</a>`;
+                }).join('');
+                
+                return `
+                    <div class="search-result-group">
+                        <div style="padding: 0.75rem 1rem; display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                            <div class="search-result-controller" data-url="${escapeHtml(controllerUrl)}" style="margin: 0; padding: 0; background: transparent; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem;">
+                                <i class="fas fa-folder"></i>
+                                <span>${controllerName}</span>
+                                <i class="fas fa-chevron-right" style="font-size: 0.625rem;"></i>
+                            </div>
+                            <div style="display: inline-flex; flex-wrap: wrap; gap: 0.5rem;">
+                                ${viewsHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Add click event listeners to controller names
+            searchResults.querySelectorAll('.search-result-controller').forEach(element => {
+                element.addEventListener('click', function() {
+                    const url = this.getAttribute('data-url');
+                    if (url) {
+                        navigateToUrl(url);
+                    }
+                });
+            });
+            
+            searchResults.classList.add('show');
+        }
+        
+        function getControllerIndexUrl(controller) {
+            // Special case for Admin controller - Dashboard is the index
+            if (controller === 'Admin') {
+                return '/Admin/Dashboard';
+            }
+            // Default to Index action
+            return `/${controller}/Index`;
+        }
+        
+        function getViewUrl(controller, view) {
+            // Special case for Admin controller
+            if (controller === 'Admin' && view === 'Dashboard') {
+                return '/Admin/Dashboard';
+            }
+            // Handle Home controller Index
+            if (controller === 'Home' && view === 'Index') {
+                return '/';
+            }
+            // Default URL pattern
+            return `/${controller}/${view}`;
+        }
+        
+        function navigateToUrl(url) {
+            showLoader();
+            window.location.href = url;
+        }
+    </script>
+    
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

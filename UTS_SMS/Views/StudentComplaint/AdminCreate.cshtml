@@ -1,0 +1,553 @@
+@model SMS.Models.StudentComplaint
+
+@{
+    ViewData["Title"] = "Register Student Complaint";
+}
+
+<link rel="stylesheet" href="~/lib/sweetalert2/sweetalert2.min.css" />
+
+<div class="min-h-screen  p-3 md:p-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-primary-800">Register Student Complaint</h1>
+                <p class="text-neutral-600 mt-1">Create a new complaint record for a student</p>
+            </div>
+            <a asp-action="AdminIndex" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm transition-colors flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to Complaints
+            </a>
+        </div>
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="bg-error-light border border-red-400 text-error px-4 py-3 rounded mb-4">
+                @TempData["ErrorMessage"]
+            </div>
+        }
+
+        <!-- Form -->
+        <div class="bg-white rounded-2xl shadow-sms-lg overflow-hidden">
+            <div class="bg-gradient-to-r from-red-500 to-red-600 p-6 text-white">
+                <h2 class="text-xl font-bold text-white">Complaint Registration Form</h2>
+                <p class="text-red-100 mt-1">Fill in the details below to register a complaint</p>
+            </div>
+
+            <form asp-action="AdminCreate" method="post" class="p-6 space-y-6">
+                <div asp-validation-summary="ModelOnly" class="text-error bg-error-light p-3 rounded-lg"></div>
+
+                <!-- Student Selection -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <!-- Campus Selection -->
+                    <div class="form-group">
+                        <label asp-for="CampusId" class="block text-sm font-medium text-neutral-700 mb-2">Campus</label>
+                        <select asp-for="CampusId" asp-items="ViewBag.Campuses" 
+                                class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                onchange="loadClasses(this.value)" required>
+                            <option value="">Select Campus</option>
+                        </select>
+                        <span asp-validation-for="CampusId" class="text-error text-sm"></span>
+                    </div>
+
+                  
+                </div>
+
+                <!-- Student Search -->
+                <div class="form-group">
+                    <label asp-for="StudentId" class="block text-sm font-medium text-neutral-700 mb-2">Student</label>
+                    <input type="text" id="studentSearch" 
+                           class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                           placeholder="Search student by name or roll number..."
+                           autocomplete="off">
+                    <input type="hidden" asp-for="StudentId" id="studentIdInput" />
+                    
+                    <!-- Search Results Dropdown -->
+                    <div id="studentSearchResults" class="absolute z-10 mt-1 w-full bg-white border border-primary-200 rounded-lg shadow-lg hidden max-h-60 overflow-y-auto"></div>
+                    
+                    <!-- Selected Student Display -->
+                    <div id="selectedStudentDisplay" class="mt-2 hidden">
+                        <div class="p-4 bg-primary-50 rounded-lg border border-primary-200">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center">
+                                        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                        </svg>
+                                        <div>
+                                            <p class="text-sm font-medium text-primary-800" id="selectedStudentName"></p>
+                                            <p class="text-xs text-primary-600" id="selectedStudentDetails"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="clearStudentSelection()" class="text-error hover:text-red-700">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <span asp-validation-for="StudentId" class="text-error text-sm"></span>
+                </div>
+
+                <!-- Complaint Details -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <!-- Complaint Type -->
+                    <div class="form-group">
+                        <label asp-for="ComplaintType" class="block text-sm font-medium text-neutral-700 mb-2">Complaint Type</label>
+                        <select asp-for="ComplaintType" class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                            <option value="">Select Type</option>
+                            <option value="Academic">Academic</option>
+                            <option value="Behavioral">Behavioral</option>
+                            <option value="Disciplinary">Disciplinary</option>
+                            <option value="Attendance">Attendance</option>
+                            <option value="Financial">Financial</option>
+                            <option value="Administrative">Administrative</option>
+                            <option value="Facility">Facility</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <span asp-validation-for="ComplaintType" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Priority -->
+                    <div class="form-group">
+                        <label asp-for="Priority" class="block text-sm font-medium text-neutral-700 mb-2">Priority</label>
+                        <select asp-for="Priority" class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" required>
+                            <option value="">Select Priority</option>
+                            <option value="High">High</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                        <span asp-validation-for="Priority" class="text-error text-sm"></span>
+                    </div>
+                </div>
+
+                <!-- Complaint Title -->
+                <div class="form-group">
+                    <label asp-for="ComplaintTitle" class="block text-sm font-medium text-neutral-700 mb-2">Complaint Title</label>
+                    <input asp-for="ComplaintTitle" 
+                           class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                           placeholder="Brief summary of the complaint" required />
+                    <span asp-validation-for="ComplaintTitle" class="text-error text-sm"></span>
+                </div>
+
+                <!-- Complaint Description -->
+                <div class="form-group">
+                    <label asp-for="ComplaintDescription" class="block text-sm font-medium text-neutral-700 mb-2">Detailed Description</label>
+                    <textarea asp-for="ComplaintDescription" rows="6"
+                              class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                              placeholder="Provide detailed information about the complaint, including specific incidents, dates, and any relevant context..." required></textarea>
+                    <span asp-validation-for="ComplaintDescription" class="text-error text-sm"></span>
+                </div>
+
+                <!-- Teacher Selection (Optional - for complaints involving teachers) -->
+                <div class="form-group">
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">
+                        Related Teacher (Optional)
+                        <span class="text-xs text-neutral-500 font-normal ml-2">Select if this complaint involves a specific teacher</span>
+                    </label>
+                    <input type="text" id="teacherSearch" 
+                           class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                           placeholder="Search for a teacher by name..."
+                           autocomplete="off">
+                    <input type="hidden" id="teacherIdInput" name="TeacherId" value="" />
+                    
+                    <!-- Teacher Search Results Dropdown -->
+                    <div id="teacherSearchResults" class="absolute z-10 mt-1 w-full bg-white border border-primary-200 rounded-lg shadow-lg hidden max-h-60 overflow-y-auto"></div>
+                    
+                    <!-- Selected Teacher Display -->
+                    <div id="selectedTeacherDisplay" class="mt-2 hidden">
+                        <div class="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center">
+                                        <svg class="w-5 h-5 text-orange-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                        </svg>
+                                        <div>
+                                            <p class="text-sm font-medium text-orange-800" id="selectedTeacherName"></p>
+                                            <p class="text-xs text-orange-600" id="selectedTeacherRole">Teacher</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="clearTeacherSelection()" class="text-error hover:text-red-700">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Teacher Comments (Only shown if teacher is selected) -->
+                <div id="teacherCommentsSection" class="form-group hidden">
+                    <div class="bg-blue-50 border border-primary-200 rounded-lg p-4 mb-2">
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-primary-600 mr-2 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <div>
+                                <p class="text-sm font-medium text-primary-800">Teacher Involvement</p>
+                                <p class="text-xs text-primary-600 mt-1">Since a teacher is involved, you can optionally add their remarks here or ask them to add their comments later.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">
+                        Teacher Comments/Remarks (Optional)
+                    </label>
+                    <textarea id="teacherCommentsInput" name="TeacherComments" rows="4"
+                              class="w-full px-3 py-2 border border-primary-200 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                              placeholder="Enter teacher's comments or remarks about this complaint (if available)..."></textarea>
+                    <p class="text-xs text-neutral-500 mt-1">If the teacher is not available, leave this blank. They can add their comments later when reviewing the complaint.</p>
+                </div>
+
+                <!-- Additional Options -->
+                <div class="space-y-3">
+                    <div class="flex items-center">
+                        <input asp-for="RequiresParentNotification" type="checkbox" 
+                               class="h-4 w-4 text-error focus:ring-red-500 border-primary-200 rounded" />
+                        <label asp-for="RequiresParentNotification" class="ml-2 block text-sm text-primary-800">
+                            Requires Parent Notification
+                        </label>
+                    </div>
+
+                    <div class="flex items-center">
+                        <input asp-for="IsAnonymous" type="checkbox" 
+                               class="h-4 w-4 text-error focus:ring-red-500 border-primary-200 rounded" />
+                        <label asp-for="IsAnonymous" class="ml-2 block text-sm text-primary-800">
+                            Anonymous Complaint
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex flex-col sm:flex-row gap-3 pt-4">
+                    <button type="submit" 
+                            class="flex-1 bg-error hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Register Complaint
+                    </button>
+                    <a asp-action="AdminIndex" 
+                       class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center text-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script src="~/lib/sweetalert2/sweetalert2.min.js"></script>
+    <script>
+        // Student Search Functionality
+        let searchTimeout;
+        const studentSearch = document.getElementById('studentSearch');
+        const studentSearchResults = document.getElementById('studentSearchResults');
+        const selectedStudentDisplay = document.getElementById('selectedStudentDisplay');
+        const studentIdInput = document.getElementById('studentIdInput');
+
+        // Make search container relative for absolute positioning
+        if (studentSearch) {
+            studentSearch.parentElement.style.position = 'relative';
+
+            studentSearch.addEventListener('input', function() {
+                const searchTerm = this.value.trim();
+                
+                clearTimeout(searchTimeout);
+                
+                if (searchTerm.length < 2) {
+                    studentSearchResults.classList.add('hidden');
+                    return;
+                }
+                
+                searchTimeout = setTimeout(() => {
+                    searchStudents(searchTerm);
+                }, 300);
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!studentSearch.contains(e.target) && !studentSearchResults.contains(e.target)) {
+                    studentSearchResults.classList.add('hidden');
+                }
+            });
+        }
+
+        function searchStudents(term) {
+            fetch(`@Url.Action("SearchStudents", "StudentComplaint")?term=${encodeURIComponent(term)}`)
+                .then(response => response.json())
+                .then(data => {
+                    displayStudentResults(data);
+                })
+                .catch(error => {
+                    console.error('Error searching students:', error);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Failed to search students. Please try again.',
+                        icon: 'error',
+                        confirmButtonColor: '#ef4444'
+                    });
+                });
+        }
+
+        function displayStudentResults(students) {
+            if (!students || students.length === 0) {
+                studentSearchResults.innerHTML = '<div class="p-3 text-sm text-neutral-500">No students found</div>';
+                studentSearchResults.classList.remove('hidden');
+                return;
+            }
+            
+            let html = '<div class="py-2">';
+            students.forEach(student => {
+                html += `
+                    <div class="px-3 py-2 hover:bg-primary-50 cursor-pointer transition-colors duration-150" 
+                         onclick="selectStudent(${student.id}, '${student.studentName.replace(/'/g, "\\'")}', '${student.rollNumber || ''}', '${student.className.replace(/'/g, "\\'")}', '${student.sectionName.replace(/'/g, "\\'")}')">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-primary-800">${student.studentName}</p>
+                                <p class="text-xs text-neutral-500">${student.className} - ${student.sectionName}${student.rollNumber ? ' | Roll: ' + student.rollNumber : ''}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            studentSearchResults.innerHTML = html;
+            studentSearchResults.classList.remove('hidden');
+        }
+
+        function selectStudent(id, name, rollNumber, className, sectionName) {
+            studentIdInput.value = id;
+            studentSearch.value = '';
+            studentSearchResults.classList.add('hidden');
+            
+            document.getElementById('selectedStudentName').textContent = name + (rollNumber ? ` (Roll: ${rollNumber})` : '');
+            document.getElementById('selectedStudentDetails').textContent = `${className} - ${sectionName}`;
+            selectedStudentDisplay.classList.remove('hidden');
+        }
+
+        function clearStudentSelection() {
+            studentIdInput.value = '';
+            studentSearch.value = '';
+            selectedStudentDisplay.classList.add('hidden');
+        }
+
+        // Teacher Search Functionality
+        let teacherSearchTimeout;
+        const teacherSearchInput = document.getElementById('teacherSearch');
+        const teacherSearchResults = document.getElementById('teacherSearchResults');
+        const selectedTeacherDisplay = document.getElementById('selectedTeacherDisplay');
+        const teacherIdInput = document.getElementById('teacherIdInput');
+        const teacherCommentsSection = document.getElementById('teacherCommentsSection');
+
+        if (teacherSearchInput) {
+            // Make search container relative for absolute positioning
+            teacherSearchInput.parentElement.style.position = 'relative';
+
+            teacherSearchInput.addEventListener('input', function() {
+                const searchTerm = this.value.trim();
+                
+                clearTimeout(teacherSearchTimeout);
+                
+                if (searchTerm.length < 2) {
+                    teacherSearchResults.classList.add('hidden');
+                    return;
+                }
+                
+                teacherSearchTimeout = setTimeout(() => {
+                    searchTeachers(searchTerm);
+                }, 300);
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!teacherSearchInput.contains(e.target) && !teacherSearchResults.contains(e.target)) {
+                    teacherSearchResults.classList.add('hidden');
+                }
+            });
+        }
+
+        function searchTeachers(term) {
+            fetch(`@Url.Action("SearchTeachers", "StudentComplaint")?term=${encodeURIComponent(term)}`)
+                .then(response => response.json())
+                .then(data => {
+                    displayTeacherResults(data);
+                })
+                .catch(error => {
+                    console.error('Error searching teachers:', error);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Failed to search teachers. Please try again.',
+                        icon: 'error',
+                        confirmButtonColor: '#ef4444'
+                    });
+                });
+        }
+
+        function displayTeacherResults(teachers) {
+            if (!teachers || teachers.length === 0) {
+                teacherSearchResults.innerHTML = '<div class="p-3 text-sm text-neutral-500">No teachers found</div>';
+                teacherSearchResults.classList.remove('hidden');
+                return;
+            }
+            
+            let html = '<div class="py-2">';
+            teachers.forEach(teacher => {
+                html += `
+                    <div class="px-3 py-2 hover:bg-primary-50 cursor-pointer transition-colors duration-150" 
+                         onclick="selectTeacher(${teacher.id}, '${teacher.fullName.replace(/'/g, "\\'")}')">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-primary-800">${teacher.fullName}</p>
+                                <p class="text-xs text-neutral-500">Teacher</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            teacherSearchResults.innerHTML = html;
+            teacherSearchResults.classList.remove('hidden');
+        }
+
+        function selectTeacher(id, name) {
+            teacherIdInput.value = id;
+            teacherSearchInput.value = '';
+            teacherSearchResults.classList.add('hidden');
+            
+            document.getElementById('selectedTeacherName').textContent = name;
+            selectedTeacherDisplay.classList.remove('hidden');
+            
+            // Show teacher comments section when a teacher is selected
+            if (teacherCommentsSection) {
+                teacherCommentsSection.classList.remove('hidden');
+            }
+        }
+
+        function clearTeacherSelection() {
+            teacherIdInput.value = '';
+            teacherSearchInput.value = '';
+            selectedTeacherDisplay.classList.add('hidden');
+            
+            // Hide teacher comments section when teacher is cleared
+            if (teacherCommentsSection) {
+                teacherCommentsSection.classList.add('hidden');
+                document.getElementById('teacherCommentsInput').value = '';
+            }
+        }
+
+        // Campus/Class/Section cascade (legacy support)
+        async function loadClasses(campusId) {
+            const classSelect = document.getElementById('classSelect');
+            const sectionSelect = document.getElementById('sectionSelect');
+
+            // Clear dependent dropdowns
+            if (classSelect) {
+                classSelect.innerHTML = '<option value="">Select Class</option>';
+            }
+            if (sectionSelect) {
+                sectionSelect.innerHTML = '<option value="">Select Section</option>';
+            }
+
+            if (campusId && classSelect) {
+                try {
+                    const response = await fetch(`@Url.Action("GetClassesByCampus")?campusId=${campusId}`);
+                    const classes = await response.json();
+                    
+                    classes.forEach(cls => {
+                        const option = document.createElement('option');
+                        option.value = cls.id;
+                        option.textContent = cls.name;
+                        classSelect.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Error loading classes:', error);
+                }
+            }
+        }
+
+        async function loadSections(classId) {
+            const sectionSelect = document.getElementById('sectionSelect');
+
+            // Clear sections dropdown
+            if (sectionSelect) {
+                sectionSelect.innerHTML = '<option value="">Select Section</option>';
+
+                if (classId) {
+                    try {
+                        const response = await fetch(`@Url.Action("GetSectionsByClass")?classId=${classId}`);
+                        const sections = await response.json();
+                        
+                        sections.forEach(section => {
+                            const option = document.createElement('option');
+                            option.value = section.id;
+                            option.textContent = section.name;
+                            sectionSelect.appendChild(option);
+                        });
+                    } catch (error) {
+                        console.error('Error loading sections:', error);
+                    }
+                }
+            }
+        }
+
+        // Form submission with SweetAlert confirmation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const studentId = studentIdInput.value;
+            
+            if (!studentId) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Missing Information',
+                    text: 'Please select a student.',
+                    icon: 'warning',
+                    confirmButtonColor: '#ef4444'
+                });
+                return false;
+            }
+
+            const title = document.getElementById('ComplaintTitle').value.trim();
+            const description = document.getElementById('ComplaintDescription').value.trim();
+            
+            if (!title || !description) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Missing Information',
+                    text: 'Please fill in all required fields.',
+                    icon: 'warning',
+                    confirmButtonColor: '#ef4444'
+                });
+                return false;
+            }
+
+            e.preventDefault();
+            Swal.fire({
+                title: 'Register Complaint?',
+                text: 'Are you sure you want to register this complaint?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Register',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    this.submit();
+                }
+            });
+        });
+    </script>
+}

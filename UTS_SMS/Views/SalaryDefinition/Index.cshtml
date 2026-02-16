@@ -1,0 +1,156 @@
+﻿@model IEnumerable<SMS.Models.SalaryDefinition>
+
+@{
+    ViewData["Title"] = "Salary Definitions";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-primary-800">💰 Salary Definitions</h1>
+                <p class="text-neutral-600 mt-2">Manage employee salary structures and allowances</p>
+            </div>
+            <a asp-action="Create" class="bg-gradient-to-r from-green-600 to-teal-700 hover:from-green-700 hover:to-teal-800 text-white px-6 py-3 rounded-xl transition-all duration-300 flex items-center mt-4 md:mt-0 shadow-sms-lg hover:shadow-sms-xl transform hover:scale-105">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                New Salary
+            </a>
+        </div>
+
+        <!-- Success Alert -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="bg-success-light border-l-4 border-success text-success p-4 mb-6 rounded-xl animate-fade-in">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    @TempData["SuccessMessage"]
+                </div>
+            </div>
+        }
+
+        <!-- Filters -->
+        <form method="get" class="bg-white p-6 rounded-2xl shadow-sms-xl mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label for="searchString" class="block text-sm font-medium text-neutral-700 mb-1">Search Employee</label>
+                    <input type="text" name="searchString" value="@ViewData["CurrentFilter"]" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400" placeholder="Name, CNIC, Phone..." />
+                </div>
+                <div>
+                    <label for="roleFilter" class="block text-sm font-medium text-neutral-700 mb-1">Filter by Role</label>
+                    <select name="roleFilter" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400" asp-items="@(new SelectList(ViewBag.Roles, "", ""))">
+                        <option value="">All Roles</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="w-full bg-gradient-primary hover:bg-primary-700 text-white font-medium py-3 rounded-lg transition-all">Filter</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Salary Definitions Table -->
+        <div class="bg-white rounded-2xl shadow-sms-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-neutral-50">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Employee</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Role</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Gross Salary</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Net Salary</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-primary-100">
+                        @foreach (var item in Model)
+                        {
+                            <tr class="transition-all duration-300 hover:bg-primary-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 bg-gradient-to-r from-purple-400 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3">
+                                            @(item.Employee?.FullName?.Split(' ').Select(n => n[0]).Take(2).Aggregate("", (a, b) => a + b) ?? "E")
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-primary-800">@item.Employee?.FullName</div>
+                                            <div class="text-sm text-neutral-500">@item.Employee?.CNIC</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                        @item.Employee?.Role
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-primary-800 font-medium">
+                                    ₹@item.GrossSalary.ToString("N2")
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-primary-800 font-semibold">
+                                    ₹@item.NetSalary.ToString("N2")
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div class="flex space-x-2">
+                                        <a asp-action="Edit" asp-route-id="@item.Id"
+                                           class="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-primary-400 text-white px-3 py-1.5 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-sms-md flex items-center text-sm">
+                                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                            </svg>
+                                            Edit
+                                        </a>
+                                        <a asp-action="Deactivate" asp-route-id="@item.Id"
+                                           class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-3 py-1.5 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-sms-md flex items-center text-sm">
+                                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                                            </svg>
+                                            Deactivate
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="bg-white rounded-2xl shadow-sms-lg p-8 text-center mt-8">
+                <svg class="w-16 h-16 text-neutral-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                </svg>
+                <h3 class="text-lg font-medium text-primary-800 mb-2">No salary definitions found</h3>
+                <p class="text-neutral-500 mb-4">Start by defining salaries for your employees.</p>
+                <a asp-action="Create" class="bg-gradient-to-r from-green-600 to-teal-700 hover:from-green-700 hover:to-teal-800 text-white px-6 py-2 rounded-lg transition-all duration-300 inline-flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Create Salary
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+}

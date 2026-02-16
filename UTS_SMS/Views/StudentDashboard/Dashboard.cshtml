@@ -1,0 +1,1352 @@
+@model SMS.Controllers.StudentDashboardController.StudentDashboardViewModel
+
+@{
+    ViewData["Title"] = "Student Dashboard";
+    var userName = Model.StudentName ?? "Student";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SMS</title>
+
+    <!-- Outfit Font - Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS - Offline -->
+    <link rel="stylesheet" href="~/lib/tailwindcss/tailwind.min.css" asp-append-version="true" />
+
+    <!-- Apache ECharts - Offline -->
+    <script src="~/lib/echarts/echarts.min.js" asp-append-version="true"></script>
+
+    <!-- Font Awesome - Offline -->
+    <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" asp-append-version="true" />
+
+    <style>
+        * {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background: linear-gradient(180deg, #F5F1E8 0%, #E8E4D9 50%, #FFFEF9 100%);
+        }
+
+        .card-dark {
+            background: linear-gradient(135deg, #2D2D2D 0%, #1a1a1a 100%);
+        }
+
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .hover-lift {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15);
+        }
+
+        .profile-card {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .profile-blur {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+          
+            /* 2. The Gradient Background */
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 80%, transparent 100% );
+            /* 3. THE FIX: The Mask */
+            /* This fades the entire element (blur + color) out toward the top */
+            -webkit-mask-image: linear-gradient(to top, black 0%, transparent 100%);
+            mask-image: linear-gradient(to top, black 0%, transparent 100%);
+        }
+
+        .subject-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.5rem 0.625rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 0.625rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #e5e7eb;
+            flex-shrink: 0;
+        }
+
+        .subject-badge:hover {
+            background: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .subject-badge:hover .diary-icon {
+            transform: scale(1.1);
+        }
+
+        .diary-icon {
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            background: linear-gradient(135deg, #2D2D2D 0%, #1a1a1a 100%);
+            border-radius: 0.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.75rem;
+            transition: transform 0.2s ease;
+        }
+
+        .timetable-slot {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            padding: 0.5rem 0.625rem;
+            border-radius: 0.625rem;
+            transition: all 0.2s ease;
+             flex-shrink: 0;
+            min-width: 140px;
+        }
+
+        .timetable-slot:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .calendar-day {
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .calendar-day:hover {
+            transform: scale(1.05);
+        }
+
+        .event-dot {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .event-details-card {
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @@keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .custom-modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            transition: opacity 0.3s ease-out;
+        }
+
+        .custom-modal-content {
+            background: #FFFEF9;
+            margin: 0;
+            padding: 0;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            overflow: hidden;
+        }
+
+        .custom-modal-header {
+            padding: 1.25rem 1.5rem;
+            background: linear-gradient(135deg, #2D2D2D 0%, #1a1a1a 100%);
+            color: white;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .custom-modal-header h2 {
+            margin: 0;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .custom-modal-close {
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            padding: 0;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .custom-modal-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        .custom-modal-body {
+            padding: 1.5rem;
+            max-height: calc(90vh - 70px);
+            overflow-y: auto;
+            background: #FFFEF9;
+            border-radius: 0 0 16px 16px;
+        }
+
+        .custom-modal-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-modal-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .custom-modal-body::-webkit-scrollbar-thumb {
+            background: #2D2D2D;
+            border-radius: 10px;
+        }
+
+        .modal-section {
+            margin-bottom: 1rem;
+        }
+
+        .modal-section-title {
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-section-content {
+            color: #4a5568;
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        .modal-images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 0.625rem;
+            margin-top: 0.625rem;
+        }
+
+        .modal-image-item {
+            width: 100%;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid #e5e7eb;
+        }
+
+        .modal-image-item:hover {
+            transform: scale(1.05);
+            border-color: #2D2D2D;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .duty-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0.875rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .duty-card:hover {
+            border-color: #FFD700;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
+        }
+
+        .complaint-card {
+            background: #fff;
+            border-left: 3px solid #ef4444;
+            border-radius: 6px;
+            padding: 0.875rem;
+            margin-bottom: 0.625rem;
+            transition: all 0.2s;
+        }
+
+        .complaint-card:hover {
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+        }
+
+        .side-section {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 1rem;
+            height: fit-content;
+        }
+
+        .side-section-title {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #2D2D2D;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .border-l-3 {
+            border-left-width: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #2D2D2D;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #1a1a1a;
+        }
+    </style>
+</head>
+<body>
+    <div class="p-4">
+        <!-- Top Section: Profile + Homework + Fee -->
+        <div class="flex gap-4 mb-4">
+
+            <div style="width: 220px; height: 320px; flex-shrink: 0;">
+                <div class="profile-card">
+                    @if (!string.IsNullOrEmpty(Model.ProfilePicture))
+                    {
+                        <img src="/@Model.ProfilePicture" alt="@Model.StudentName" class="w-full h-full object-cover" />
+                    }
+                    else
+                    {
+                        <div class="w-full h-full bg-gradient-to-br from-[#667eea] to-[#764ba2] flex items-center justify-center">
+                            <i class="fas fa-user-graduate text-6xl text-white opacity-50"></i>
+                        </div>
+                    }
+                    <div class="profile-blur flex flex-col justify-end p-4">
+                        <h2 class="text-white font-bold text-base mb-2 drop-shadow-lg">@Model.StudentName</h2>
+                        <div class="space-y-1 text-white text-xs drop-shadow">
+                            <div><i class="fas fa-graduation-cap mr-1"></i>@Model.ClassName - @Model.SectionName</div>
+                            <div><i class="fas fa-id-card mr-1"></i>Roll: @Model.Student.RollNumber</div>
+                            <div><i class="fas fa-calendar-check mr-1"></i>@Model.AttendancePercentage%</div>
+                            @if (Model.StudentAwards != null && Model.StudentAwards.Any())
+                            {
+                                var topAward = Model.StudentAwards.First();
+                                <div class="mt-2 pt-2 border-t border-white/20">
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-base">@topAward.AwardIcon</span>
+                                        <span class="font-semibold">@topAward.Award</span>
+                                    </div>
+                                    <div class="text-[10px] opacity-80">@topAward.ExamName - @topAward.AcademicYear</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glassmorphism rounded-2xl p-3 flex-1" style="height: 320px; max-width: 30%;">
+                <h3 class="text-sm font-bold text-[#2D2D2D] mb-2 flex items-center gap-2">
+                    <i class="fas fa-book text-[#667eea]"></i>
+                    Today's Homework
+                </h3>
+                <div class="grid grid-cols-3 gap-2 content-start" style="max-height: calc(100% - 32px); overflow-y: auto;">
+                    @if (Model.TodayHomework.Any())
+                    {
+                        @foreach (var hw in Model.TodayHomework.Take(9))
+                        {
+                            <div class="subject-badge flex flex-col justify-center items-center h-[85px] bg-white/50 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer border border-transparent hover:border-[#667eea] p-1"
+                                 onclick="showDiaryDetails(@hw.Id)"
+                                 title="@hw.SubjectName - @hw.TeacherName">
+                                <div class="diary-icon m-1 text-base text-[#667eea]">
+                                    <i class="fas fa-book-open"></i>
+                                </div>
+                                <div class="w-full text-center overflow-hidden px-1">
+                                    <div class="text-[#2D2D2D] text-[11px] leading-tight truncate">@hw.SubjectName</div>
+                                    <div class="text-[10px] text-gray-500 leading-tight truncate mt-0.5">@hw.TeacherName</div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="col-span-3 text-center py-8 text-gray-500 text-xs">No homework</div>
+                    }
+                </div>
+            </div>
+
+
+            <div class="glassmorphism rounded-2xl p-4 flex flex-col flex-1" style="height: 320px; min-width: 0;">
+                <div class="flex items-center justify-between mb-2 flex-shrink-0">
+                    <h3 class="text-sm font-bold text-[#2D2D2D] flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center">
+                            <i class="fas fa-chart-bar text-[#667eea] text-xs"></i>
+                        </div>
+                        Subject Analysis
+                    </h3>
+                    <select id="subjectExamCategory" onchange="loadSubjectWiseChart()" class="px-2 py-1 text-[10px] bg-gray-50 rounded border border-gray-200 outline-none hover:border-[#667eea] transition-colors cursor-pointer">
+                        <option value="">All Exams</option>
+                        @foreach (var category in Model.ExamAnalysis.ExamCategories)
+                        {
+                            <option value="@category.Name">@category.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="flex-1 w-full relative">
+                    <div id="subjectWiseChart" style="width: 100%; height: 100%;"></div>
+                </div>
+            </div>
+
+
+            <div class="glassmorphism rounded-2xl p-4 flex flex-col border border-white/20 shadow-xl" style="width: calc(22.22% - 1rem); height: 320px; flex-shrink: 0;">
+                <h3 class="text-sm font-bold text-[#2D2D2D] mb-3 flex items-center gap-2 flex-shrink-0">
+                    <div class="w-6 h-6 rounded-full bg-yellow-100 flex items-center justify-center">
+                        <i class="fas fa-dollar-sign text-[#FFD700] text-xs"></i>
+                    </div>
+                    Fee Details
+                </h3>
+                @if (Model.FeeDetails.FeeCalculation != null)
+                {
+                    var calc = Model.FeeDetails.FeeCalculation;
+                    var isDueZero = calc.RemainingDues == 0;
+                    <div class="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl p-3 mb-3 shadow-sm flex-shrink-0 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 w-16 h-16 bg-[#667eea]/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+                        <div class="flex justify-between items-end mb-2">
+                            <div>
+                                <div class="text-[10px] text-gray-500 font-semibold uppercase tracking-wider">Total Payable</div>
+                                <div class="text-sm font-bold text-[#2D2D2D]">@calc.TotalPayable.ToString("C")</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-[10px] text-gray-500 font-semibold uppercase tracking-wider">Paid</div>
+                                <div class="text-sm font-bold text-[#4CAF50]">@calc.TotalPaid.ToString("C")</div>
+                            </div>
+                        </div>
+                        <div class="h-px bg-gray-200 my-2"></div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-gray-600">Remaining Due</span>
+                            <span class="text-base font-extrabold @(isDueZero ? "text-[#4CAF50]" : "text-[#ef4444]")">
+                                @calc.RemainingDues.ToString("C")
+                            </span>
+                        </div>
+                    </div>
+                    @if (calc.Transactions.Any())
+                    {
+                        <div class="flex flex-col flex-1 min-h-0">
+                            <div class="flex items-center justify-between mb-2 px-1">
+                                <div class="text-xs font-bold text-gray-700 flex items-center gap-2">
+                                    Recent Transactions
+                                    <span class="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px]">@calc.Transactions.Count</span>
+                                </div>
+                            </div>
+                            <div class="overflow-y-auto pr-1 space-y-2 custom-scrollbar pb-1">
+                                @foreach (var transaction in calc.Transactions)
+                                {
+                                    <div class="group flex items-center justify-between p-2 bg-white border border-gray-100 rounded-lg hover:border-[#667eea]/50 hover:shadow-md transition-all duration-200">
+                                        <div class="flex flex-col">
+                                            <span class="text-xs font-bold text-[#2D2D2D]">@transaction.PaymentDate.ToString("MMM dd, yyyy")</span>
+                                            <div class="flex items-center gap-1 mt-0.5">
+                                                <i class="fas fa-circle text-[6px] @(transaction.CashPaid > 0 && transaction.OnlinePaid > 0 ? "text-purple-400" : (transaction.CashPaid > 0 ? "text-green-400" : "text-blue-400"))"></i>
+                                                <span class="text-[10px] text-gray-500 font-medium">
+                                                    @if (transaction.CashPaid > 0 && transaction.OnlinePaid > 0)
+                                                    {
+                                                        <span>Mixed</span>
+                                                    }
+                                                    else if (transaction.CashPaid > 0)
+                                                    {
+
+                                                        <span>Cash</span>
+                                                    }
+                                                    else
+                                                    {
+
+                                                        <span>Online</span>
+                                                    }
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-xs font-bold text-[#4CAF50]">@transaction.AmountPaid.ToString("C")</span>
+                                            <button onclick="printReceipt(@transaction.Id)"
+                                                    class="flex items-center gap-1 bg-indigo-50 text-[#667eea] hover:bg-[#667eea] hover:text-white px-3 py-1.5 rounded-md transition-all duration-200 shadow-sm hover:shadow-md group-hover:translate-x-0"
+                                                    title="Print Receipt">
+                                                <i class="fas fa-print text-xs"></i>
+                                                <span class="text-[10px] font-bold">Print</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="flex-1 flex flex-col items-center justify-center text-gray-400 animate-pulse">
+                        <i class="fas fa-file-invoice-dollar text-4xl mb-3 opacity-20"></i>
+                        <p class="text-xs font-medium">No fee records found</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Today's Timetable (Full Width Horizontal Scroll) -->
+        @if (Model.TodayTimetable.Any())
+        {
+            <div class="glassmorphism rounded-2xl p-3 mb-4">
+                <h3 class="text-sm font-bold text-[#2D2D2D] mb-2 flex items-center gap-2">
+                    <i class="fas fa-clock text-[#4CAF50]"></i>
+                    Today's Schedule
+                </h3>
+                <div class="flex gap-2 overflow-x-auto pb-2">
+                    @foreach (var slot in Model.TodayTimetable)
+                    {
+                        <div class="timetable-slot @(slot.IsBreak ? "bg-yellow-50 border-yellow-300" : "bg-green-50 border-green-300")">
+                            <div class="font-semibold text-[#2D2D2D] text-xs flex items-center gap-1">
+                               
+                                <span>@slot.SubjectName</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(slot.TeacherName))
+                            {
+                                <div class="text-xs text-gray-600">@slot.TeacherName</div>
+                            }
+                            <div class="text-xs text-gray-500 flex items-center gap-1">
+                                <i class="fas fa-clock text-xs"></i>
+                                @slot.StartTime - @slot.EndTime
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+
+        <!-- Awards & Achievements Section -->
+        @if (Model.StudentAwards != null && Model.StudentAwards.Any())
+        {
+            <div class="glassmorphism rounded-2xl p-4 mb-4">
+                <h3 class="text-sm font-bold text-[#2D2D2D] mb-3 flex items-center gap-2">
+                    <i class="fas fa-trophy text-yellow-500"></i>
+                    Academic Achievements & Awards
+                </h3>
+                <div class="flex gap-3 overflow-x-auto pb-2">
+                    @foreach (var award in Model.StudentAwards.Take(6))
+                    {
+                        var tierClass = award.Position <= 3 ? "from-yellow-100 to-yellow-200 border-yellow-400" :
+                                       award.Position <= 6 ? "from-blue-100 to-blue-200 border-blue-400" :
+                                       "from-orange-100 to-orange-200 border-orange-400";
+                        
+                        <div class="bg-gradient-to-br @tierClass border-2 rounded-xl p-3 min-w-[200px] hover:shadow-lg transition-all cursor-pointer"
+                             onclick="showAwardDetails('@award.Award', '@award.ExamName', '@award.ExamCategoryName', @award.Position, @award.FinalPercentage, @award.AcademicYear)">
+                            <div class="flex items-start justify-between mb-2">
+                                <div class="text-3xl">@award.AwardIcon</div>
+                                <div class="bg-white rounded-full px-2 py-1 text-xs font-bold text-gray-700">
+                                    #@award.Position
+                                </div>
+                            </div>
+                            <div class="font-bold text-sm text-gray-800 mb-1">@award.Award</div>
+                            <div class="text-xs text-gray-600 mb-2">@award.ExamName</div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-gray-500">@award.ExamCategoryName</span>
+                                <span class="text-xs font-semibold text-gray-700">@award.FinalPercentage%</span>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">Academic Year @award.AcademicYear</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Main Content Grid -->
+        <div class="flex flex-col gap-4">
+
+            <!-- Calendar, Attendance, Performance in ONE ROW -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+                <!-- Calendar Card -->
+                <div class="card-dark rounded-2xl p-4 hover-lift flex flex-col">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <i class="fas fa-calendar-alt"></i>
+                            Calendar
+                        </h3>
+                        <div class="flex items-center gap-2">
+                            <button onclick="changeMonth(-1)" class="w-6 h-6 rounded-lg bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-white transition">
+                                <i class="fas fa-chevron-left text-[10px]"></i>
+                            </button>
+                            <span id="currentMonthYear" class="text-white font-semibold text-xs"></span>
+                            <button onclick="changeMonth(1)" class="w-6 h-6 rounded-lg bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-white transition">
+                                <i class="fas fa-chevron-right text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="dashboardCalendar" class="mb-3 flex-grow text-xs"></div>
+                    <div id="calendarEventsContainer" class="hidden border-t border-gray-700 pt-3 mt-auto">
+                        <h4 class="text-xs font-bold text-white mb-2" id="eventTitle">Events</h4>
+                        <div id="calendarEvents" class="space-y-2 max-h-24 overflow-y-auto custom-scrollbar"></div>
+                    </div>
+                </div>
+
+                <!-- Attendance Card -->
+                <div class="glassmorphism rounded-2xl p-4 hover-lift flex flex-col">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-bold text-[#2D2D2D] flex items-center gap-2">
+                            <i class="fas fa-chart-line text-[#4CAF50]"></i>
+                            Attendance
+                        </h3>
+                        <div class="flex gap-1">
+                            <button onclick="loadAttendanceChart('thisYear', event)" class="attendance-period-btn px-2 py-1 text-xs bg-[#FFD700] text-[#2D2D2D] rounded font-medium">Year</button>
+                            <button onclick="loadAttendanceChart('lastYear', event)" class="attendance-period-btn px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded font-medium">Last</button>
+                        </div>
+                    </div>
+                    <div id="attendanceTrendsChart" class="flex-grow w-full" style="min-height: 180px;"></div>
+                    <div class="grid grid-cols-3 gap-2 mt-3">
+                        <div class="text-center p-2 bg-blue-50 rounded-lg">
+                            <div class="text-lg font-bold text-[#2D2D2D]" id="totalDays">0</div>
+                            <div class="text-xs text-gray-600">Total</div>
+                        </div>
+                        <div class="text-center p-2 bg-green-50 rounded-lg">
+                            <div class="text-lg font-bold text-[#4CAF50]" id="presentDays">0</div>
+                            <div class="text-xs text-gray-600">Present</div>
+                        </div>
+                        <div class="text-center p-2 bg-red-50 rounded-lg">
+                            <div class="text-lg font-bold text-[#ef4444]" id="absentDays">0</div>
+                            <div class="text-xs text-gray-600">Absent</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Card -->
+                <div class="glassmorphism rounded-2xl p-4 hover-lift flex flex-col">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-bold text-[#2D2D2D] flex items-center gap-2">
+                            <i class="fas fa-trophy text-[#FFD700]"></i>
+                            Performance
+                        </h3>
+                        <select id="examCategory" onchange="loadExamWiseChart()" class="px-2 py-1 text-xs bg-gray-100 rounded border-none w-24">
+                            <option value="">All</option>
+                            @foreach (var category in Model.ExamAnalysis.ExamCategories)
+                            {
+                                <option value="@category.Name">@category.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div id="examWiseChart" class="flex-grow" style="width: 100%; min-height: 180px;"></div>
+                </div>
+
+            </div>
+
+         
+
+            <!-- Duties and Complaints Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <!-- Duties Card -->
+                <div class="glassmorphism rounded-2xl p-3 hover-lift">
+                    <h3 class="text-sm font-bold text-[#2D2D2D] mb-2 flex items-center gap-2">
+                        <i class="fas fa-tasks text-purple-600"></i>
+                        My Duties
+                    </h3>
+                    <div class="space-y-2 max-h-[200px] overflow-y-auto custom-scrollbar pr-2">
+                        @if (Model.AssignedDuties.Any())
+                        {
+                            @foreach (var duty in Model.AssignedDuties)
+                            {
+                                <div class="flex items-start gap-2 p-2 bg-white rounded-lg border border-gray-200 hover:border-purple-400 transition-all">
+                                    <i class="fas fa-check-circle text-purple-600 mt-0.5 flex-shrink-0"></i>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-xs font-semibold text-gray-800 truncate">@duty.DutyTitle</div>
+                                        <div class="text-xs text-gray-600 truncate">@duty.Description</div>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span class="text-xs px-2 py-0.5 rounded @(duty.Priority == "High" ? "bg-red-100 text-red-700" : duty.Priority == "Medium" ? "bg-yellow-100 text-yellow-700" : "bg-blue-100 text-blue-700")">
+                                                @duty.Priority
+                                            </span>
+                                            <span class="text-xs text-gray-500">@duty.StartDate.ToString("MMM dd")</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-xs text-gray-500 text-center py-8">No duties assigned</div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Complaints Card -->
+                <div class="glassmorphism rounded-2xl p-3 hover-lift">
+                    <h3 class="text-sm font-bold text-[#2D2D2D] mb-2 flex items-center gap-2">
+                        <i class="fas fa-exclamation-triangle text-red-600"></i>
+                        Complaints About Me
+                    </h3>
+                    <div class="space-y-2 max-h-[200px] overflow-y-auto custom-scrollbar pr-2" id="complaintsContainer">
+                        <div class="text-xs text-gray-500 text-center py-8">Loading complaints...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Diary Modal -->
+    <div id="diaryModal" class="custom-modal">
+        <div class="custom-modal-content">
+            <div class="custom-modal-header">
+                <h2 id="modalTitle" class="text-white">
+                    <i class="fas fa-book-open mr-2"></i>
+                    Homework Details
+                </h2>
+                <button class="custom-modal-close" onclick="closeDiaryModal()" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="custom-modal-body" id="modalBody">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const studentId = @Model.StudentId;
+        let calendarCurrentMonth = new Date().getMonth();
+        let calendarCurrentYear = new Date().getFullYear();
+        let calendarEventsByDate = {};
+        
+        const subjectWiseData = @Html.Raw(Json.Serialize(Model.ExamAnalysis.SubjectWiseData));
+        const examWiseData = @Html.Raw(Json.Serialize(Model.ExamAnalysis.ExamWiseData));
+        const homeworkData = @Html.Raw(Json.Serialize(Model.TodayHomework));
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            updateMonthYearDisplay();
+            initCalendar();
+            loadAttendanceChart('thisYear');
+            loadSubjectWiseChart();
+            loadExamWiseChart();
+            loadComplaints(); // Load complaints on page load
+            
+            // Modal click outside to close
+            const modal = document.getElementById('diaryModal');
+            modal.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    closeDiaryModal();
+                }
+            });
+            
+            // Escape key to close modal
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && modal.style.display === 'block') {
+                    closeDiaryModal();
+                }
+            });
+            
+            window.addEventListener('resize', function() {
+                echarts.getInstanceByDom(document.getElementById('attendanceTrendsChart'))?.resize();
+                echarts.getInstanceByDom(document.getElementById('subjectWiseChart'))?.resize();
+                echarts.getInstanceByDom(document.getElementById('examWiseChart'))?.resize();
+            });
+        });
+
+        function loadComplaints() {
+            fetch(`/StudentDashboard/GetStudentComplaints?studentId=${studentId}`)
+                .then(r => r.json())
+                .then(data => {
+                    const container = document.getElementById('complaintsContainer');
+                    
+                    if (data.success && data.complaints && data.complaints.length > 0) {
+                        let html = '';
+                        data.complaints.forEach(complaint => {
+                            html += `<div class="flex items-start gap-2 p-2 bg-white rounded-lg border-l-3 border-l-red-500 hover:shadow-md transition-all">
+                                <i class="fas fa-exclamation-circle text-red-600 mt-0.5 flex-shrink-0"></i>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-xs font-semibold text-gray-800 truncate">${complaint.complaintTitle}</div>
+                                    <div class="text-xs text-gray-600 line-clamp-2">${complaint.complaintDescription}</div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700">
+                                            ${complaint.complaintType}
+                                        </span>
+                                        <span class="text-xs text-gray-500">${new Date(complaint.complaintDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                                    </div>
+                                </div>
+                            </div>`;
+                        });
+                        container.innerHTML = html;
+                    } else {
+                        container.innerHTML = '<div class="text-xs text-gray-500 text-center py-8">No open complaints</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading complaints:', error);
+                    document.getElementById('complaintsContainer').innerHTML = '<div class="text-xs text-red-500 text-center py-8">Failed to load complaints</div>';
+                });
+        }
+
+        function printReceipt(transactionId) {
+            window.open('/BillingReports/TransactionReceipt/' + transactionId, '_blank');
+        }
+
+        function updateMonthYearDisplay() {
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            document.getElementById('currentMonthYear').textContent = monthNames[calendarCurrentMonth] + ' ' + calendarCurrentYear;
+        }
+
+        function changeMonth(direction) {
+            calendarCurrentMonth += direction;
+            if (calendarCurrentMonth > 11) {
+                calendarCurrentMonth = 0;
+                calendarCurrentYear++;
+            } else if (calendarCurrentMonth < 0) {
+                calendarCurrentMonth = 11;
+                calendarCurrentYear--;
+            }
+            updateMonthYearDisplay();
+            loadCalendar(calendarCurrentYear, calendarCurrentMonth);
+        }
+
+        function initCalendar() {
+            loadCalendar(calendarCurrentYear, calendarCurrentMonth);
+        }
+
+        function loadCalendar(year, month) {
+            const calendarDiv = document.getElementById('dashboardCalendar');
+            const today = new Date();
+            
+            fetch(`/StudentDashboard/GetCalendarEventsByMonth?year=${year}&month=${month + 1}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) return;
+                    
+                    const events = data.events || [];
+                    calendarEventsByDate = {};
+                    
+                    events.forEach(event => {
+                        const date = new Date(event.startDate);
+                        if (date.getMonth() === month && date.getFullYear() === year) {
+                            const day = date.getDate();
+                            if (!calendarEventsByDate[day]) calendarEventsByDate[day] = [];
+                            calendarEventsByDate[day].push(event);
+                        }
+                    });
+
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    const firstDay = new Date(year, month, 1).getDay();
+
+                    let html = '<div class="grid grid-cols-7 gap-1 text-center">';
+                    
+                    // Day headers
+                    ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach((day, i) => {
+                        html += `<div class="text-xs font-medium ${i === 0 ? 'text-red-400' : 'text-gray-400'} py-1">${day}</div>`;
+                    });
+
+                    // Empty cells
+                    for (let i = 0; i < firstDay; i++) {
+                        html += '<div></div>';
+                    }
+
+                    // Days
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const date = new Date(year, month, day);
+                        const isSunday = date.getDay() === 0;
+                        const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+                        const hasEvents = calendarEventsByDate[day]?.length > 0;
+                        const isHoliday = hasEvents && calendarEventsByDate[day].some(e => e.isHoliday);
+                        
+                        let bgClass = isToday ? 'bg-[#FFD700] text-[#2D2D2D] font-bold' :
+                                     isHoliday ? 'bg-blue-600 text-white' :
+                                     isSunday ? 'bg-red-900/50 text-red-300' :
+                                     hasEvents ? 'bg-gray-600 text-white' :
+                                     'bg-gray-800 text-gray-300 hover:bg-gray-700';
+                        
+                        html += `<div class="calendar-day p-2 rounded-lg ${bgClass} cursor-pointer text-xs" 
+                                     onclick='showDayEvents(${day})'>
+                            ${day}
+                            ${hasEvents ? `<div class="event-dot ${isHoliday ? 'bg-white' : 'bg-green-400'}"></div>` : ''}
+                        </div>`;
+                    }
+
+                    html += '</div>';
+                    calendarDiv.innerHTML = html;
+                })
+                .catch(error => console.error('Error loading calendar:', error));
+        }
+
+        function showDayEvents(day) {
+            const events = calendarEventsByDate[day] || [];
+            const date = new Date(calendarCurrentYear, calendarCurrentMonth, day);
+            
+            updateCalendarEvents(events, date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }));
+        }
+
+        function updateCalendarEvents(events, title = '') {
+            const container = document.getElementById('calendarEvents');
+            const titleElement = document.getElementById('eventTitle');
+            const eventsContainer = document.getElementById('calendarEventsContainer');
+            
+            titleElement.textContent = title || 'Events';
+            
+            if (!events || events.length === 0) {
+                eventsContainer.classList.add('hidden');
+                return;
+            }
+
+            eventsContainer.classList.remove('hidden');
+            
+            let html = '';
+            events.forEach(event => {
+                const icon = event.isHoliday ? 'fa-umbrella-beach' : 'fa-calendar-day';
+                const color = event.isHoliday ? 'bg-blue-500' : 'bg-gray-500';
+                
+                html += `<div class="event-details-card p-2 bg-gray-800 rounded-lg border-l-4 ${event.isHoliday ? 'border-blue-400' : 'border-gray-400'}">
+                    <div class="flex items-start gap-2">
+                        <i class="fas ${icon} ${event.isHoliday ? 'text-blue-400' : 'text-gray-400'} text-xs mt-0.5"></i>
+                        <div class="flex-1">
+                            <div class="text-xs font-semibold text-white">${event.title}</div>
+                            ${event.description ? `<div class="text-xs text-gray-400 mt-1">${event.description}</div>` : ''}
+                        </div>
+                    </div>
+                </div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function loadAttendanceChart(period, event = null) {
+            const chartDom = document.getElementById('attendanceTrendsChart');
+            const myChart = echarts.getInstanceByDom(chartDom) || echarts.init(chartDom);
+            
+            // 1. Reset all buttons to gray
+    const buttons = document.querySelectorAll('.attendance-period-btn');
+    buttons.forEach(btn => {
+        btn.classList.remove('bg-[#FFD700]', 'text-[#2D2D2D]');
+        btn.classList.add('bg-gray-200', 'text-gray-700');
+    });
+    
+    // 2. Determine which button to highlight
+    let activeBtn;
+    if (event && event.target) {
+        // If triggered by a click, use the clicked element
+        activeBtn = event.target;
+    } else {
+        // If triggered by page load, find the button that matches the 'period'
+        // This assumes your buttons have text or data-attributes that match
+        activeBtn = Array.from(buttons).find(btn => 
+            btn.getAttribute('onclick')?.includes(period)
+        );
+    }
+
+    // 3. Highlight the active button
+    if (activeBtn) {
+        activeBtn.classList.remove('bg-gray-200', 'text-gray-700');
+        activeBtn.classList.add('bg-[#FFD700]', 'text-[#2D2D2D]');
+    }
+            
+            fetch(`/StudentDashboard/GetAttendanceData?studentId=${studentId}&period=${period}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        console.error('Failed to load attendance data');
+                        return;
+                    }
+                    
+                    document.getElementById('totalDays').textContent = data.totals.total;
+                    document.getElementById('presentDays').textContent = data.totals.present;
+                    document.getElementById('absentDays').textContent = data.totals.absent;
+
+                    myChart.setOption({
+                        tooltip: { 
+                            trigger: 'axis',
+                            formatter: function(params) {
+                                let result = params[0].axisValue + '<br/>';
+                                params.forEach(param => {
+                                    result += `${param.marker} ${param.seriesName}: ${param.value}<br/>`;
+                                });
+                                return result;
+                            }
+                        },
+                        legend: { 
+                            data: ['Present', 'Absent', 'Leave', 'Late'], 
+                            bottom: 0, 
+                            textStyle: { fontSize: 10 } 
+                        },
+                        grid: { left: '10%', right: '10%', bottom: '15%', top: '10%' },
+                        xAxis: { 
+                            type: 'category', 
+                            data: data.labels, 
+                            axisLabel: { fontSize: 10 } 
+                        },
+                        yAxis: { 
+                            type: 'value', 
+                            axisLabel: { fontSize: 10 } 
+                        },
+                        series: [
+                            {
+                                name: 'Present',
+                                type: 'line',
+                                data: data.presentData,
+                                smooth: true,
+                                itemStyle: { color: '#4CAF50' },
+                                areaStyle: { color: 'rgba(76, 175, 80, 0.2)' }
+                            },
+                            {
+                                name: 'Absent',
+                                type: 'line',
+                                data: data.absentData,
+                                smooth: true,
+                                itemStyle: { color: '#ef4444' },
+                                areaStyle: { color: 'rgba(239, 68, 68, 0.2)' }
+                            },
+                            {
+                                name: 'Leave',
+                                type: 'line',
+                                data: data.leaveData,
+                                smooth: true,
+                                itemStyle: { color: '#FFD700' },
+                                areaStyle: { color: 'rgba(255, 215, 0, 0.2)' }
+                            },
+                            {
+                                name: 'Late',
+                                type: 'line',
+                                data: data.lateData,
+                                smooth: true,
+                                itemStyle: { color: '#f59e0b' },
+                                areaStyle: { color: 'rgba(245, 158, 11, 0.2)' }
+                            }
+                        ]
+                    });
+                })
+                .catch(error => console.error('Error loading attendance:', error));
+        }
+
+        function loadSubjectWiseChart() {
+            const chartDom = document.getElementById('subjectWiseChart');
+            const myChart = echarts.getInstanceByDom(chartDom) || echarts.init(chartDom);
+            
+            const selectedCategory = document.getElementById('subjectExamCategory').value;
+            let filteredData = selectedCategory ? 
+                subjectWiseData.filter(d => d.examResults.some(e => e.categoryName === selectedCategory)) :
+                subjectWiseData;
+            
+            myChart.setOption({
+                tooltip: { 
+                    trigger: 'axis', 
+                    axisPointer: { type: 'shadow' },
+                    formatter: function(params) {
+                        let result = params[0].axisValue + '<br/>';
+                        params.forEach(param => {
+                            if (param.seriesName === 'Class Average') {
+                                result += `${param.marker} ${param.seriesName}: ${param.value}%<br/>`;
+                            } else {
+                                const subjectData = filteredData[param.dataIndex];
+                                if (subjectData) {
+                                    result += `${param.marker} <strong>Student: ${param.value}%</strong><br/>`;
+                                    result += `<div style="margin-left: 20px; font-size: 11px;">`;
+                                    subjectData.examResults.forEach(exam => {
+                                        result += `• ${exam.examName}: ${exam.obtainedMarks}/${exam.totalMarks}<br/>`;
+                                    });
+                                    result += `Avg: ${subjectData.averagePercentage.toFixed(1)}%</div>`;
+                                }
+                            }
+                        });
+                        return result;
+                    }
+                },
+                legend: {
+                    data: ['Student Average', 'Class Average'],
+                    bottom: 0,
+                    textStyle: { fontSize: 10 }
+                },
+                grid: { left: '15%', right: '10%', bottom: '25%', top: '10%' },
+                xAxis: {
+                    type: 'category',
+                    data: filteredData.map(d => d.subjectName),
+                    axisLabel: { rotate: 45, interval: 0, fontSize: 9 }
+                },
+                yAxis: { type: 'value', max: 100, axisLabel: { fontSize: 10 } },
+                series: [
+                    {
+                        name: 'Student Average',
+                        type: 'bar',
+                        data: filteredData.map(d => parseFloat(d.averagePercentage.toFixed(1))),
+                        itemStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: '#667eea' },
+                                { offset: 1, color: '#764ba2' }
+                            ])
+                        }
+                    },
+                    {
+                        name: 'Class Average',
+                        type: 'line',
+                        data: filteredData.map(d => parseFloat(d.classAveragePercentage.toFixed(1))),
+                        itemStyle: { color: '#FF6B6B' },
+                        lineStyle: { width: 2, type: 'dashed' },
+                        symbol: 'circle',
+                        symbolSize: 8
+                    }
+                ]
+            });
+        }
+
+        function loadExamWiseChart() {
+            const chartDom = document.getElementById('examWiseChart');
+            const myChart = echarts.getInstanceByDom(chartDom) || echarts.init(chartDom);
+            
+            const selectedCategory = document.getElementById('examCategory').value;
+            let filteredData = selectedCategory ? 
+                examWiseData.filter(d => d.categoryName === selectedCategory) :
+                examWiseData;
+            
+            myChart.setOption({
+                tooltip: { 
+                    trigger: 'axis', 
+                    axisPointer: { type: 'shadow' },
+                    formatter: function(params) {
+                        let result = params[0].axisValue + '<br/>';
+                        params.forEach(param => {
+                            if (param.seriesName === 'Class Average') {
+                                result += `${param.marker} ${param.seriesName}: ${param.value}%<br/>`;
+                            } else {
+                                const examData = filteredData[param.dataIndex];
+                                if (examData) {
+                                    result += `${param.marker} <strong>Student: ${param.value}%</strong><br/>`;
+                                    result += `<div style="margin-left: 20px; font-size: 11px;">`;
+                                    result += `Total: ${examData.totalObtained}/${examData.totalMarks}<br/>`;
+                                    examData.subjectResults.forEach(subject => {
+                                        result += `• ${subject.subjectName}: ${subject.obtainedMarks}/${subject.totalMarks} (${subject.percentage.toFixed(1)}%)<br/>`;
+                                    });
+                                    result += `</div>`;
+                                }
+                            }
+                        });
+                        return result;
+                    }
+                },
+                legend: {
+                    data: ['Student Average', 'Class Average'],
+                    bottom: 0,
+                    textStyle: { fontSize: 10 }
+                },
+                grid: { left: '10%', right: '10%', bottom: '20%', top: '10%' },
+                xAxis: {
+                    type: 'category',
+                    data: filteredData.map(d => d.examName),
+                    axisLabel: { rotate: 45, interval: 0, fontSize: 9 }
+                },
+                yAxis: { type: 'value', max: 100, axisLabel: { fontSize: 10 } },
+                series: [
+                    {
+                        name: 'Student Average',
+                        type: 'bar',
+                        data: filteredData.map(d => parseFloat(d.overallPercentage.toFixed(1))),
+                        itemStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: '#ffd700' },
+                                { offset: 1, color: '#ffa500' }
+                            ])
+                        }
+                    },
+                    {
+                        name: 'Class Average',
+                        type: 'line',
+                        data: filteredData.map(d => parseFloat(d.classAveragePercentage.toFixed(1))),
+                        itemStyle: { color: '#FF6B6B' },
+                        lineStyle: { width: 2, type: 'dashed' },
+                        symbol: 'circle',
+                        symbolSize: 8
+                    }
+                ]
+            });
+        }
+
+        function showDiaryDetails(diaryId) {
+            const diary = homeworkData.find(d => d.id === diaryId);
+            if (!diary) return;
+
+            let content = '';
+            
+            // Homework section
+            if (diary.homework) {
+                content += `<div class="modal-section">
+                    <div class="modal-section-title"><i class="fas fa-tasks mr-1"></i>Homework</div>
+                    <div class="modal-section-content">${diary.homework}</div>
+                </div>`;
+            }
+            
+            // Lesson Summary
+            if (diary.lessonSummary) {
+                content += `<div class="modal-section">
+                    <div class="modal-section-title"><i class="fas fa-lightbulb mr-1"></i>Lesson Summary</div>
+                    <div class="modal-section-content">${diary.lessonSummary}</div>
+                </div>`;
+            }
+            
+            // Notes
+            if (diary.notes) {
+                content += `<div class="modal-section">
+                    <div class="modal-section-title"><i class="fas fa-sticky-note mr-1"></i>Notes</div>
+                    <div class="modal-section-content">${diary.notes}</div>
+                </div>`;
+            }
+            
+            // Images
+            if (diary.images && diary.images.length > 0) {
+                content += `<div class="modal-section">
+                    <div class="modal-section-title"><i class="fas fa-paperclip mr-1"></i>Attachments (${diary.images.length})</div>
+                    <div class="modal-images-grid">`;
+                
+                diary.images.forEach((img, index) => {
+                    content += `<img src="/${img}" 
+                                     class="modal-image-item" 
+                                     onclick="window.open('/${img}', '_blank')" 
+                                     title="Click to view full size"
+                                     alt="Attachment ${index + 1}" />`;
+                });
+                
+                content += `</div></div>`;
+            }
+
+            document.getElementById('modalBody').innerHTML = content;
+            const modal = document.getElementById('diaryModal');
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            setTimeout(() => {
+                modal.style.opacity = '1';
+            }, 10);
+        }
+
+        function showBasicHomework(diary) {
+            let content = '';
+            
+            if (diary.homework) {
+                content += `<div class="modal-section">
+                    <div class="modal-section-title"><i class="fas fa-tasks mr-1"></i>Homework</div>
+                    <div class="modal-section-content">${diary.homework}</div>
+                </div>`;
+            }
+            
+            if (diary.lessonSummary) {
+                content += `<div class="modal-section">
+                    <div class="modal-section-title"><i class="fas fa-lightbulb mr-1"></i>Lesson Summary</div>
+                    <div class="modal-section-content">${diary.lessonSummary}</div>
+                </div>`;
+            }
+            
+            if (diary.notes) {
+                content += `<div class="modal-section">
+                    <div class="modal-section-title"><i class="fas fa-sticky-note mr-1"></i>Notes</div>
+                    <div class="modal-section-content">${diary.notes}</div>
+                </div>`;
+            }
+            
+            if (diary.images && diary.images.length > 0) {
+                content += `<div class="modal-section">
+                    <div class="modal-section-title"><i class="fas fa-paperclip mr-1"></i>Attachments (${diary.images.length})</div>
+                    <div class="modal-images-grid">`;
+                
+                diary.images.forEach((img, index) => {
+                    content += `<img src="/${img}" 
+                                     class="modal-image-item" 
+                                     onclick="window.open('/${img}', '_blank')" 
+                                     title="Click to view full size"
+                                     alt="Attachment ${index + 1}" />`;
+                });
+                
+                content += `</div></div>`;
+            }
+            
+            document.getElementById('modalBody').innerHTML = content;
+            const modal = document.getElementById('diaryModal');
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            setTimeout(() => {
+                modal.style.opacity = '1';
+            }, 10);
+        }
+
+        function closeDiaryModal() {
+            const modal = document.getElementById('diaryModal');
+            
+            // Add smooth exit animation
+            modal.style.opacity = '0';
+            
+            setTimeout(() => {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }, 300);
+        }
+
+        function showAwardDetails(award, examName, examCategory, position, percentage, academicYear) {
+            alert(`🏆 Achievement Details\n\nAward: ${award}\nPosition: #${position}\nPercentage: ${percentage}%\nExam: ${examName}\nCategory: ${examCategory}\nAcademic Year: ${academicYear}`);
+        }
+    </script>
+</body>
+</html>
