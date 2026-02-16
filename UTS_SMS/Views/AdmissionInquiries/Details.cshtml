@@ -1,0 +1,179 @@
+@model SMS.Models.AdmissionInquiry
+
+@{
+    ViewData["Title"] = "Admission Inquiry Details";
+}
+
+<div class="min-h-screen bg-neutral-50 p-4 md:p-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-primary-800">📋 Inquiry Details</h1>
+                <p class="text-neutral-600 mt-1">@Model.StudentName - @Model.InquiryDate.ToString("MMM dd, yyyy")</p>
+            </div>
+            <div class="flex space-x-2">
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="bg-gradient-primary hover:bg-primary-700 text-white px-4 py-2 rounded-xl transition-all duration-300 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                    Edit
+                </a>
+                <a asp-action="Index" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl transition-all duration-300 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Back to List
+                </a>
+            </div>
+        </div>
+
+        <!-- Status Badge -->
+        <div class="mb-6">
+            @{
+                var statusClass = Model.InquiryStatus switch
+                {
+                    "New" => "bg-primary-100 text-primary-800",
+                    "Contacted" => "bg-warning-light text-yellow-800",
+                    "Visited" => "bg-purple-100 text-purple-800",
+                    "Enrolled" => "bg-success-light text-success",
+                    "Rejected" => "bg-error-light text-error",
+                    _ => "bg-neutral-100 text-primary-800"
+                };
+            }
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium @statusClass">
+                @Model.InquiryStatus
+            </span>
+        </div>
+
+        <!-- Main Details Card -->
+        <div class="bg-white rounded-2xl shadow-sms-lg overflow-hidden mb-6">
+            <div class="px-6 py-4 bg-gradient-to-r from-primary-600 to-blue-700">
+                <h2 class="text-xl font-semibold text-white">Student Information</h2>
+            </div>
+            
+            <div class="p-6">
+                <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                    <div>
+                        <dt class="text-sm font-medium text-neutral-700">Student Name</dt>
+                        <dd class="mt-1 text-base text-primary-800 font-semibold">@Model.StudentName</dd>
+                    </div>
+                    
+                    <div>
+                        <dt class="text-sm font-medium text-neutral-700">Father's Name</dt>
+                        <dd class="mt-1 text-base text-primary-800">@Model.FatherName</dd>
+                    </div>
+                    
+                    <div>
+                        <dt class="text-sm font-medium text-neutral-700">Phone Number</dt>
+                        <dd class="mt-1 text-base text-primary-800">
+                            <a href="tel:@Model.PhoneNumber" class="text-primary-600 hover:text-primary-800">@Model.PhoneNumber</a>
+                        </dd>
+                    </div>
+                    
+                    <div>
+                        <dt class="text-sm font-medium text-neutral-700">Email</dt>
+                        <dd class="mt-1 text-base text-primary-800">
+                            @if (!string.IsNullOrEmpty(Model.Email))
+                            {
+                                <a href="mailto:@Model.Email" class="text-primary-600 hover:text-primary-800">@Model.Email</a>
+                            }
+                            else
+                            {
+                                <span class="text-neutral-500">Not provided</span>
+                            }
+                        </dd>
+                    </div>
+                    
+                    <div>
+                        <dt class="text-sm font-medium text-neutral-700">Class Interested</dt>
+                        <dd class="mt-1 text-base text-primary-800">@Model.ClassInterested?.Name</dd>
+                    </div>
+                    
+                    <div>
+                        <dt class="text-sm font-medium text-neutral-700">Campus</dt>
+                        <dd class="mt-1 text-base text-primary-800">@Model.Campus?.Name</dd>
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(Model.PreviousSchool))
+                    {
+                        <div class="md:col-span-2">
+                            <dt class="text-sm font-medium text-neutral-700">Previous School</dt>
+                            <dd class="mt-1 text-base text-primary-800">@Model.PreviousSchool</dd>
+                        </div>
+                    }
+                </dl>
+            </div>
+        </div>
+
+        <!-- Inquiry Details Card -->
+        <div class="bg-white rounded-2xl shadow-sms-lg overflow-hidden mb-6">
+            <div class="px-6 py-4 bg-gradient-to-r from-green-600 to-green-700">
+                <h2 class="text-xl font-semibold text-white">Inquiry Details</h2>
+            </div>
+            
+            <div class="p-6">
+                <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                    <div>
+                        <dt class="text-sm font-medium text-neutral-700">Inquiry Date</dt>
+                        <dd class="mt-1 text-base text-primary-800">@Model.InquiryDate.ToString("MMMM dd, yyyy")</dd>
+                    </div>
+                    
+                    <div>
+                        <dt class="text-sm font-medium text-neutral-700">Source</dt>
+                        <dd class="mt-1 text-base text-primary-800">@(Model.Source ?? "Not specified")</dd>
+                    </div>
+                    
+                    @if (Model.VisitDate.HasValue)
+                    {
+                        <div>
+                            <dt class="text-sm font-medium text-neutral-700">Visit Date</dt>
+                            <dd class="mt-1 text-base text-primary-800">@Model.VisitDate.Value.ToString("MMMM dd, yyyy")</dd>
+                        </div>
+                    }
+                    
+                    @if (Model.FollowUpDate.HasValue)
+                    {
+                        <div>
+                            <dt class="text-sm font-medium text-neutral-700">Follow-up Date</dt>
+                            <dd class="mt-1 text-base text-primary-800">@Model.FollowUpDate.Value.ToString("MMMM dd, yyyy")</dd>
+                        </div>
+                    }
+                    
+                    <div>
+                        <dt class="text-sm font-medium text-neutral-700">Follow-up Required</dt>
+                        <dd class="mt-1 text-base text-primary-800">@(Model.FollowUpRequired ? "Yes" : "No")</dd>
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(Model.CreatedBy))
+                    {
+                        <div>
+                            <dt class="text-sm font-medium text-neutral-700">Created By</dt>
+                            <dd class="mt-1 text-base text-primary-800">@Model.CreatedBy</dd>
+                        </div>
+                    }
+                </dl>
+                
+                @if (!string.IsNullOrEmpty(Model.Remarks))
+                {
+                    <div class="mt-6">
+                        <dt class="text-sm font-medium text-neutral-700 mb-2">Remarks</dt>
+                        <dd class="mt-1 text-base text-primary-800 bg-neutral-50 p-4 rounded-lg">@Model.Remarks</dd>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex flex-col sm:flex-row gap-3 mt-6">
+            <a asp-action="Edit" asp-route-id="@Model.Id" 
+               class="flex-1 bg-gradient-primary hover:bg-primary-700 text-white text-center py-3 px-6 rounded-xl font-medium transition-all duration-300">
+                Edit Inquiry
+            </a>
+            <a asp-action="Index" 
+               class="flex-1 bg-gray-600 hover:bg-gray-700 text-white text-center py-3 px-6 rounded-xl font-medium transition-all duration-300">
+                Back to Inquiries
+            </a>
+        </div>
+    </div>
+</div>

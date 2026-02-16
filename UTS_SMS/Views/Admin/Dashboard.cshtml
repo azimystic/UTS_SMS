@@ -1,0 +1,2861 @@
+@model SMS.ViewModels.DashboardViewModel
+
+@{
+    ViewData["Title"] = "Admin Dashboard";
+    // Layout = null; // Full-screen layout without the default layout
+    var userName = User.Identity?.Name ?? "Admin";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SMS</title>
+
+    <!-- Outfit Font - Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS - Offline -->
+    <link rel="stylesheet" href="~/lib/tailwindcss/tailwind.min.css" asp-append-version="true" />
+
+    <!-- Apache ECharts - Offline -->
+    <script src="~/lib/echarts/echarts.min.js" asp-append-version="true"></script>
+
+    <!-- Font Awesome - Offline -->
+    <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" asp-append-version="true" />
+    
+    <!-- SweetAlert2 - Offline -->
+    <link rel="stylesheet" href="~/lib/sweetalert2/sweetalert2.min.css" asp-append-version="true" />
+    <script src="~/lib/sweetalert2/sweetalert2.min.js" asp-append-version="true"></script>
+
+    <style>
+        * {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(180deg, #F5F1E8 0%, #E8E4D9 50%, #FFFEF9 100%);
+            min-height: 100vh;
+        }
+
+        .card-gradient {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .card-dark {
+            background: linear-gradient(135deg, #2D2D2D 0%, #1a1a1a 100%);
+        }
+
+        .nav-item.active {
+            background-color: #000000;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .animated-counter {
+            transition: all 0.3s ease;
+        }
+
+        .pulse-animation {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @@keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .5;
+            }
+        }
+
+        .skeleton {
+            animation: skeleton-loading 1s linear infinite alternate;
+        }
+
+        @@keyframes skeleton-loading {
+            0% {
+                background-color: hsl(200, 20%, 80%);
+            }
+
+            100% {
+                background-color: hsl(200, 20%, 95%);
+            }
+        }
+
+        .hover-lift {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+            .hover-lift:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15);
+            }
+
+        .glassmorphism {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .cursor-pointer {
+            cursor: pointer;
+        }
+
+        /* Fix modal overflow issues - ensure modals have proper scrolling */
+        .swal2-popup {
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .swal2-html-container {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        /* Custom Modal Styles */
+        .custom-modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
+
+        .custom-modal-content {
+            background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+            margin: 2% auto;
+            padding: 0;
+            border: none;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @@keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .custom-modal-header {
+            padding: 24px 32px;
+            background: linear-gradient(135deg, #2D2D2D 0%, #1a1a1a 100%);
+            color: white;
+            border-radius: 24px 24px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .custom-modal-header h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .custom-modal-close {
+            color: #fff;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .custom-modal-close:hover,
+        .custom-modal-close:focus {
+            background: rgba(255, 255, 255, 0.1);
+            transform: rotate(90deg);
+        }
+
+        .custom-modal-body {
+            padding: 32px;
+        }
+
+        .custom-modal-footer {
+            padding: 24px 32px;
+            background: #f9f9f9;
+            border-radius: 0 0 24px 24px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .modal-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .modal-btn-primary {
+            background: #FFD700;
+            color: #2D2D2D;
+        }
+
+        .modal-btn-primary:hover {
+            background: #FFC700;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+        }
+
+        .modal-btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .modal-btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2D2D2D;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #FFD700;
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            font-weight: 500;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Modern Full-Screen Dashboard with Gradient Background -->
+ 
+        <div class="mx-auto p-4 sm:p-6">
+
+         @*    <!-- Dark Pill-Shaped Navigation Bar -->
+            <div class="bg-[#2D2D2D] rounded-full shadow-lg p-2 mb-6 flex items-center justify-between">
+                <div class="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                    <button class="nav-item active px-6 py-3 rounded-full text-white text-sm font-medium transition-all whitespace-nowrap">Dashboard</button>
+                    <button class="nav-item px-6 py-3 rounded-full text-white text-sm font-medium hover:bg-[#1a1a1a] transition-all whitespace-nowrap" onclick="navigateToSection('/Students/Index')">Students</button>
+                    <button class="nav-item px-6 py-3 rounded-full text-white text-sm font-medium hover:bg-[#1a1a1a] transition-all whitespace-nowrap" onclick="navigateToSection('/Attendance')">Attendance</button>
+                    <button class="nav-item px-6 py-3 rounded-full text-white text-sm font-medium hover:bg-[#1a1a1a] transition-all whitespace-nowrap" onclick="navigateToSection('/Billing')">Fees</button>
+                    <button class="nav-item px-6 py-3 rounded-full text-white text-sm font-medium hover:bg-[#1a1a1a] transition-all whitespace-nowrap" onclick="navigateToSection('/Payroll')">Payroll</button>
+                    <button class="nav-item px-6 py-3 rounded-full text-white text-sm font-medium hover:bg-[#1a1a1a] transition-all whitespace-nowrap" onclick="navigateToSection('/Exams')">Exams</button>
+                </div>
+                <div class="flex items-center gap-3 pr-2">
+                    @if (Model.IsOwnerDashboard)
+                    {
+                        <select id="campusSelector" class="px-4 py-2 rounded-full bg-[#1a1a1a] text-white text-sm font-medium border-none focus:ring-2 focus:ring-[#FFD700]">
+                            <option value="">All Campuses</option>
+                            @foreach (var campus in Model.Campuses)
+                            {
+                                bool isSelected = Model.SelectedCampusId == campus.Id;
+
+                                <option value="@campus.Id" selected="@isSelected">
+                                    @campus.Name
+                                </option>
+                            }
+                        </select>
+                    }
+                    <button class="w-10 h-10 rounded-full flex items-center justify-center text-white hover:bg-[#1a1a1a] transition-all">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <button class="w-10 h-10 rounded-full flex items-center justify-center text-white hover:bg-[#1a1a1a] transition-all relative">
+                        <i class="fas fa-bell"></i>
+                        <span class="absolute top-0 right-0 w-2 h-2 bg-[#FFD700] rounded-full"></span>
+                    </button>
+                    <a href="/Account/Logout" class="w-10 h-10 rounded-full bg-[#FFD700] flex items-center justify-center text-[#2D2D2D] hover:bg-[#FFC700] transition-all font-bold text-sm">
+                        @userName.Substring(0, 1).ToUpper()
+                    </a>
+                </div>
+            </div> *@
+
+            <!-- Welcome Section with Key Metrics -->
+            <div class="glassmorphism rounded-3xl shadow-lg p-6 sm:p-8 mb-6 hover-lift">
+                <h1 class="text-3xl sm:text-5xl font-bold text-[#2D2D2D] mb-6">Welcome, @userName</h1>
+
+                <!-- Stats Bar -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-[#FFD700]/20 flex items-center justify-center">
+                            <i class="fas fa-user-graduate text-xl text-[#2D2D2D]"></i>
+                        </div>
+                        <div>
+                            <div class="text-2xl sm:text-3xl font-bold text-[#2D2D2D] animated-counter" id="totalStudents">@Model.TotalStudents</div>
+                            <div class="text-xs text-gray-600 font-medium">Students</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-[#FFD700]/20 flex items-center justify-center">
+                            <i class="fas fa-chalkboard-teacher text-xl text-[#2D2D2D]"></i>
+                        </div>
+                        <div>
+                            <div class="text-2xl sm:text-3xl font-bold text-[#2D2D2D] animated-counter" id="totalTeachers">@Model.TotalTeachers</div>
+                            <div class="text-xs text-gray-600 font-medium">Teachers</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-[#FFD700]/20 flex items-center justify-center">
+                            <i class="fas fa-users text-xl text-[#2D2D2D]"></i>
+                        </div>
+                        <div>
+                            <div class="text-2xl sm:text-3xl font-bold text-[#2D2D2D] animated-counter" id="totalEmployees">@Model.TotalEmployees</div>
+                            <div class="text-xs text-gray-600 font-medium">Staff</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-[#FFD700]/20 flex items-center justify-center">
+                            <i class="fas fa-graduation-cap text-xl text-[#2D2D2D]"></i>
+                        </div>
+                        <div>
+                            <div class="text-2xl sm:text-3xl font-bold text-[#2D2D2D]">@Model.ExamSummary.TotalExamsScheduled</div>
+                            <div class="text-xs text-gray-600 font-medium">Exams</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Indicators -->
+                <div class="flex flex-wrap items-center gap-3 sm:gap-4">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm text-gray-700 font-medium">Attendance:</span>
+                        <span class="px-4 py-1.5 bg-[#FFD700] text-[#2D2D2D] rounded-full text-sm font-bold">@Model.AttendanceSummary.StudentAttendancePercentage%</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm text-gray-700 font-medium">Staff Present:</span>
+                        <span class="px-4 py-1.5 bg-[#4CAF50] text-white rounded-full text-sm font-bold">@Model.AttendanceSummary.TeacherAttendancePercentage%</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm text-gray-700 font-medium">Pass Rate:</span>
+                        <span class="px-4 py-1.5 bg-[#FFD700] text-[#2D2D2D] rounded-full text-sm font-bold">@Model.ExamSummary.OverallPassPercentage%</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm text-gray-700 font-medium">Revenue:</span>
+                        <span class="px-4 py-1.5 bg-[#4CAF50] text-white rounded-full text-sm font-bold">@Model.FinancialSummary.MonthlyRevenueActual.ToString("C0")</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Dashboard Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+
+                <!-- Left Column - Charts and Analytics -->
+                <div class="lg:col-span-8 space-y-6">
+
+                    <!-- Attendance Trends Chart (Dark Theme) -->
+                    <div class="card-dark rounded-3xl shadow-lg p-6 hover-lift cursor-pointer" onclick="window.location.href='/Attendance/DailySummary'">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xl font-bold text-white">Attendance Trends</h3>
+                            <div class="flex gap-2 items-center flex-wrap">
+                                <button id="showStudentBtn" class="attendance-type-btn px-3 py-1 text-sm bg-[#FFD700] text-[#2D2D2D] rounded-lg font-medium" onclick="event.stopPropagation(); switchAttendanceType('student', this)">Student</button>
+                                <button id="showEmployeeBtn" class="attendance-type-btn px-3 py-1 text-sm bg-gray-700 text-gray-300 rounded-lg font-medium" onclick="event.stopPropagation(); switchAttendanceType('employee', this)">Employee</button>
+                                <button id="showNamazBtn" class="attendance-type-btn px-3 py-1 text-sm bg-gray-700 text-gray-300 rounded-lg font-medium" onclick="event.stopPropagation(); switchAttendanceType('namaz', this)">Namaz</button>
+                                <button class="attendance-period-btn px-3 py-1 text-sm bg-[#FFD700] text-[#2D2D2D] rounded-lg font-medium" onclick="event.stopPropagation(); updateAttendancePeriod(7, this)">7D</button>
+                                <button class="attendance-period-btn px-3 py-1 text-sm bg-gray-700 text-gray-300 rounded-lg font-medium" onclick="event.stopPropagation(); updateAttendancePeriod(30, this)">30D</button>
+                            </div>
+                        </div>
+                        <div id="attendanceTrendsChart" style="width: 100%; height: 350px;" onclick="event.stopPropagation();"></div>
+                    </div>
+
+                    <!-- Fee Collection Visualization -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Fee Collection Trends -->
+                        <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-bold text-[#2D2D2D]">Fee Collection</h3>
+                                <div class="flex gap-2">
+                                    <button class="fee-period-btn px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-lg font-medium" onclick="loadFeeCollectionChart(7)">7D</button>
+                                    <button class="fee-period-btn px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-lg font-medium" onclick="loadFeeCollectionChart(30)">30D</button>
+                                    <button class="fee-period-btn px-3 py-1 text-sm bg-[#FFD700] text-[#2D2D2D] rounded-lg font-medium" onclick="loadFeeCollectionChart(180)">6M</button>
+                                </div>
+                            </div>
+                            <div id="feeCollectionChart" style="width: 100%; height: 300px;"></div>
+                        </div>
+
+                        <!-- Payment Status Breakdown -->
+                        <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift cursor-pointer" onclick="window.location.href='/BillingReports/Index'">
+                            <h3 class="text-lg font-bold text-[#2D2D2D] mb-4">Payment Status</h3>
+                            <div id="paymentStatusChart" style="width: 100%; height: 300px;" onclick="event.stopPropagation();"></div>
+                            <div class="mt-4 space-y-2">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Collected This Month:</span>
+                                    <span class="font-bold text-[#4CAF50]">@Model.FinancialSummary.MonthlyRevenueActual.ToString("C")</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Target (To Be Collected):</span>
+                                    <span class="font-bold text-[#FFD700]">@Model.FinancialSummary.TotalFeesToBeCollected.ToString("C")</span>
+                                </div>
+                                <div class="flex justify-between text-sm pt-2 border-t">
+                                    <span class="text-gray-700 font-medium">Collection Progress:</span>
+                                    <span class="font-bold @(Model.FinancialSummary.RevenuePercentage >= 80 ? "text-[#4CAF50]" : Model.FinancialSummary.RevenuePercentage >= 50 ? "text-[#FFD700]" : "text-[#ef4444]")">
+                                        @Model.FinancialSummary.RevenuePercentage%
+                                    </span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                                    <div class="bg-[#4CAF50] h-2.5 rounded-full transition-all duration-500" style="width: @Math.Min(100, Model.FinancialSummary.RevenuePercentage)%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Revenue Trends Graph -->
+                    <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold text-[#2D2D2D]">Revenue Trends (Fees - Salaries - Expenses)</h3>
+                            <div class="flex gap-2">
+                                <button class="revenue-period-btn px-3 py-1 text-sm bg-[#FFD700] text-[#2D2D2D] rounded-lg font-medium" onclick="loadRevenueTrends('thisYear')">This Year</button>
+                                <button class="revenue-period-btn px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-lg font-medium" onclick="loadRevenueTrends('lastYear')">Last Year</button>
+                            </div>
+                        </div>
+                        <div id="revenueTrendsChart" style="width: 100%; height: 350px;"></div>
+                    </div>
+
+                    <!-- Calendar (Dark Theme) -->
+                    <div class="card-dark rounded-3xl shadow-lg p-6 hover-lift">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold text-white">Calendar & Events</h3>
+                            <div class="flex items-center gap-2">
+                                <button onclick="previousMonth()" class="w-8 h-8 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-white transition-all" title="Previous Month">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <button onclick="nextMonth()" class="w-8 h-8 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-white transition-all" title="Next Month">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="dashboardCalendar"></div>
+                        <div id="calendarEvents" class="mt-4 space-y-2">
+                            <!-- Calendar events will be populated here -->
+                        </div>
+                    </div>
+
+                    <!-- Student Count Trends -->
+                    <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold text-[#2D2D2D]">Student Count Trends</h3>
+                            <div class="flex gap-2">
+                                <button class="student-count-btn px-3 py-1 text-sm bg-[#FFD700] text-[#2D2D2D] rounded-lg font-medium" onclick="loadStudentCountTrends(6)">6M</button>
+                                <button class="student-count-btn px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-lg font-medium" onclick="loadStudentCountTrends(12)">1Y</button>
+                            </div>
+                        </div>
+                        <div id="studentCountChart" style="width: 100%; height: 300px;"></div>
+                    </div>
+                </div>
+
+                <!-- Right Column - Quick Info Cards -->
+                <div class="lg:col-span-4 space-y-6">
+
+                    <!-- Quick Actions - Icon Only at Top -->
+                    <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                        <h3 class="text-lg font-bold text-[#2D2D2D] mb-4">Quick Actions</h3>
+                        <div class="grid grid-cols-4 gap-3">
+                            <a href="/Students/Create" class="flex flex-col items-center justify-center p-3 bg-[#FFD700]/20 rounded-xl hover:bg-[#FFD700]/30 transition-all" title="Add Student">
+                                <i class="fas fa-user-plus text-2xl text-[#2D2D2D]"></i>
+                            </a>
+                            <a href="/Attendance" class="flex flex-col items-center justify-center p-3 bg-blue-50 rounded-xl hover:bg-blue-100 transition-all" title="Attendance">
+                                <i class="fas fa-clipboard-check text-2xl text-blue-600"></i>
+                            </a>
+                            <a href="/Billing/Create" class="flex flex-col items-center justify-center p-3 bg-green-50 rounded-xl hover:bg-green-100 transition-all" title="Fee Entry">
+                                <i class="fas fa-dollar-sign text-2xl text-green-600"></i>
+                            </a>
+                            <a href="/Exams" class="flex flex-col items-center justify-center p-3 bg-purple-50 rounded-xl hover:bg-purple-100 transition-all" title="Exams">
+                                <i class="fas fa-graduation-cap text-2xl text-purple-600"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Fee Received Today -->
+                    <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift cursor-pointer" onclick="window.location.href='/BillingReports/Transactions'">
+                        <h3 class="text-lg font-bold text-[#2D2D2D] mb-4">Fee Received Today</h3>
+                        <div class="flex items-center justify-center p-4 bg-green-50 rounded-xl mb-3">
+                            <div class="text-center">
+                                <div class="text-3xl font-bold text-[#4CAF50]">@Model.TodayFeeReceived.ToString("C0")</div>
+                                <div class="text-xs text-gray-600 mt-1">Total Amount</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-blue-50 rounded-xl">
+                            <span class="text-sm text-gray-600">Transactions:</span>
+                            <span class="text-lg font-bold text-blue-600">@Model.TodayFeeTransactions</span>
+                        </div>
+                    </div>
+
+                    <!-- Profile Summary Card -->
+                    <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                        <div class="flex flex-col items-center mb-4">
+                            <div class="w-20 h-20 rounded-2xl bg-[#FFD700]/20 flex items-center justify-center mb-3">
+                                <i class="fas fa-user text-3xl text-[#2D2D2D]"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-[#2D2D2D] mb-1">@userName</h3>
+                            <p class="text-sm text-gray-600 mb-1">Administrator</p>
+                            <p class="text-xs text-[#FFD700] font-medium mb-3">@Model.FinancialSummary.CampusName</p>
+
+                            <!-- Period Selector -->
+                            <div class="flex gap-2 mb-3">
+                                <button class="period-btn px-3 py-1 text-xs bg-[#FFD700] text-[#2D2D2D] rounded-lg font-medium" data-period="thisMonth">This Month</button>
+                                <button class="period-btn px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded-lg font-medium" data-period="lastMonth">Last Month</button>
+                                <button class="period-btn px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded-lg font-medium" data-period="thisYear">This Year</button>
+                            </div>
+
+                            <div class="text-xl font-bold text-[#FFD700]" id="profileRevenue">@Model.FinancialSummary.MonthlyRevenueActual.ToString("C")</div>
+                            <div class="text-xs text-gray-600">Total Revenue</div>
+                        </div>
+
+                        <!-- Quick Stats -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between p-3 bg-gray-50 rounded-xl">
+                                <span class="text-sm text-gray-600">Campus:</span>
+                                <span class="text-sm font-bold text-[#2D2D2D]" id="profileCampusName">@Model.FinancialSummary.CampusName</span>
+                            </div>
+                            <div class="flex justify-between p-3 bg-gray-50 rounded-xl">
+                                <span class="text-sm text-gray-600">Total Expenses:</span>
+                                <span class="text-sm font-bold text-[#2D2D2D]" id="profileExpenses">@Model.FinancialSummary.TotalExpenses.ToString("C0")</span>
+                            </div>
+                            <div class="flex justify-between p-3 bg-gray-50 rounded-xl">
+                                <span class="text-sm text-gray-600">Total Salaries:</span>
+                                <span class="text-sm font-bold text-[#2D2D2D]" id="profileSalaries">@Model.FinancialSummary.TotalSalariesPaid.ToString("C0")</span>
+                            </div>
+                            <div class="flex justify-between p-3 bg-gray-50 rounded-xl">
+                                <span class="text-sm text-gray-600">Total Fees:</span>
+                                <span class="text-sm font-bold text-[#2D2D2D]" id="profileFees">@Model.FinancialSummary.MonthlyRevenueActual.ToString("C0")</span>
+                            </div>
+                            <div class="flex justify-between p-3 @(Model.FinancialSummary.ProfitLoss >= 0 ? "bg-green-50" : "bg-red-50") rounded-xl">
+                                <span class="text-sm text-gray-600">Profit/Loss:</span>
+                                <span class="text-sm font-bold @(Model.FinancialSummary.ProfitLoss >= 0 ? "text-[#4CAF50]" : "text-[#ef4444]")" id="profileProfitLoss">@Model.FinancialSummary.ProfitLoss.ToString("C0")</span>
+                            </div>
+                            <div class="flex justify-between p-3 bg-gray-50 rounded-xl">
+                                <span class="text-sm text-gray-600">Active Duties:</span>
+                                <span class="text-sm font-bold text-[#2D2D2D]">@Model.ActiveDuties.Count</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Today's Attendance Summary -->
+                    <div class="card-dark rounded-3xl shadow-lg p-6 hover-lift">
+                        <h3 class="text-lg font-bold text-white mb-4">Today's Attendance</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-sm mb-2">
+                                    <span class="text-gray-300">Students</span>
+                                    <span class="text-white font-bold">@Model.AttendanceSummary.StudentAttendancePercentage%</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-2">
+                                    <div class="bg-[#FFD700] h-2 rounded-full transition-all duration-500" style="width: @Model.AttendanceSummary.StudentAttendancePercentage%"></div>
+                                </div>
+                                <div class="flex justify-between text-xs text-gray-400 mt-1">
+                                    <span>@Model.AttendanceSummary.TotalStudentsPresent Present</span>
+                                    <span>@Model.AttendanceSummary.TotalStudentsAbsent Absent</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-sm mb-2">
+                                    <span class="text-gray-300">Teachers</span>
+                                    <span class="text-white font-bold">@Model.AttendanceSummary.TeacherAttendancePercentage%</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-2">
+                                    <div class="bg-[#4CAF50] h-2 rounded-full transition-all duration-500" style="width: @Model.AttendanceSummary.TeacherAttendancePercentage%"></div>
+                                </div>
+                                <div class="flex justify-between text-xs text-gray-400 mt-1">
+                                    <span>@Model.AttendanceSummary.TotalTeachersPresent Present</span>
+                                    <span>@Model.AttendanceSummary.TotalTeachersAbsent Absent</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- To-Do List (Dark Theme) -->
+                    <div class="card-dark rounded-3xl shadow-lg p-6 hover-lift">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold text-white">To-Do List</h3>
+                            <button onclick="showAddToDoModal()" class="w-8 h-8 rounded-full bg-[#FFD700] flex items-center justify-center text-[#2D2D2D] hover:bg-[#FFC700] transition-all" title="Add new task">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div id="todoList" class="space-y-3">
+                            @foreach (var todo in Model.ToDoList)
+                            {
+                                <div class="flex items-start gap-3 p-3 @(todo.IsCompleted ? "bg-gray-800" : "bg-gray-700") rounded-xl">
+                                    <button class="w-5 h-5 rounded @(todo.IsCompleted ? "bg-[#4CAF50]" : "border-2 border-gray-400") flex items-center justify-center flex-shrink-0 mt-0.5 cursor-pointer hover:opacity-80 transition-opacity" onclick="toggleToDo(@todo.Id)">
+                                        @if (todo.IsCompleted)
+                                        {
+                                            <i class="fas fa-check text-xs text-white"></i>
+                                        }
+                                    </button>
+                                    <div class="flex-1">
+                                        <div class="text-sm font-medium text-white @(todo.IsCompleted ? "line-through" : "")">@todo.Title</div>
+                                        <div class="text-xs text-gray-400">@todo.Description</div>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span class="text-xs px-2 py-0.5 rounded @(todo.Priority == "High" ? "bg-red-500/20 text-red-300" : todo.Priority == "Medium" ? "bg-yellow-500/20 text-yellow-300" : "bg-blue-500/20 text-blue-300")">@todo.Priority</span>
+                                            <span class="text-xs text-gray-400">@todo.DueDate.ToString("MMM dd")</span>
+                                        </div>
+                                    </div>
+                                    <button class="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 hover:bg-red-500/30 transition-all flex-shrink-0 mt-0.5" onclick="deleteToDo(@todo.Id)" title="Delete task">
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Birthdays & Duties -->
+                    <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                        <h3 class="text-lg font-bold text-[#2D2D2D] mb-4">Upcoming Birthdays</h3>
+                        <div class="space-y-3">
+                            @if (Model.UpcomingBirthdays.Any())
+                            {
+                                @foreach (var birthday in Model.UpcomingBirthdays.Take(5))
+                                {
+                                    <div class="flex items-center gap-3 p-2 bg-yellow-50 rounded-xl">
+                                        <div class="w-10 h-10 rounded-full bg-[#FFD700]/30 flex items-center justify-center">
+                                            <i class="fas fa-birthday-cake text-[#FFD700]"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="text-sm font-medium text-[#2D2D2D]">@birthday.Name</div>
+                                            <div class="text-xs text-gray-600">@birthday.Type - @(birthday.DaysUntil == 0 ? "Today!" : birthday.DaysUntil == 1 ? "Tomorrow" : $"In {birthday.DaysUntil} days")</div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-sm text-gray-500 text-center py-4">No upcoming birthdays</div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Assigned Duties -->
+                    <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift cursor-pointer" onclick="window.location.href='/AssignedDuties/Index'">
+                        <h3 class="text-lg font-bold text-[#2D2D2D] mb-4">Assigned Duties (Active Today)</h3>
+                        <div class="space-y-3 max-h-64 overflow-y-auto">
+                            @if (Model.ActiveDuties.Any())
+                            {
+                                @foreach (var duty in Model.ActiveDuties.Take(5))
+                                {
+                                    <div class="p-3 bg-purple-50 rounded-xl">
+                                        <div class="flex items-start gap-2 mb-2">
+                                            <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                                                <i class="fas fa-tasks text-sm text-purple-600"></i>
+                                            </div>
+                                            <div class="flex-1">
+                                                <div class="text-sm font-semibold text-[#2D2D2D]">@duty.DutyTitle</div>
+                                                <div class="text-xs text-gray-600 mt-1">
+                                                    <i class="fas fa-user text-purple-600"></i> Employee: @duty.Employee.FullName
+                                                </div>
+                                                @if (duty.AssignedStudents?.Any() == true)
+                                                {
+                                                    <div class="text-xs text-gray-600 mt-1">
+                                                        <i class="fas fa-user-graduate text-blue-600"></i> Students: @string.Join(", ", duty.AssignedStudents.Take(3).Select(ads => ads.Student.StudentName))@(duty.AssignedStudents.Count() > 3 ? $" +{duty.AssignedStudents.Count() - 3} more" : "")
+                                                    </div>
+                                                }
+                                                <div class="text-xs text-gray-500 mt-1">
+                                                    <i class="fas fa-calendar"></i> @duty.StartDate.ToString("MMM dd") - @duty.DueDate.ToString("MMM dd")
+                                                    <span class="ml-2 px-2 py-0.5 rounded @(duty.Status == "Assigned" ? "bg-blue-100 text-blue-700" : duty.Status == "In Progress" ? "bg-yellow-100 text-yellow-700" : "bg-gray-100 text-gray-700")">@duty.Status</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-sm text-gray-500 text-center py-4">No active duties</div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Teacher of the Month -->
+                    @if (Model.TeacherOfMonth != null)
+                    {
+                        <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift cursor-pointer" onclick="window.location.href='/TeacherPerformance/Index'">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-bold text-[#2D2D2D]">🏆 Teacher of the Month</h3>
+                                <span class="text-xs text-gray-600">@Model.TeacherOfMonth.Month.ToString("D2")/@Model.TeacherOfMonth.Year</span>
+                            </div>
+                            <div class="bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl p-6 text-white" onclick="event.stopPropagation();">
+                                <div class="flex items-center gap-4 mb-4">
+                                    <div class="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-3xl">
+                                        🥇
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="text-xl font-bold">@Model.TeacherOfMonth.Teacher.FullName</div>
+                                        <div class="text-sm opacity-90">@Model.TeacherOfMonth.Achievements</div>
+                                    </div>
+                                </div>
+                                <div class="bg-white/20 rounded-xl p-4 backdrop-blur-sm">
+                                    <div class="text-center">
+                                        <div class="text-4xl font-bold">@Model.TeacherOfMonth.Score.ToString("F1")</div>
+                                        <div class="text-sm opacity-90">out of 20.0 points</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 text-center">
+                                <a href="/TeacherPerformance/Index" class="text-sm text-blue-600 hover:underline" onclick="event.stopPropagation();">View All Performance Rankings →</a>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Today's Diaries (Homework) -->
+                    <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-[#2D2D2D]">📓 Today's Homework</h3>
+                            <a href="/Diary/Index" class="text-xs text-blue-600 hover:underline">View All</a>
+                        </div>
+                        <div class="space-y-3 max-h-96 overflow-y-auto">
+                            @if (Model.TodayDiaries.Any())
+                            {
+                                @foreach (var diary in Model.TodayDiaries)
+                                {
+                                    <div class="p-3 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors cursor-pointer" onclick="window.location.href='/Diary/Details/@diary.Id'">
+                                        <div class="flex justify-between items-start mb-1">
+                                            <div class="font-medium text-[#2D2D2D] text-sm">@diary.ClassName - @diary.SectionName</div>
+                                            <div class="flex items-center space-x-1">
+                                                <span class="text-xs text-gray-500">@diary.SubjectName</span>
+                                                <a href="/Diary/Edit/@diary.Id" class="text-indigo-600 hover:text-indigo-800" onclick="event.stopPropagation();" title="Edit">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                    </svg>
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <div class="text-xs text-gray-600 mb-1">@diary.TeacherName</div>
+                                        @if (!string.IsNullOrEmpty(diary.Homework))
+                                        {
+                                            <div class="text-sm text-[#2D2D2D] mt-2">
+                                                <i class="fas fa-book text-blue-600 mr-1"></i>
+                                                @diary.Homework
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="text-sm text-gray-400 italic mt-2">No homework assigned</div>
+                                        }
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="text-sm text-gray-500 text-center py-4">No diaries for today</div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Admission Inquiries Card -->
+                    <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold text-[#2D2D2D]">Admission Inquiries</h3>
+                            <a href="/AdmissionInquiries/Index" class="text-xs text-blue-600 hover:underline">View All</a>
+                        </div>
+                        
+                        <!-- Period Toggle -->
+                        <div class="flex gap-2 mb-4">
+                            <button class="inquiry-period-btn px-4 py-2 text-sm bg-[#FFD700] text-[#2D2D2D] rounded-lg font-medium" data-period="thisMonth">
+                                This Month
+                            </button>
+                            <button class="inquiry-period-btn px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg font-medium" data-period="lastMonth">
+                                Last Month
+                            </button>
+                        </div>
+
+                        <!-- Summary Stats -->
+                        <div class="grid grid-cols-3 gap-2 mb-4" id="inquiryStats">
+                            <div class="p-3 bg-blue-50 rounded-lg text-center">
+                                <div class="text-2xl font-bold text-blue-600" id="inquiryTotal">@Model.InquirySummary.ThisMonthTotal</div>
+                                <div class="text-xs text-gray-600">Total</div>
+                            </div>
+                            <div class="p-3 bg-green-50 rounded-lg text-center">
+                                <div class="text-2xl font-bold text-green-600" id="inquiryEnrolled">@Model.InquirySummary.ThisMonthEnrolled</div>
+                                <div class="text-xs text-gray-600">Enrolled</div>
+                            </div>
+                            <div class="p-3 bg-red-50 rounded-lg text-center">
+                                <div class="text-2xl font-bold text-red-600" id="inquiryRejected">@Model.InquirySummary.ThisMonthRejected</div>
+                                <div class="text-xs text-gray-600">Rejected</div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Action Buttons -->
+                        <div class="flex gap-2 mb-4">
+                            <button class="inquiry-status-filter flex-1 px-3 py-2 text-xs bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200" data-status="all">
+                                All
+                            </button>
+                            <button class="inquiry-status-filter flex-1 px-3 py-2 text-xs bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200" data-status="Enrolled">
+                                Enrolled
+                            </button>
+                            <button class="inquiry-status-filter flex-1 px-3 py-2 text-xs bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200" data-status="Rejected">
+                                Rejected
+                            </button>
+                        </div>
+
+                        <!-- Inquiries List -->
+                        <div id="inquiriesList" class="space-y-2 max-h-80 overflow-y-auto">
+                            @foreach (var inquiry in Model.InquirySummary.ThisMonthInquiries.Take(10))
+                            {
+                                <div class="inquiry-item p-3 bg-gray-50 rounded-lg text-sm hover:bg-gray-100 transition-colors cursor-pointer" 
+                                     data-status="@inquiry.InquiryStatus"
+                                     onclick="window.location.href='/AdmissionInquiries/Details/@inquiry.Id'">
+                                    <div class="flex justify-between items-start mb-1">
+                                        <div class="font-semibold text-[#2D2D2D]">@inquiry.StudentName</div>
+                                        <span class="px-2 py-0.5 rounded text-xs @(inquiry.InquiryStatus == "Enrolled" ? "bg-green-100 text-green-700" : inquiry.InquiryStatus == "Rejected" ? "bg-red-100 text-red-700" : inquiry.InquiryStatus == "Contacted" ? "bg-yellow-100 text-yellow-700" : "bg-blue-100 text-blue-700")">
+                                            @inquiry.InquiryStatus
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center gap-3 text-xs text-gray-600">
+                                        <span><i class="fas fa-phone mr-1"></i>@inquiry.PhoneNumber</span>
+                                        <span><i class="fas fa-graduation-cap mr-1"></i>@inquiry.ClassName</span>
+                                    </div>
+                                    <div class="text-xs text-gray-500 mt-1">@inquiry.InquiryDate.ToString("MMM dd, yyyy")</div>
+                                </div>
+                            }
+                            @if (!Model.InquirySummary.ThisMonthInquiries.Any())
+                            {
+                                <div class="text-sm text-gray-500 text-center py-4">No inquiries this month</div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Complaints -->
+                    <div class="glassmorphism rounded-3xl shadow-lg p-6 hover-lift">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold text-[#2D2D2D]">Complaints</h3>
+                            <a href="/StudentComplaint/AdminIndex" class="text-xs text-blue-600 hover:underline">View All</a>
+                        </div>
+                        
+                        <!-- Status Filters -->
+                        <div class="grid grid-cols-2 gap-2 mb-4">
+                            <button class="complaint-filter px-3 py-2 text-sm bg-yellow-100 text-yellow-700 rounded-lg font-medium border-2 border-yellow-400" data-status="open">
+                                <div class="font-bold">@Model.ComplaintSummary.OpenComplaints</div>
+                                <div class="text-xs">Open</div>
+                            </button>
+                            <button class="complaint-filter px-3 py-2 text-sm bg-green-100 text-green-700 rounded-lg font-medium border-2 border-transparent" data-status="resolved">
+                                <div class="font-bold">@(Model.ComplaintSummary.AdminTeacherComplaints.Count(c => c.Status == "Resolved") + Model.ComplaintSummary.StudentParentComplaints.Count(c => c.Status == "Resolved"))</div>
+                                <div class="text-xs">Resolved</div>
+                            </button>
+                        </div>
+                        
+                        <!-- Complaints Display with Split View -->
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <!-- Admin/Teacher Complaints -->
+                            <div>
+                                <div class="text-xs font-semibold text-gray-600 mb-2 border-b pb-1">Admin/Teacher Reports</div>
+                                <div id="adminTeacherComplaints" class="space-y-2 max-h-64 overflow-y-auto">
+                                    @foreach (var complaint in Model.ComplaintSummary.AdminTeacherComplaints.Where(c => c.Status == "Open").Take(5))
+                                    {
+                                        <div class="complaint-card p-2 bg-gray-50 rounded-lg text-xs" data-status="@complaint.Status.ToLower()">
+                                            <div class="font-semibold text-gray-800 truncate">@complaint.ComplaintTitle</div>
+                                            <div class="text-gray-600 truncate">Student: @complaint.StudentName</div>
+                                            <div class="flex items-center justify-between mt-1">
+                                                <span class="px-2 py-0.5 rounded text-xs @(complaint.Status == "Open" ? "bg-yellow-100 text-yellow-700" : complaint.Status == "Resolved" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700")">
+                                                    @complaint.Status
+                                                </span>
+                                                <span class="text-xs text-gray-500">
+                                                    @(complaint.IsToday ? "Today" : complaint.IsYesterday ? "Yesterday" : complaint.ComplaintDate.ToString("MMM dd"))
+                                                </span>
+                                            </div>
+                                        </div>
+                                    }
+                                    @if (!Model.ComplaintSummary.AdminTeacherComplaints.Any(c => c.Status == "Open"))
+                                    {
+                                        <div class="text-xs text-gray-400 text-center py-4">No open complaints</div>
+                                    }
+                                </div>
+                            </div>
+                            
+                            <!-- Student/Parent Complaints -->
+                            <div class="border-l pl-3">
+                                <div class="text-xs font-semibold text-gray-600 mb-2 border-b pb-1">Student/Parent Reports</div>
+                                <div id="studentParentComplaints" class="space-y-2 max-h-64 overflow-y-auto">
+                                    @foreach (var complaint in Model.ComplaintSummary.StudentParentComplaints.Where(c => c.Status == "Open").Take(5))
+                                    {
+                                        <div class="complaint-card p-2 bg-gray-50 rounded-lg text-xs" data-status="@complaint.Status.ToLower()">
+                                            <div class="font-semibold text-gray-800 truncate">@complaint.ComplaintTitle</div>
+                                            <div class="text-gray-600 truncate">Student: @complaint.StudentName</div>
+                                            <div class="flex items-center justify-between mt-1">
+                                                <span class="px-2 py-0.5 rounded text-xs @(complaint.Status == "Open" ? "bg-yellow-100 text-yellow-700" : complaint.Status == "Resolved" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700")">
+                                                    @complaint.Status
+                                                </span>
+                                                <span class="text-xs text-gray-500">
+                                                    @(complaint.IsToday ? "Today" : complaint.IsYesterday ? "Yesterday" : complaint.ComplaintDate.ToString("MMM dd"))
+                                                </span>
+                                            </div>
+                                        </div>
+                                    }
+                                    @if (!Model.ComplaintSummary.StudentParentComplaints.Any(c => c.Status == "Open"))
+                                    {
+                                        <div class="text-xs text-gray-400 text-center py-4">No open complaints</div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+    <!-- Custom Modal for Calendar Events -->
+    <div id="calendarEventModal" class="custom-modal">
+        <div class="custom-modal-content">
+            <div class="custom-modal-header">
+                <h2 id="calendarModalTitle">Add Event</h2>
+                <button class="custom-modal-close" onclick="closeCalendarModal()">&times;</button>
+            </div>
+            <div class="custom-modal-body">
+                <form id="calendarEventForm">
+                    <input type="hidden" id="eventId" value="">
+                    <input type="hidden" id="eventDate" value="">
+                    
+                    <div class="form-group">
+                        <label for="eventName">Event Name <span style="color: #ef4444;">*</span></label>
+                        <input type="text" id="eventName" placeholder="Enter event name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="eventDescription">Description</label>
+                        <textarea id="eventDescription" placeholder="Enter description (optional)"></textarea>
+                    </div>
+                    
+                    <div class="form-group" id="startDateGroup" style="display:none;">
+                        <label for="eventStartDate">Start Date</label>
+                        <input type="date" id="eventStartDate">
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="isMultiDay">
+                        <label for="isMultiDay">Multiple-day event?</label>
+                    </div>
+                    
+                    <div class="form-group" id="endDateGroup" style="display: none;">
+                        <label for="eventEndDate">End Date</label>
+                        <input type="date" id="eventEndDate">
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="isHoliday">
+                        <label for="isHoliday">Mark as holiday?</label>
+                    </div>
+                </form>
+            </div>
+            <div class="custom-modal-footer">
+                <button type="button" class="modal-btn modal-btn-secondary" onclick="closeCalendarModal()">Cancel</button>
+                <button type="button" class="modal-btn modal-btn-primary" onclick="submitCalendarEvent()">Save Event</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal for To-Do -->
+    <div id="todoModal" class="custom-modal">
+        <div class="custom-modal-content">
+            <div class="custom-modal-header">
+                <h2>Add New Task</h2>
+                <button class="custom-modal-close" onclick="closeTodoModal()">&times;</button>
+            </div>
+            <div class="custom-modal-body">
+                <form id="todoForm">
+                    <div class="form-group">
+                        <label for="todoTitle">Task Title <span style="color: #ef4444;">*</span></label>
+                        <input type="text" id="todoTitle" placeholder="Enter task title" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="todoDescription">Description</label>
+                        <textarea id="todoDescription" placeholder="Enter description (optional)"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="todoPriority">Priority</label>
+                        <select id="todoPriority">
+                            <option value="Low">Low</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="todoDueDate">Due Date</label>
+                        <input type="date" id="todoDueDate">
+                    </div>
+                </form>
+            </div>
+            <div class="custom-modal-footer">
+                <button type="button" class="modal-btn modal-btn-secondary" onclick="closeTodoModal()">Cancel</button>
+                <button type="button" class="modal-btn modal-btn-primary" onclick="submitTodoTask()">Add Task</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Navigation function
+        function navigateToSection(url) {
+            window.location.href = url;
+        }
+
+        // Active nav item styling
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                if (!this.onclick) {
+                    document.querySelectorAll('.nav-item').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                }
+            });
+        });
+
+        // Animated Counter Function
+        function animateCounter(element, target) {
+            let current = 0;
+            const increment = target / 50;
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    element.textContent = Math.round(target);
+                    clearInterval(timer);
+                } else {
+                    element.textContent = Math.round(current);
+                }
+            }, 20);
+        }
+
+        // Initialize Charts
+        function initializeCharts() {
+            // Attendance Trends Chart
+            loadAttendanceTrends(7);
+
+            // Fee Collection Chart
+            loadFeeCollectionChart(180);
+
+            // Payment Status Chart
+            initPaymentStatusChart();
+
+            // Student Count Chart
+            loadStudentCountTrends(6);
+
+            // Revenue Trends Chart
+            loadRevenueTrends('thisYear');
+
+            // Calendar
+            initCalendar();
+        }
+
+        // Load Revenue Trends
+        function loadRevenueTrends(period) {
+            const chartDom = document.getElementById('revenueTrendsChart');
+            const myChart = echarts.init(chartDom);
+
+            myChart.showLoading();
+
+            // Update button states
+           if (typeof event !== 'undefined' && event && event.target && event.target.classList) {
+            document.querySelectorAll('.revenue-period-btn').forEach(btn => {
+                btn.classList.remove('bg-[#FFD700]', 'text-[#2D2D2D]');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            event.target.classList.remove('bg-gray-200', 'text-gray-700');
+            event.target.classList.add('bg-[#FFD700]', 'text-[#2D2D2D]');
+        }
+
+            const campusId = @(Model.SelectedCampusId.HasValue? Model.SelectedCampusId.Value.ToString() : "null");
+            const url = campusId ? `/Admin/GetRevenueTrends?period=${period}&campusId=${campusId}` : `/Admin/GetRevenueTrends?period=${period}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    myChart.hideLoading();
+
+                    const dates = data.map(d => d.date);
+                    const totalExpenses = data.map(d => d.totalExpenses);
+                    const totalSalaries = data.map(d => d.totalSalaries);
+                    const totalFees = data.map(d => d.totalFees);
+                    const totalRevenue = data.map(d => d.totalRevenue);
+
+                    const option = {
+                        tooltip: {
+                            trigger: 'axis',
+                            axisPointer: {
+                                type: 'cross'
+                            },
+                            formatter: function(params) {
+                                let result = params[0].name + '<br/>';
+                                params.forEach(param => {
+                                    result += param.marker + param.seriesName + ': $' + param.value.toLocaleString() + '<br/>';
+                                });
+                                return result;
+                            }
+                        },
+                        legend: {
+                            data: ['Total Expenses', 'Total Salaries', 'Total Fees', 'Revenue']
+                        },
+                        grid: {
+                            left: '3%',
+                            right: '4%',
+                            bottom: '3%',
+                            containLabel: true
+                        },
+                        xAxis: {
+                            type: 'category',
+                            boundaryGap: false,
+                            data: dates,
+                            axisLabel: {
+                                rotate: 45
+                            }
+                        },
+                        yAxis: {
+                            type: 'value',
+                            name: 'Amount ($)'
+                        },
+                        series: [
+                            {
+                                name: 'Total Expenses',
+                                type: 'line',
+                                smooth: true,
+                                data: totalExpenses,
+                                itemStyle: {
+                                    color: '#ef4444'
+                                }
+                            },
+                            {
+                                name: 'Total Salaries',
+                                type: 'line',
+                                smooth: true,
+                                data: totalSalaries,
+                                itemStyle: {
+                                    color: '#FF9800'
+                                }
+                            },
+                            {
+                                name: 'Total Fees',
+                                type: 'line',
+                                smooth: true,
+                                data: totalFees,
+                                itemStyle: {
+                                    color: '#4CAF50'
+                                }
+                            },
+                            {
+                                name: 'Revenue',
+                                type: 'line',
+                                smooth: true,
+                                data: totalRevenue,
+                                itemStyle: {
+                                    color: '#FFD700'
+                                },
+                                lineStyle: {
+                                    width: 3
+                                }
+                            }
+                        ]
+                    };
+
+                    myChart.setOption(option);
+                })
+                .catch(error => {
+                    console.error('Error loading revenue trends:', error);
+                    myChart.hideLoading();
+                });
+        }
+
+        // Global variables for calendar navigation
+        let calendarCurrentMonth = new Date().getMonth();
+        let calendarCurrentYear = new Date().getFullYear();
+        
+        // Navigate to previous month
+        function previousMonth() {
+            calendarCurrentMonth--;
+            if (calendarCurrentMonth < 0) {
+                calendarCurrentMonth = 11;
+                calendarCurrentYear--;
+            }
+            loadCalendar(calendarCurrentYear, calendarCurrentMonth);
+        }
+        
+        // Navigate to next month
+        function nextMonth() {
+            calendarCurrentMonth++;
+            if (calendarCurrentMonth > 11) {
+                calendarCurrentMonth = 0;
+                calendarCurrentYear++;
+            }
+            loadCalendar(calendarCurrentYear, calendarCurrentMonth);
+        }
+        
+        // Initialize Calendar with multi-day event support
+        function initCalendar() {
+            loadCalendar(calendarCurrentYear, calendarCurrentMonth);
+        }
+        
+        // Load calendar for specific month/year
+        function loadCalendar(year, month) {
+            const calendarDiv = document.getElementById('dashboardCalendar');
+            const today = new Date();
+            
+            // Load calendar events for specified month
+            fetch(`/Admin/GetCalendarEvents?year=${year}&month=${month + 1}`)
+                .then(response => response.json())
+                .then(events => {
+                    // Group events by date, handling multi-day events
+                    const eventsByDate = {};
+                    const multiDayEvents = new Set();
+                    
+                    events.forEach(event => {
+                        const startDate = new Date(event.date);
+                        const startDay = startDate.getDate();
+                        
+                        // Check if event has end date (multi-day event)
+                        if (event.endDate) {
+                            const endDate = new Date(event.endDate);
+                            multiDayEvents.add(event.id);
+                            
+                            // Add event to all days between start and end
+                            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                                if (d.getMonth() === month && d.getFullYear() === year) {
+                                    const day = d.getDate();
+                                    if (!eventsByDate[day]) eventsByDate[day] = [];
+                                    eventsByDate[day].push({...event, isMultiDay: true});
+                                }
+                            }
+                        } else {
+                            // Single day event
+                            if (!eventsByDate[startDay]) eventsByDate[startDay] = [];
+                            eventsByDate[startDay].push({...event, isMultiDay: false});
+                        }
+                    });
+
+                    // Simple calendar HTML generation
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    const firstDay = new Date(year, month, 1).getDay();
+
+                    let calendarHTML = '<div class="mb-4"><h4 class="text-sm font-medium text-gray-300">' + 
+                                      new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) + 
+                                      '</h4></div><div class="grid grid-cols-7 gap-2">';
+
+                    // Day headers (dark theme)
+                    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                    days.forEach((day, index) => {
+                        const textColor = index === 0 ? 'text-red-400' : 'text-gray-400';
+                        calendarHTML += `<div class="text-center text-xs font-medium ${textColor}">${day}</div>`;
+                    });
+
+                    // Empty cells for days before month starts
+                    for (let i = 0; i < firstDay; i++) {
+                        calendarHTML += '<div></div>';
+                    }
+
+                    // Days of month
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const currentDate = new Date(year, month, day);
+                        const dayOfWeek = currentDate.getDay();
+                        const isSunday = dayOfWeek === 0;
+                        const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+                        const hasEvents = eventsByDate[day] && eventsByDate[day].length > 0;
+                        
+                        // Check if it's a holiday or has multi-day event
+                        const isHoliday = hasEvents && eventsByDate[day].some(e => e.isHoliday);
+                        const hasMultiDayEvent = hasEvents && eventsByDate[day].some(e => e.isMultiDay);
+                        
+                        let bgClass = '';
+                        if (isToday) {
+                            bgClass = 'bg-[#FFD700] text-[#2D2D2D] font-bold';
+                        } else if (isHoliday) {
+                            bgClass = 'bg-red-900 text-red-200';
+                        } else if (hasMultiDayEvent) {
+                            bgClass = 'bg-blue-900 text-blue-200 border-2 border-blue-400';
+                        } else if (isSunday) {
+                            bgClass = 'bg-red-900/50 text-red-300';
+                        } else if (hasEvents) {
+                            bgClass = 'bg-gray-700 text-gray-200';
+                        } else {
+                            bgClass = 'bg-gray-800 text-gray-300 hover:bg-gray-700';
+                        }
+                        
+                        let tooltip = '';
+                        if (hasEvents) {
+                            tooltip = eventsByDate[day].map(e => {
+                                const icon = e.type === 'exam' ? '📝' : e.isHoliday ? '🏖️' : '📅';
+                                let text = `${icon} ${e.title}`;
+                                if (e.isMultiDay) text += ' (Multi-day)';
+                                if (e.classSection && e.classSection.trim() !== '') {
+                                    text += ` (${e.classSection})`;
+                                }
+                                if (e.description) {
+                                    text += `: ${e.description}`;
+                                }
+                                return text;
+                            }).join('&#10;');
+                        } else if (isSunday) {
+                            tooltip = 'Sunday - Off Day';
+                        }
+                        
+                        calendarHTML += `<div class="calendar-day text-center p-2 rounded-lg ${bgClass} cursor-pointer text-sm relative group" 
+                                             data-day="${day}" data-month="${month + 1}" data-year="${year}" 
+                                             data-events='${JSON.stringify(eventsByDate[day] || [])}'
+                                             onclick="showDayEvents(this)"
+                                             title="${tooltip || 'Click to view/add events'}">
+                            ${day}
+                            ${hasEvents ? `<div class="absolute top-0 right-0 w-2 h-2 ${hasMultiDayEvent ? 'bg-blue-400' : 'bg-green-400'} rounded-full"></div>` : ''}
+                            <div class="absolute top-0 right-0 hidden group-hover:flex items-center justify-center w-5 h-5 bg-[#4CAF50] text-white rounded-full text-xs cursor-pointer" 
+                                 onclick="event.stopPropagation(); showAddEventModal(${day}, ${month + 1}, ${year})">
+                                +
+                            </div>
+                        </div>`;
+                    }
+
+                    calendarHTML += '</div>';
+                    calendarDiv.innerHTML = calendarHTML;
+                    
+                    // Show first event day or first day of month
+                    if (Object.keys(eventsByDate).length > 0) {
+                        const firstEventDay = Math.min(...Object.keys(eventsByDate).map(Number));
+                        const firstEventElement = document.querySelector(`[data-day="${firstEventDay}"][data-month="${month + 1}"]`);
+                        if (firstEventElement) {
+                            showDayEvents(firstEventElement);
+                        } else {
+                            updateCalendarEventsList([], `Events for ${new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`);
+                        }
+                    } else {
+                        updateCalendarEventsList([], `Events for ${new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading calendar events:', error);
+                    calendarDiv.innerHTML = '<div class="text-sm text-red-400 text-center py-4">Error loading calendar</div>';
+                });
+        }
+        
+        // Show events for a specific day
+        function showDayEvents(dayElement) {
+            const events = JSON.parse(dayElement.dataset.events || '[]');
+            const day = dayElement.dataset.day;
+            const month = dayElement.dataset.month;
+            const year = dayElement.dataset.year;
+            const date = new Date(year, month - 1, day);
+            
+            if (events.length === 0) {
+                updateCalendarEventsList([], `Events for ${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`);
+            } else {
+                updateCalendarEventsList(events, `Events for ${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`);
+            }
+        }
+        
+        function updateCalendarEventsList(events, title = 'Upcoming Events') {
+            const eventsDiv = document.getElementById('calendarEvents');
+            if (!events || events.length === 0) {
+                eventsDiv.innerHTML = `<div class="text-sm font-semibold text-gray-300 mb-2">${title}</div><div class="text-sm text-gray-500 text-center py-4">No events</div>`;
+                return;
+            }
+            
+            let eventsHTML = `<div class="text-sm font-semibold text-gray-300 mb-2">${title}</div>`;
+            events.slice(0, 5).forEach(event => {
+                const icon = event.type === 'exam' ? '📝' : event.isHoliday ? '🏖️' : '📅';
+                const color = event.type === 'exam' ? 'bg-purple-900/50' : event.isHoliday ? 'bg-red-900/50' : 'bg-blue-900/50';
+                const textColor = event.type === 'exam' ? 'text-purple-200' : event.isHoliday ? 'text-red-200' : 'text-blue-200';
+                const multiDayBadge = event.isMultiDay ? '<span class="ml-2 px-2 py-0.5 bg-blue-600 text-white text-xs rounded">Multi-day</span>' : '';
+                
+                let eventDetails = new Date(event.date).toLocaleDateString();
+                if (event.endDate && event.isMultiDay) {
+                    eventDetails += ` - ${new Date(event.endDate).toLocaleDateString()}`;
+                }
+                if (event.classSection && event.classSection.trim() !== '') {
+                    eventDetails += ` • ${event.classSection}`;
+                }
+                if (event.description) {
+                    eventDetails += ` • ${event.description}`;
+                }
+                
+                // Only show edit/delete for non-exam events
+                const actionButtons = event.type !== 'exam' ? `
+                    <button class="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 hover:bg-blue-500/30 transition-all flex-shrink-0" onclick="showEditEventModal(${event.id}, '${event.title.replace(/'/g, "\\'")}', '${(event.description || '').replace(/'/g, "\\'")}', '${event.date}', '${event.endDate || ''}', ${event.isHoliday})" title="Edit event">
+                        <i class="fas fa-edit text-xs"></i>
+                    </button>
+                    <button class="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 hover:bg-red-500/30 transition-all flex-shrink-0" onclick="deleteCalendarEvent(${event.id})" title="Delete event">
+                        <i class="fas fa-trash text-xs"></i>
+                    </button>
+                ` : '';
+                
+                eventsHTML += `
+                    <div class="flex items-center gap-2 p-2 ${color} rounded-xl hover:opacity-80 transition-opacity">
+                        <div class="text-xl">${icon}</div>
+                        <div class="flex-1">
+                            <div class="text-sm font-medium ${textColor}">
+                                ${event.title}${multiDayBadge}
+                            </div>
+                            <div class="text-xs text-gray-400">${eventDetails}</div>
+                        </div>
+                        ${actionButtons}
+                    </div>`;
+            });
+            
+            eventsDiv.innerHTML = eventsHTML;
+        }
+        
+        function showAddEventModal(day, month, year) {
+            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            
+            // Reset form
+            document.getElementById('calendarEventForm').reset();
+            document.getElementById('eventId').value = '';
+            document.getElementById('eventDate').value = dateStr;
+            document.getElementById('eventEndDate').value = dateStr;
+            document.getElementById('calendarModalTitle').textContent = `Add Event for ${year}-${month}-${day}`;
+            document.getElementById('startDateGroup').style.display = 'none';
+            document.getElementById('endDateGroup').style.display = 'none';
+            
+            // Show modal
+            document.getElementById('calendarEventModal').style.display = 'block';
+            
+            // Setup multi-day toggle
+            document.getElementById('isMultiDay').onchange = function() {
+                document.getElementById('endDateGroup').style.display = this.checked ? 'block' : 'none';
+            };
+        }
+        
+        function closeCalendarModal() {
+            document.getElementById('calendarEventModal').style.display = 'none';
+        }
+        
+        function submitCalendarEvent() {
+            const eventName = document.getElementById('eventName').value.trim();
+            const description = document.getElementById('eventDescription').value.trim();
+            const isMultiDay = document.getElementById('isMultiDay').checked;
+            const endDate = isMultiDay ? document.getElementById('eventEndDate').value : null;
+            const isHoliday = document.getElementById('isHoliday').checked;
+            const eventId = document.getElementById('eventId').value;
+            const startDate = document.getElementById('eventStartDate').value || document.getElementById('eventDate').value;
+            
+            if (!eventName) {
+                alert('Event name is required');
+                return;
+            }
+            
+            const campusId = @(Model.SelectedCampusId ?? 0);
+            const url = eventId ? '/Admin/UpdateCalendarEvent' : '/Admin/AddCalendarEvent';
+            const payload = eventId ? 
+                { id: parseInt(eventId), eventName, description, startDate, endDate, isHoliday } :
+                { campusId, eventName, description, startDate: document.getElementById('eventDate').value, endDate, isHoliday };
+            
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    closeCalendarModal();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: eventId ? 'Event updated successfully' : 'Event added successfully',
+                        confirmButtonColor: '#FFD700',
+                        timer: 1500
+                    });
+                    initCalendar();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error saving event:', error);
+                alert('Error saving event');
+            });
+        }
+        
+        // Show edit event modal
+        function showEditEventModal(id, title, description, startDate, endDate, isHoliday) {
+            const hasEndDate = endDate && endDate !== '' && endDate !== 'null';
+            
+            // Populate form
+            document.getElementById('eventId').value = id;
+            document.getElementById('eventName').value = title;
+            document.getElementById('eventDescription').value = description || '';
+            document.getElementById('eventStartDate').value = startDate;
+            document.getElementById('eventEndDate').value = hasEndDate ? endDate : startDate;
+            document.getElementById('isMultiDay').checked = hasEndDate;
+            document.getElementById('isHoliday').checked = isHoliday;
+            document.getElementById('calendarModalTitle').textContent = 'Edit Event';
+            document.getElementById('startDateGroup').style.display = 'block';
+            document.getElementById('endDateGroup').style.display = hasEndDate ? 'block' : 'none';
+            
+            // Show modal
+            document.getElementById('calendarEventModal').style.display = 'block';
+            
+            // Setup multi-day toggle
+            document.getElementById('isMultiDay').onchange = function() {
+                document.getElementById('endDateGroup').style.display = this.checked ? 'block' : 'none';
+            };
+        }
+        
+        // Delete calendar event
+        function deleteCalendarEvent(id) {
+            Swal.fire({
+                title: 'Delete Event?',
+                text: 'Are you sure you want to delete this event? This action cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, delete it',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/Admin/DeleteCalendarEvent?id=${id}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Deleted!',
+                                text: 'Event has been deleted successfully',
+                                confirmButtonColor: '#FFD700',
+                                timer: 1500
+                            });
+                            initCalendar(); // Reload calendar only
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.message || 'Error deleting event',
+                                confirmButtonColor: '#ef4444'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error deleting event:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Error deleting event',
+                            confirmButtonColor: '#ef4444'
+                        });
+                    });
+                }
+            });
+        }
+
+        // Period selector for profile summary
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.period-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const period = this.dataset.period;
+
+                    // Update button states
+                    document.querySelectorAll('.period-btn').forEach(b => {
+                        b.classList.remove('bg-[#FFD700]', 'text-[#2D2D2D]');
+                        b.classList.add('bg-gray-200', 'text-gray-700');
+                    });
+                    this.classList.remove('bg-gray-200', 'text-gray-700');
+                    this.classList.add('bg-[#FFD700]', 'text-[#2D2D2D]');
+
+                    // Fetch and update financial summary
+                    const campusId = @(Model.SelectedCampusId.HasValue? Model.SelectedCampusId.Value.ToString() : "null");
+                    const url = campusId ? `/Admin/GetFinancialSummaryByPeriod?period=${period}&campusId=${campusId}` : `/Admin/GetFinancialSummaryByPeriod?period=${period}`;
+
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(data => {
+                            document.getElementById('profileRevenue').textContent = '$' + data.monthlyRevenueActual.toLocaleString();
+                            document.getElementById('profileCampusName').textContent = data.campusName;
+                            document.getElementById('profileExpenses').textContent = '$' + data.totalExpenses.toLocaleString();
+                            document.getElementById('profileSalaries').textContent = '$' + data.totalSalariesPaid.toLocaleString();
+                            document.getElementById('profileFees').textContent = '$' + data.monthlyRevenueActual.toLocaleString();
+                            document.getElementById('profileProfitLoss').textContent = '$' + data.profitLoss.toLocaleString();
+
+                            // Update color based on profit/loss
+                            const profitLossElement = document.getElementById('profileProfitLoss');
+                            if (data.profitLoss >= 0) {
+                                profitLossElement.classList.remove('text-[#ef4444]');
+                                profitLossElement.classList.add('text-[#4CAF50]');
+                            } else {
+                                profitLossElement.classList.remove('text-[#4CAF50]');
+                                profitLossElement.classList.add('text-[#ef4444]');
+                            }
+                        })
+                        .catch(error => console.error('Error updating financial summary:', error));
+                });
+            });
+        });
+
+        // Load Attendance Trends
+        function loadAttendanceTrends(days) {
+            const chartDom = document.getElementById('attendanceTrendsChart');
+            const myChart = echarts.init(chartDom);
+
+            // Show loading
+            myChart.showLoading();
+
+            fetch(`/Admin/GetAttendanceTrends?days=${days}`)
+                .then(response => response.json())
+                .then(data => {
+                    myChart.hideLoading();
+
+                    const dates = data.map(d => d.dayOfWeek);
+                    const presentData = data.map(d => d.present);
+                    const absentData = data.map(d => d.absent);
+                    const percentageData = data.map(d => d.percentage);
+
+                    const option = {
+                        tooltip: {
+                            trigger: 'axis',
+                            axisPointer: {
+                                type: 'cross'
+                            }
+                        },
+                        legend: {
+                            data: ['Present', 'Absent', 'Attendance %']
+                        },
+                        grid: {
+                            left: '3%',
+                            right: '4%',
+                            bottom: '3%',
+                            containLabel: true
+                        },
+                        xAxis: {
+                            type: 'category',
+                            boundaryGap: false,
+                            data: dates
+                        },
+                        yAxis: [
+                            {
+                                type: 'value',
+                                name: 'Count'
+                            },
+                            {
+                                type: 'value',
+                                name: 'Percentage',
+                                max: 100
+                            }
+                        ],
+                        series: [
+                            {
+                                name: 'Present',
+                                type: 'line',
+                                smooth: true,
+                                data: presentData,
+                                areaStyle: {
+                                    color: 'rgba(76, 175, 80, 0.3)'
+                                },
+                                itemStyle: {
+                                    color: '#4CAF50'
+                                }
+                            },
+                            {
+                                name: 'Absent',
+                                type: 'line',
+                                smooth: true,
+                                data: absentData,
+                                areaStyle: {
+                                    color: 'rgba(239, 68, 68, 0.3)'
+                                },
+                                itemStyle: {
+                                    color: '#ef4444'
+                                }
+                            },
+                            {
+                                name: 'Attendance %',
+                                type: 'line',
+                                smooth: true,
+                                yAxisIndex: 1,
+                                data: percentageData,
+                                itemStyle: {
+                                    color: '#FFD700'
+                                }
+                            }
+                        ]
+                    };
+
+                    myChart.setOption(option);
+                })
+                .catch(error => {
+                    console.error('Error loading attendance trends:', error);
+                    myChart.hideLoading();
+                });
+        }
+
+        // Load Fee Collection Chart with Target Line
+        function loadFeeCollectionChart(days = 180) {
+            const chartDom = document.getElementById('feeCollectionChart');
+            const myChart = echarts.init(chartDom);
+
+            myChart.showLoading();
+
+            // Update button states
+           if (typeof event !== 'undefined' && event && event.target && event.target.classList) {
+            document.querySelectorAll('.fee-period-btn').forEach(btn => {
+                btn.classList.remove('bg-[#FFD700]', 'text-[#2D2D2D]');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            event.target.classList.remove('bg-gray-200', 'text-gray-700');
+            event.target.classList.add('bg-[#FFD700]', 'text-[#2D2D2D]');
+        }
+
+            const endpoint = days >= 180 ? `/Admin/GetFeeCollectionTrends?months=${days/30}` : `/Admin/GetFeeCollectionTrends?days=${days}`;
+
+            fetch(endpoint)
+                .then(response => response.json())
+                .then(data => {
+                    myChart.hideLoading();
+
+                    const labels = data.map(d => d.month || d.date);
+                    const collected = data.map(d => d.collected);
+                    const targets = data.map(d => d.target || 0);
+
+                    const option = {
+                        tooltip: {
+                            trigger: 'axis',
+                            formatter: function(params) {
+                                let result = params[0].name + '<br/>';
+                                params.forEach(param => {
+                                    result += '💰 ' + param.seriesName + ': $' + param.value.toLocaleString() + '<br/>';
+                                });
+                                return result;
+                            }
+                        },
+                        legend: {
+                            data: ['Collected'],
+                            bottom: 0
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: labels,
+                            axisLabel: {
+                                rotate: 45
+                            }
+                        },
+                        yAxis: {
+                            type: 'value'
+                        },
+                        series: [
+                            {
+                                name: 'Collected',
+                                data: collected,
+                                type: 'bar',
+                                itemStyle: {
+                                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                        { offset: 0, color: '#4CAF50' },
+                                        { offset: 1, color: '#2E7D32' }
+                                    ])
+                                },
+                                label: {
+                                    show: false
+                                }
+                            }
+                        ]
+                    };
+
+                    myChart.setOption(option);
+                })
+                .catch(error => {
+                    console.error('Error loading fee collection:', error);
+                    myChart.hideLoading();
+                });
+        }
+
+        // Payment Status Chart
+        function initPaymentStatusChart() {
+            const chartDom = document.getElementById('paymentStatusChart');
+            const myChart = echarts.init(chartDom);
+
+            const collected = @Model.FinancialSummary.MonthlyRevenueActual;
+            const target = @Model.FinancialSummary.TotalFeesToBeCollected;
+            const remaining = Math.max(0, target - collected);
+
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: ${c} ({d}%)'
+                },
+                series: [{
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: {
+                        borderRadius: 10,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: false
+                    },
+                    emphasis: {
+                        label: {
+                            show: true,
+                            fontSize: 16,
+                            fontWeight: 'bold'
+                        }
+                    },
+                    data: [
+                        { value: collected, name: 'Collected', itemStyle: { color: '#4CAF50' } },
+                        { value: remaining, name: 'Remaining', itemStyle: { color: '#FFD700' } }
+                    ]
+                }]
+            };
+
+            myChart.setOption(option);
+        }
+
+        // Student Count Trends Chart
+        function loadStudentCountTrends(months = 6) {
+            const chartDom = document.getElementById('studentCountChart');
+            const myChart = echarts.init(chartDom);
+            
+            myChart.showLoading();
+            
+            // Update button states
+            if (typeof event !== 'undefined' && event && event.target && event.target.classList) {
+                document.querySelectorAll('.student-count-btn').forEach(btn => {
+                    btn.classList.remove('bg-[#FFD700]', 'text-[#2D2D2D]');
+                    btn.classList.add('bg-gray-200', 'text-gray-700');
+                });
+                event.target.classList.remove('bg-gray-200', 'text-gray-700');
+                event.target.classList.add('bg-[#FFD700]', 'text-[#2D2D2D]');
+            }
+            
+            fetch(`/Admin/GetStudentCountTrends?months=${months}`)
+                .then(response => response.json())
+                .then(data => {
+                    myChart.hideLoading();
+                    
+                    const months = data.map(d => d.month);
+                    const counts = data.map(d => d.count);
+                    
+                    const option = {
+                        tooltip: {
+                            trigger: 'axis',
+                            formatter: function(params) {
+                                return params[0].name + '<br/>Students: ' + params[0].value;
+                            }
+                        },
+                        grid: {
+                            left: '3%',
+                            right: '4%',
+                            bottom: '3%',
+                            containLabel: true
+                        },
+                        xAxis: {
+                            type: 'category',
+                            boundaryGap: false,
+                            data: months,
+                            axisLabel: {
+                                rotate: 45
+                            }
+                        },
+                        yAxis: {
+                            type: 'value',
+                            name: 'Student Count'
+                        },
+                        series: [{
+                            name: 'Students',
+                            type: 'line',
+                            smooth: true,
+                            data: counts,
+                            areaStyle: {
+                                color: 'rgba(255, 215, 0, 0.3)'
+                            },
+                            itemStyle: {
+                                color: '#FFD700'
+                            },
+                            lineStyle: {
+                                width: 3
+                            }
+                        }]
+                    };
+                    
+                    myChart.setOption(option);
+                })
+                .catch(error => {
+                    console.error('Error loading student count trends:', error);
+                    myChart.hideLoading();
+                });
+        }
+        
+        // Toggle between regular and namaz attendance
+        // Global variable to track current period
+        let currentAttendancePeriod = 7;
+        let currentAttendanceType = 'student'; // Track current attendance type
+        
+        // Switch attendance type (student, employee, namaz)
+        function switchAttendanceType(type, button) {
+            currentAttendanceType = type;
+            
+            // Update button states
+            document.querySelectorAll('.attendance-type-btn').forEach(btn => {
+                btn.classList.remove('bg-[#FFD700]', 'text-[#2D2D2D]');
+                btn.classList.add('bg-gray-700', 'text-gray-300');
+            });
+            button.classList.remove('bg-gray-700', 'text-gray-300');
+            button.classList.add('bg-[#FFD700]', 'text-[#2D2D2D]');
+            
+            // Load appropriate chart
+            if (type === 'employee') {
+                loadEmployeeAttendanceTrends(currentAttendancePeriod);
+            } else if (type === 'namaz') {
+                loadNamazAttendanceTrends(currentAttendancePeriod);
+            } else {
+                loadAttendanceTrends(currentAttendancePeriod);
+            }
+        }
+        
+        // Update attendance period and reload appropriate chart
+        function updateAttendancePeriod(days, button) {
+            currentAttendancePeriod = days;
+            
+            // Update button states
+            document.querySelectorAll('.attendance-period-btn').forEach(btn => {
+                btn.classList.remove('bg-[#FFD700]', 'text-[#2D2D2D]');
+                btn.classList.add('bg-gray-700', 'text-gray-300');
+            });
+            button.classList.remove('bg-gray-700', 'text-gray-300');
+            button.classList.add('bg-[#FFD700]', 'text-[#2D2D2D]');
+            
+            // Reload appropriate chart based on current type
+            if (currentAttendanceType === 'employee') {
+                loadEmployeeAttendanceTrends(currentAttendancePeriod);
+            } else if (currentAttendanceType === 'namaz') {
+                loadNamazAttendanceTrends(currentAttendancePeriod);
+            } else {
+                loadAttendanceTrends(currentAttendancePeriod);
+            }
+        }
+        
+        // Load Student Attendance Trends (dark theme)
+        function loadAttendanceTrends(days) {
+            const chartDom = document.getElementById('attendanceTrendsChart');
+            const myChart = echarts.init(chartDom);
+
+            myChart.showLoading();
+
+            fetch(`/Admin/GetAttendanceTrends?days=${days}`)
+                .then(response => response.json())
+                .then(data => {
+                    myChart.hideLoading();
+
+                    const dates = data.map(d => d.dayOfWeek);
+                    const presentData = data.map(d => d.present);
+                    const absentData = data.map(d => d.absent);
+                    const percentageData = data.map(d => d.percentage);
+
+                    const option = {
+                        backgroundColor: 'transparent',
+                        tooltip: {
+                            trigger: 'axis',
+                            axisPointer: {
+                                type: 'cross'
+                            },
+                            backgroundColor: 'rgba(50, 50, 50, 0.9)',
+                            borderColor: '#777',
+                            borderWidth: 1,
+                            textStyle: {
+                                color: '#fff'
+                            }
+                        },
+                        legend: {
+                            data: ['Present', 'Absent', 'Attendance %'],
+                            textStyle: {
+                                color: '#fff'
+                            }
+                        },
+                        grid: {
+                            left: '3%',
+                            right: '4%',
+                            bottom: '3%',
+                            containLabel: true
+                        },
+                        xAxis: {
+                            type: 'category',
+                            boundaryGap: false,
+                            data: dates,
+                            axisLabel: {
+                                color: '#ccc'
+                            },
+                            axisLine: {
+                                lineStyle: {
+                                    color: '#555'
+                                }
+                            }
+                        },
+                        yAxis: [
+                            {
+                                type: 'value',
+                                name: 'Count',
+                                nameTextStyle: {
+                                    color: '#ccc'
+                                },
+                                axisLabel: {
+                                    color: '#ccc'
+                                },
+                                axisLine: {
+                                    lineStyle: {
+                                        color: '#555'
+                                    }
+                                },
+                                splitLine: {
+                                    lineStyle: {
+                                        color: '#333'
+                                    }
+                                }
+                            },
+                            {
+                                type: 'value',
+                                name: 'Percentage',
+                                max: 100,
+                                nameTextStyle: {
+                                    color: '#ccc'
+                                },
+                                axisLabel: {
+                                    color: '#ccc'
+                                },
+                                axisLine: {
+                                    lineStyle: {
+                                        color: '#555'
+                                    }
+                                },
+                                splitLine: {
+                                    show: false
+                                }
+                            }
+                        ],
+                        series: [
+                            {
+                                name: 'Present',
+                                type: 'line',
+                                smooth: true,
+                                data: presentData,
+                                areaStyle: {
+                                    color: 'rgba(76, 175, 80, 0.3)'
+                                },
+                                itemStyle: {
+                                    color: '#4CAF50'
+                                }
+                            },
+                            {
+                                name: 'Absent',
+                                type: 'line',
+                                smooth: true,
+                                data: absentData,
+                                areaStyle: {
+                                    color: 'rgba(239, 68, 68, 0.3)'
+                                },
+                                itemStyle: {
+                                    color: '#ef4444'
+                                }
+                            },
+                            {
+                                name: 'Attendance %',
+                                type: 'line',
+                                smooth: true,
+                                yAxisIndex: 1,
+                                data: percentageData,
+                                itemStyle: {
+                                    color: '#FFD700'
+                                }
+                            }
+                        ]
+                    };
+
+                    myChart.setOption(option);
+                })
+                .catch(error => {
+                    console.error('Error loading attendance trends:', error);
+                    myChart.hideLoading();
+                });
+        }
+        
+        // Load Employee Attendance Trends (dark theme)
+        function loadEmployeeAttendanceTrends(days) {
+            const chartDom = document.getElementById('attendanceTrendsChart');
+            const myChart = echarts.init(chartDom);
+            
+            myChart.showLoading();
+            
+            fetch(`/Admin/GetEmployeeAttendanceTrends?days=${days}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    myChart.hideLoading();
+                    
+                    console.log('Employee Attendance Data:', data);
+                    
+                    if (!data || data.length === 0) {
+                        // Show message if no data
+                        myChart.setOption({
+                            title: {
+                                text: 'No employee attendance data available',
+                                left: 'center',
+                                top: 'center',
+                                textStyle: {
+                                    color: '#ccc',
+                                    fontSize: 16
+                                }
+                            }
+                        });
+                        return;
+                    }
+                    
+                    const dates = data.map(d => d.dayOfWeek);
+                    const presentData = data.map(d => d.present);
+                    const absentData = data.map(d => d.absent);
+                    const lateData = data.map(d => d.late);
+                    const percentageData = data.map(d => d.percentage);
+                    
+                    const option = {
+                        backgroundColor: 'transparent',
+                        tooltip: {
+                            trigger: 'axis',
+                            axisPointer: {
+                                type: 'cross'
+                            },
+                            backgroundColor: 'rgba(50, 50, 50, 0.9)',
+                            borderColor: '#777',
+                            borderWidth: 1,
+                            textStyle: {
+                                color: '#fff'
+                            }
+                        },
+                        legend: {
+                            data: ['Present', 'Absent', 'Late', 'Attendance %'],
+                            textStyle: {
+                                color: '#fff'
+                            }
+                        },
+                        grid: {
+                            left: '3%',
+                            right: '4%',
+                            bottom: '3%',
+                            containLabel: true
+                        },
+                        xAxis: {
+                            type: 'category',
+                            boundaryGap: false,
+                            data: dates,
+                            axisLabel: {
+                                color: '#ccc'
+                            },
+                            axisLine: {
+                                lineStyle: {
+                                    color: '#555'
+                                }
+                            }
+                        },
+                        yAxis: [
+                            {
+                                type: 'value',
+                                name: 'Count',
+                                nameTextStyle: {
+                                    color: '#ccc'
+                                },
+                                axisLabel: {
+                                    color: '#ccc'
+                                },
+                                axisLine: {
+                                    lineStyle: {
+                                        color: '#555'
+                                    }
+                                },
+                                splitLine: {
+                                    lineStyle: {
+                                        color: '#333'
+                                    }
+                                }
+                            },
+                            {
+                                type: 'value',
+                                name: 'Percentage',
+                                max: 100,
+                                nameTextStyle: {
+                                    color: '#ccc'
+                                },
+                                axisLabel: {
+                                    color: '#ccc'
+                                },
+                                axisLine: {
+                                    lineStyle: {
+                                        color: '#555'
+                                    }
+                                },
+                                splitLine: {
+                                    show: false
+                                }
+                            }
+                        ],
+                        series: [
+                            {
+                                name: 'Present',
+                                type: 'line',
+                                smooth: true,
+                                data: presentData,
+                                areaStyle: {
+                                    color: 'rgba(76, 175, 80, 0.3)'
+                                },
+                                itemStyle: {
+                                    color: '#4CAF50'
+                                }
+                            },
+                            {
+                                name: 'Absent',
+                                type: 'line',
+                                smooth: true,
+                                data: absentData,
+                                areaStyle: {
+                                    color: 'rgba(239, 68, 68, 0.3)'
+                                },
+                                itemStyle: {
+                                    color: '#ef4444'
+                                }
+                            },
+                            {
+                                name: 'Late',
+                                type: 'line',
+                                smooth: true,
+                                data: lateData,
+                                areaStyle: {
+                                    color: 'rgba(255, 152, 0, 0.3)'
+                                },
+                                itemStyle: {
+                                    color: '#FF9800'
+                                }
+                            },
+                            {
+                                name: 'Attendance %',
+                                type: 'line',
+                                smooth: true,
+                                yAxisIndex: 1,
+                                data: percentageData,
+                                itemStyle: {
+                                    color: '#FFD700'
+                                }
+                            }
+                        ]
+                    };
+                    
+                    myChart.setOption(option);
+                })
+                .catch(error => {
+                    console.error('Error loading employee attendance trends:', error);
+                    myChart.hideLoading();
+                });
+        }
+        
+        // Load Namaz Attendance Trends (dark theme, only With Jamat %)
+                function loadNamazAttendanceTrends(days) {
+            const chartDom = document.getElementById('attendanceTrendsChart');
+            const myChart = echarts.init(chartDom);
+
+            myChart.showLoading();
+
+            fetch(`/Admin/GetNamazAttendanceTrends?days=${days}`)
+                .then(response => response.json())
+                .then(data => {
+                    myChart.hideLoading();
+
+                    // 1. Prepare all data arrays (Fixed missing variables)
+                    const dates = data.map(d => d.dayOfWeek);
+                    const withJamat = data.map(d => d.withJamat);
+                    // Ensure we handle potential nulls/undefined for Qaza and Without Jamat
+                    const qaza = data.map(d => d.qaza || 0);
+                    const withoutJamat = data.map(d => d.withoutJamat || 0);
+                    const percentageData = data.map(d => d.percentage);
+
+                    const option = {
+                        backgroundColor: 'transparent',
+                        tooltip: {
+                            trigger: 'axis',
+                            axisPointer: { type: 'cross' },
+                            backgroundColor: 'rgba(50, 50, 50, 0.9)',
+                            borderColor: '#777',
+                            borderWidth: 1,
+                            textStyle: { color: '#fff' }
+                        },
+                        legend: {
+                            // updated to include all categories
+                            data: ['With Jamat', 'Qaza', 'Without Jamat', 'With Jamat %'],
+                            textStyle: { color: '#fff' }
+                        },
+                        grid: {
+                            left: '3%',
+                            right: '4%',
+                            bottom: '3%',
+                            containLabel: true
+                        },
+                        xAxis: {
+                            type: 'category',
+                            boundaryGap: false,
+                            data: dates,
+                            axisLabel: { color: '#ccc' },
+                            axisLine: { lineStyle: { color: '#555' } }
+                        },
+                        yAxis: [
+                            {
+                                type: 'value',
+                                name: 'Count',
+                                nameTextStyle: { color: '#ccc' },
+                                axisLabel: { color: '#ccc' },
+                                axisLine: { lineStyle: { color: '#555' } },
+                                splitLine: { lineStyle: { color: '#333' } }
+                            },
+                            {
+                                type: 'value',
+                                name: 'Percentage',
+                                max: 100,
+                                nameTextStyle: { color: '#ccc' },
+                                axisLabel: { color: '#ccc' },
+                                axisLine: { lineStyle: { color: '#555' } },
+                                splitLine: { show: false }
+                            }
+                        ],
+                        series: [
+                            {
+                                name: 'With Jamat',
+                                type: 'line',
+                                smooth: true,
+                                data: withJamat,
+                                areaStyle: { color: 'rgba(76, 175, 80, 0.3)' },
+                                itemStyle: { color: '#4CAF50' }
+                            },
+                            {
+                                name: 'Qaza',
+                                type: 'line',
+                                smooth: true,
+                                data: qaza,
+                                areaStyle: { color: 'rgba(255, 152, 0, 0.3)' },
+                                itemStyle: { color: '#FF9800' }
+                            },
+                            {
+                                name: 'Without Jamat',
+                                type: 'line',
+                                smooth: true,
+                                data: withoutJamat,
+                                areaStyle: { color: 'rgba(239, 68, 68, 0.3)' },
+                                itemStyle: { color: '#ef4444' }
+                            },
+                            {
+                                name: 'With Jamat %',
+                                type: 'line',
+                                smooth: true,
+                                yAxisIndex: 1, // Uses the right-side Y-axis
+                                data: percentageData,
+                                itemStyle: { color: '#FFD700' }
+                            }
+                        ]
+                    };
+
+                    myChart.setOption(option);
+                })
+                .catch(error => {
+                    console.error('Error loading namaz attendance trends:', error);
+                    myChart.hideLoading();
+                });
+        }
+        // Complaint filter functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const complaintFilters = document.querySelectorAll('.complaint-filter');
+            
+            complaintFilters.forEach(filter => {
+                filter.addEventListener('click', function() {
+                    const status = this.dataset.status;
+                    
+                    // Update active button
+                    complaintFilters.forEach(f => {
+                        f.classList.remove('border-yellow-400', 'border-green-400', 'bg-yellow-100', 'bg-green-100');
+                        f.classList.add('border-transparent');
+                    });
+                    
+                    if (status === 'open') {
+                        this.classList.add('border-yellow-400', 'bg-yellow-100');
+                    } else {
+                        this.classList.add('border-green-400', 'bg-green-100');
+                    }
+                    this.classList.remove('border-transparent');
+                    
+                    // Filter complaints
+                    const allComplaints = document.querySelectorAll('.complaint-card');
+                    allComplaints.forEach(card => {
+                        if (card.dataset.status === status) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                });
+            });
+        });
+        
+        // Add ToDo Modal
+        function showAddToDoModal() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            // Reset form
+            document.getElementById('todoForm').reset();
+            document.getElementById('todoDueDate').value = today;
+            document.getElementById('todoPriority').value = 'Medium';
+            
+            // Show modal
+            document.getElementById('todoModal').style.display = 'block';
+        }
+        
+        function closeTodoModal() {
+            document.getElementById('todoModal').style.display = 'none';
+        }
+        
+        function submitTodoTask() {
+            const title = document.getElementById('todoTitle').value.trim();
+            const description = document.getElementById('todoDescription').value.trim();
+            const priority = document.getElementById('todoPriority').value;
+            const dueDate = document.getElementById('todoDueDate').value;
+            
+            if (!title) {
+                alert('Task title is required');
+                return;
+            }
+            
+            fetch('/Admin/AddToDo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: title,
+                    description: description || '',
+                    priority: priority || 'Medium',
+                    dueDate: dueDate
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    closeTodoModal();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'Task added successfully',
+                        confirmButtonColor: '#FFD700',
+                        timer: 1500
+                    });
+                    reloadToDoList();
+                } else {
+                    alert('Error adding task: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error adding todo:', error);
+                alert('Error adding task');
+            });
+        }
+        
+        // Toggle ToDo item
+        // Reload ToDo list div only
+        function reloadToDoList() {
+            fetch('/Admin/GetToDoList')
+                .then(response => response.json())
+                .then(todos => {
+                    const todoListDiv = document.getElementById('todoList');
+                    if (!todos || todos.length === 0) {
+                        todoListDiv.innerHTML = '<div class="text-sm text-gray-400 text-center py-4">No tasks yet</div>';
+                        return;
+                    }
+                    
+                    let todosHTML = '';
+                    todos.forEach(todo => {
+                        const completedClass = todo.isCompleted ? 'bg-gray-800' : 'bg-gray-700';
+                        const textClass = todo.isCompleted ? 'line-through' : '';
+                        const checkClass = todo.isCompleted ? 'bg-[#4CAF50]' : 'border-2 border-gray-400';
+                        const priorityColor = todo.priority === 'High' ? 'bg-red-500/20 text-red-300' : 
+                                             todo.priority === 'Medium' ? 'bg-yellow-500/20 text-yellow-300' : 
+                                             'bg-blue-500/20 text-blue-300';
+                        
+                        const dueDate = new Date(todo.dueDate);
+                        const dueDateStr = dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                        
+                        todosHTML += `
+                            <div class="flex items-start gap-3 p-3 ${completedClass} rounded-xl">
+                                <button class="w-5 h-5 rounded ${checkClass} flex items-center justify-center flex-shrink-0 mt-0.5 cursor-pointer hover:opacity-80 transition-opacity" onclick="toggleToDo(${todo.id})">
+                                    ${todo.isCompleted ? '<i class="fas fa-check text-xs text-white"></i>' : ''}
+                                </button>
+                                <div class="flex-1">
+                                    <div class="text-sm font-medium text-white ${textClass}">${todo.title}</div>
+                                    <div class="text-xs text-gray-400">${todo.description || ''}</div>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="text-xs px-2 py-0.5 rounded ${priorityColor}">${todo.priority}</span>
+                                        <span class="text-xs text-gray-400">${dueDateStr}</span>
+                                    </div>
+                                </div>
+                                <button class="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 hover:bg-red-500/30 transition-all flex-shrink-0 mt-0.5" onclick="deleteToDo(${todo.id})" title="Delete task">
+                                    <i class="fas fa-trash text-xs"></i>
+                                </button>
+                            </div>`;
+                    });
+                    
+                    todoListDiv.innerHTML = todosHTML;
+                })
+                .catch(error => {
+                    console.error('Error reloading todo list:', error);
+                });
+        }
+        
+        // Toggle ToDo item
+        function toggleToDo(todoId) {
+            fetch(`/Admin/ToggleToDo?id=${todoId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload only the todo list div
+                    reloadToDoList();
+                }
+            })
+            .catch(error => console.error('Error toggling todo:', error));
+        }
+        
+        // Delete ToDo item
+        function deleteToDo(todoId) {
+            Swal.fire({
+                title: 'Delete Task?',
+                text: 'Are you sure you want to delete this task? This action cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, delete it',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/Admin/DeleteToDo?id=${todoId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Deleted!',
+                                text: 'Task has been deleted successfully',
+                                confirmButtonColor: '#FFD700',
+                                timer: 1500
+                            });
+                            // Reload only the todo list div
+                            reloadToDoList();
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.message || 'Error deleting task',
+                                confirmButtonColor: '#ef4444'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error deleting todo:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Error deleting task',
+                            confirmButtonColor: '#ef4444'
+                        });
+                    });
+                }
+            });
+        }
+
+        // Admission Inquiries Toggle and Filtering
+        document.querySelectorAll('.inquiry-period-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const period = this.getAttribute('data-period');
+                
+                // Update button styles
+                document.querySelectorAll('.inquiry-period-btn').forEach(b => {
+                    b.classList.remove('bg-[#FFD700]', 'text-[#2D2D2D]');
+                    b.classList.add('bg-gray-200', 'text-gray-700');
+                });
+                this.classList.remove('bg-gray-200', 'text-gray-700');
+                this.classList.add('bg-[#FFD700]', 'text-[#2D2D2D]');
+                
+                // Update stats and list
+                const inquirySummary = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.InquirySummary));
+                if (period === 'thisMonth') {
+                    document.getElementById('inquiryTotal').textContent = inquirySummary.ThisMonthTotal;
+                    document.getElementById('inquiryEnrolled').textContent = inquirySummary.ThisMonthEnrolled;
+                    document.getElementById('inquiryRejected').textContent = inquirySummary.ThisMonthRejected;
+                    updateInquiriesList(inquirySummary.ThisMonthInquiries);
+                } else {
+                    document.getElementById('inquiryTotal').textContent = inquirySummary.LastMonthTotal;
+                    document.getElementById('inquiryEnrolled').textContent = inquirySummary.LastMonthEnrolled;
+                    document.getElementById('inquiryRejected').textContent = inquirySummary.LastMonthRejected;
+                    updateInquiriesList(inquirySummary.LastMonthInquiries);
+                }
+                
+                // Reset status filter
+                document.querySelectorAll('.inquiry-status-filter').forEach(f => {
+                    f.classList.remove('bg-[#FFD700]', 'text-[#2D2D2D]');
+                    f.classList.add('bg-gray-100', 'text-gray-700');
+                });
+                document.querySelector('.inquiry-status-filter[data-status="all"]').classList.remove('bg-gray-100', 'text-gray-700');
+                document.querySelector('.inquiry-status-filter[data-status="all"]').classList.add('bg-[#FFD700]', 'text-[#2D2D2D]');
+            });
+        });
+
+        function updateInquiriesList(inquiries) {
+            const listContainer = document.getElementById('inquiriesList');
+            if (!inquiries || inquiries.length === 0) {
+                listContainer.innerHTML = '<div class="text-sm text-gray-500 text-center py-4">No inquiries found</div>';
+                return;
+            }
+            
+            let html = '';
+            inquiries.slice(0, 10).forEach(inquiry => {
+                const statusClass = inquiry.InquiryStatus === 'Enrolled' ? 'bg-green-100 text-green-700' :
+                                   inquiry.InquiryStatus === 'Rejected' ? 'bg-red-100 text-red-700' :
+                                   inquiry.InquiryStatus === 'Contacted' ? 'bg-yellow-100 text-yellow-700' :
+                                   'bg-blue-100 text-blue-700';
+                
+                const date = new Date(inquiry.InquiryDate);
+                const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                
+                html += `
+                    <div class="inquiry-item p-3 bg-gray-50 rounded-lg text-sm hover:bg-gray-100 transition-colors cursor-pointer" 
+                         data-status="${inquiry.InquiryStatus}"
+                         onclick="window.location.href='/AdmissionInquiries/Details/${inquiry.Id}'">
+                        <div class="flex justify-between items-start mb-1">
+                            <div class="font-semibold text-[#2D2D2D]">${inquiry.StudentName}</div>
+                            <span class="px-2 py-0.5 rounded text-xs ${statusClass}">
+                                ${inquiry.InquiryStatus}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs text-gray-600">
+                            <span><i class="fas fa-phone mr-1"></i>${inquiry.PhoneNumber}</span>
+                            <span><i class="fas fa-graduation-cap mr-1"></i>${inquiry.ClassName}</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">${formattedDate}</div>
+                    </div>
+                `;
+            });
+            
+            listContainer.innerHTML = html;
+        }
+
+        // Status filtering
+        document.querySelectorAll('.inquiry-status-filter').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const status = this.getAttribute('data-status');
+                
+                // Update button styles
+                document.querySelectorAll('.inquiry-status-filter').forEach(b => {
+                    b.classList.remove('bg-[#FFD700]', 'text-[#2D2D2D]');
+                    b.classList.add('bg-gray-100', 'text-gray-700');
+                });
+                this.classList.remove('bg-gray-100', 'text-gray-700');
+                this.classList.add('bg-[#FFD700]', 'text-[#2D2D2D]');
+                
+                // Filter inquiries
+                const inquiryItems = document.querySelectorAll('.inquiry-item');
+                inquiryItems.forEach(item => {
+                    if (status === 'all' || item.getAttribute('data-status') === status) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+
+            // Close modals when clicking outside
+            window.onclick = function(event) {
+                if (event.target.classList.contains('custom-modal')) {
+                    event.target.style.display = 'none';
+                }
+            };
+
+            // Campus selector change handler
+            @if (Model.IsOwnerDashboard)
+            {
+                    <text>
+                    const campusSelector = document.getElementById('campusSelector');
+                    if (campusSelector) {
+                        campusSelector.addEventListener('change', function() {
+                            const campusId = this.value;
+                            const url = campusId ? `/Owner/Dashboard?campusId=${campusId}` : '/Owner/Dashboard';
+                            window.location.href = url;
+                        });
+                    }
+                    </text>
+            }
+
+            // Make charts responsive
+            window.addEventListener('resize', function() {
+                echarts.getInstanceByDom(document.getElementById('attendanceTrendsChart'))?.resize();
+                echarts.getInstanceByDom(document.getElementById('feeCollectionChart'))?.resize();
+                echarts.getInstanceByDom(document.getElementById('paymentStatusChart'))?.resize();
+                echarts.getInstanceByDom(document.getElementById('studentCountChart'))?.resize();
+                echarts.getInstanceByDom(document.getElementById('revenueTrendsChart'))?.resize();
+            });
+        });
+    </script>
+
+</body>
+</html>
+
+
+@section Scripts {
+    <script>
+        // Navigation function
+        function navigateToSection(url) {
+            window.location.href = url;
+        }
+
+        // Active nav item styling
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(btn => {
+                    btn.classList.remove('active', 'bg-black');
+                });
+                this.classList.add('active', 'bg-black');
+            });
+        });
+
+        // Campus Selector (if needed)
+        @if (Model.IsOwnerDashboard)
+        {
+                <text>
+                document.getElementById('campusSelector')?.addEventListener('change', function() {
+                    const campusId = this.value;
+                    const url = new URL(window.location.href);
+                    if (campusId) {
+                        url.searchParams.set('campusId', campusId);
+                    } else {
+                        url.searchParams.delete('campusId');
+                    }
+                    window.location.href = url.toString();
+                });
+                </text>
+        }
+    </script>
+
+    <style>
+        .nav-item.active {
+            background-color: black;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        details summary::-webkit-details-marker {
+            display: none;
+        }
+
+        details[open] summary {
+            margin-bottom: 8px;
+        }
+    </style>
+}

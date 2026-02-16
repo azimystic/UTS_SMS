@@ -1,0 +1,222 @@
+@model IEnumerable<AdminNotification>
+@{
+    ViewData["Title"] = "Admin Notifications";
+    var actionTypes = ViewBag.ActionTypes as List<string>;
+    var currentPage = ViewBag.CurrentPage as int? ?? 1;
+    var totalPages = ViewBag.TotalPages as int? ?? 1;
+    var totalCount = ViewBag.TotalCount as int? ?? 0;
+    var filterAction = ViewBag.FilterAction as string;
+    var startDate = ViewBag.StartDate as DateTime?;
+    var endDate = ViewBag.EndDate as DateTime?;
+}
+
+<div class="container mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-primary-800">Admin Notifications</h1>
+        <div class="flex space-x-2">
+            <button id="markAllReadBtn" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-all duration-300">
+                Mark All as Read
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white p-4 rounded-xl shadow-sms-md mb-6 border border-primary-100">
+        <form asp-action="Index" method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-primary-800 mb-1">Action Type</label>
+                <select name="filterAction" class="w-full px-3 py-2 border-2 border-primary-100 rounded-md focus:ring-2 focus:ring-primary-400 focus:border-primary-400 bg-primary-50 text-primary-800">
+                    <option value="">All Actions</option>
+                    @if (actionTypes != null)
+                    {
+                        foreach (var action in actionTypes)
+                        {
+                            <option value="@action" selected="@(action == filterAction)">@action</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-primary-800 mb-1">Start Date</label>
+                <input type="date" name="startDate" value="@startDate?.ToString("yyyy-MM-dd")" 
+                       class="w-full px-3 py-2 border-2 border-primary-100 rounded-md focus:ring-2 focus:ring-primary-400 focus:border-primary-400 bg-primary-50 text-primary-800" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-primary-800 mb-1">End Date</label>
+                <input type="date" name="endDate" value="@endDate?.ToString("yyyy-MM-dd")" 
+                       class="w-full px-3 py-2 border-2 border-primary-100 rounded-md focus:ring-2 focus:ring-primary-400 focus:border-primary-400 bg-primary-50 text-primary-800" />
+            </div>
+            <div class="flex items-end space-x-2">
+                <button type="submit" class="flex-1 bg-gradient-primary hover:shadow-sms-lg text-white px-4 py-2 rounded-md transition-all duration-300">
+                    Filter
+                </button>
+                <a asp-action="Index" class="flex-1 bg-primary-100 hover:bg-primary-200 text-primary-800 px-4 py-2 rounded-md text-center transition-all duration-300">
+                    Reset
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Notifications List -->
+    <div class="bg-white rounded-xl shadow-sms-md overflow-hidden border border-primary-100">
+        @if (!Model.Any())
+        {
+            <div class="p-8 text-center text-neutral-500">
+                <svg class="mx-auto h-12 w-12 text-neutral-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                </svg>
+                <p class="text-lg">No notifications found</p>
+            </div>
+        }
+        else
+        {
+            <div class="divide-y divide-primary-100">
+                @foreach (var notification in Model)
+                {
+                    <div class="p-4 hover:bg-primary-50 transition-all duration-200 @(notification.IsRead ? "bg-white" : "bg-blue-50")" data-notification-id="@notification.Id">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    @if (!notification.IsRead)
+                                    {
+                                        <span class="inline-block w-2 h-2 bg-blue-600 rounded-full"></span>
+                                    }
+                                    <h3 class="text-lg font-semibold text-primary-800">@notification.Action</h3>
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                                        @notification.EntityType
+                                    </span>
+                                </div>
+                                <p class="text-neutral-700 mb-2">@notification.Description</p>
+                                <div class="flex items-center space-x-4 text-sm text-neutral-500">
+                                    <span class="flex items-center">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                        </svg>
+                                        @notification.PerformedBy
+                                    </span>
+                                    <span class="flex items-center">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        @notification.ActionDate.ToString("MMM dd, yyyy HH:mm")
+                                    </span>
+                                    @if (notification.Campus != null)
+                                    {
+                                        <span class="flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                            </svg>
+                                            @notification.Campus.Name
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                            @if (!notification.IsRead)
+                            {
+                                <button onclick="markAsRead(@notification.Id)" class="text-primary-600 hover:text-primary-800 ml-4">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages > 1)
+    {
+        <div class="mt-6 flex justify-center">
+            <nav class="relative z-0 inline-flex rounded-md shadow-sms-sm -space-x-px">
+                @if (currentPage > 1)
+                {
+                    <a asp-action="Index" 
+                       asp-route-page="@(currentPage - 1)"
+                       asp-route-filterAction="@filterAction"
+                       asp-route-startDate="@startDate?.ToString("yyyy-MM-dd")"
+                       asp-route-endDate="@endDate?.ToString("yyyy-MM-dd")"
+                       class="relative inline-flex items-center px-4 py-2 rounded-l-md border-2 border-primary-100 bg-white text-sm font-medium text-primary-700 hover:bg-primary-50">
+                        Previous
+                    </a>
+                }
+
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <a asp-action="Index" 
+                       asp-route-page="@i"
+                       asp-route-filterAction="@filterAction"
+                       asp-route-startDate="@startDate?.ToString("yyyy-MM-dd")"
+                       asp-route-endDate="@endDate?.ToString("yyyy-MM-dd")"
+                       class="relative inline-flex items-center px-4 py-2 border-2 border-primary-100 bg-white text-sm font-medium @(i == currentPage ? "z-10 bg-primary-50 border-primary-400 text-primary-600" : "text-primary-700 hover:bg-primary-50")">
+                        @i
+                    </a>
+                }
+
+                @if (currentPage < totalPages)
+                {
+                    <a asp-action="Index" 
+                       asp-route-page="@(currentPage + 1)"
+                       asp-route-filterAction="@filterAction"
+                       asp-route-startDate="@startDate?.ToString("yyyy-MM-dd")"
+                       asp-route-endDate="@endDate?.ToString("yyyy-MM-dd")"
+                       class="relative inline-flex items-center px-4 py-2 rounded-r-md border-2 border-primary-100 bg-white text-sm font-medium text-primary-700 hover:bg-primary-50">
+                        Next
+                    </a>
+                }
+            </nav>
+        </div>
+    }
+
+    <div class="mt-4 text-center text-sm text-neutral-600">
+        Showing @((currentPage - 1) * ViewBag.PageSize + 1) to @Math.Min(currentPage * ViewBag.PageSize, totalCount) of @totalCount notifications
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function markAsRead(id) {
+            fetch(`/AdminNotifications/MarkAsRead?id=${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const notificationEl = document.querySelector(`[data-notification-id="${id}"]`);
+                    if (notificationEl) {
+                        notificationEl.classList.remove('bg-blue-50');
+                        notificationEl.classList.add('bg-white');
+                        const indicator = notificationEl.querySelector('.bg-blue-600');
+                        if (indicator) indicator.remove();
+                        const button = notificationEl.querySelector('button');
+                        if (button) button.remove();
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        document.getElementById('markAllReadBtn').addEventListener('click', function() {
+            if (!confirm('Mark all notifications as read?')) return;
+
+            fetch('/AdminNotifications/MarkAllAsRead', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+}
