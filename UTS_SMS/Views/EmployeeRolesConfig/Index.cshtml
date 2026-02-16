@@ -1,0 +1,109 @@
+@model IEnumerable<SMS.Models.EmployeeRoleConfig>
+
+@{
+    ViewData["Title"] = "Employee Roles Configuration";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-primary-800">👔 Employee Roles Configuration</h1>
+                <p class="text-neutral-600 mt-2">Define roles for different employee types</p>
+            </div>
+            <a asp-action="Create" class="bg-gradient-primary hover:shadow-sms-lg text-white px-6 py-3 rounded-xl transition-all duration-300 flex items-center mt-4 md:mt-0 shadow-sms-md">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Create New Role Config
+            </a>
+        </div>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="bg-success-light border-l-4 border-success text-success p-4 mb-6 rounded-xl animate-fade-in">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    @TempData["SuccessMessage"]
+                </div>
+            </div>
+        }
+
+        <!-- Roles Configuration Table -->
+        <div class="bg-white rounded-2xl shadow-sms-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-neutral-50">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Role Name</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Employee Type</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Description</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Campus</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-primary-100">
+                        @if (Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr class="transition-all duration-300 hover:bg-primary-50">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-primary-800">@item.RoleName</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
+                                            @item.EmployeeType
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-primary-800">
+                                        @(string.IsNullOrEmpty(item.Description) ? "-" : item.Description)
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-primary-800">@item.Campus?.Name</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex space-x-2">
+                                            <a asp-action="Edit" asp-route-id="@item.Id"
+                                               class="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-primary-400 text-white px-3 py-1.5 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-sms-md flex items-center text-sm">
+                                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                                Edit
+                                            </a>
+                                            <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="inline" onsubmit="return confirm('Are you sure you want to delete this role configuration?');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit"
+                                                        class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-3 py-1.5 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-sms-md flex items-center text-sm">
+                                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                    </svg>
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="px-6 py-12 text-center">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <svg class="w-16 h-16 text-neutral-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                                        </svg>
+                                        <p class="text-neutral-500 text-lg">No role configurations found</p>
+                                        <p class="text-neutral-400 text-sm mt-2">Create your first role configuration to get started</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

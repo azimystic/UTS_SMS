@@ -1,0 +1,599 @@
+@model Employee
+
+@{
+    ViewData["Title"] = "Employee Details";
+    var initials = Model.FullName?.Substring(0, Math.Min(2, Model.FullName.Length)).ToUpper() ?? "EM";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        
+        <!-- Hero Section -->
+        <div class="detail-hero">
+            <div class="detail-hero-content">
+                <!-- Avatar -->
+                <div class="detail-avatar-large">
+                    @if (!string.IsNullOrEmpty(Model.ProfilePicture))
+                    {
+                        <img src="~/@Model.ProfilePicture" alt="@Model.FullName">
+                    }
+                    else
+                    {
+                        <div class="avatar-placeholder">@initials</div>
+                    }
+                </div>
+
+                <!-- Hero Info -->
+                <div class="detail-hero-info">
+                    <h1 class="detail-hero-title">@Model.FullName</h1>
+                    <p class="detail-hero-subtitle">@Model.Role</p>
+                    
+                    <div class="detail-hero-badges">
+                        <span class="detail-hero-badge">
+                            <i class="fas fa-id-card"></i>
+                            ID: @Model.Id
+                        </span>
+                        <span class="detail-hero-badge">
+                            <i class="fas fa-school"></i>
+                            @Model.Campus?.Name
+                        </span>
+                        <span class="detail-hero-badge">
+                            <i class="fas fa-@(Model.Gender == "Male" ? "mars" : "venus")"></i>
+                            @Model.Gender
+                        </span>
+                        @if (Model.IsActive)
+                        {
+                            <span class="detail-hero-badge">
+                                <i class="fas fa-check-circle"></i>
+                                Active
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="detail-hero-badge">
+                                <i class="fas fa-times-circle"></i>
+                                Inactive
+                            </span>
+                        }
+                    </div>
+
+                    <div class="detail-hero-quick-stats">
+                        <div class="detail-hero-stat">
+                            <span class="detail-hero-stat-value">@((DateTime.Now.Year - Model.DateOfBirth.Year) - (DateTime.Now.DayOfYear < Model.DateOfBirth.DayOfYear ? 1 : 0))</span>
+                            <span class="detail-hero-stat-label">Age</span>
+                        </div>
+                        <div class="detail-hero-stat">
+                            <span class="detail-hero-stat-value">@(Math.Round((DateTime.Now - Model.JoiningDate).TotalDays / 365.25, 1))</span>
+                            <span class="detail-hero-stat-label">Years</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.EducationLevel))
+                        {
+                            <div class="detail-hero-stat">
+                                <span class="detail-hero-stat-value">@Model.EducationLevel</span>
+                                <span class="detail-hero-stat-label">Education</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Hero Actions -->
+                <div class="detail-hero-actions">
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="detail-hero-btn">
+                        <i class="fas fa-edit"></i>
+                        Edit Profile
+                    </a>
+                    <a href="tel:@Model.PhoneNumber" class="detail-hero-btn">
+                        <i class="fas fa-phone"></i>
+                        Call
+                    </a>
+                    <a asp-controller="EmployeeAttendance" asp-action="Index" asp-route-employeeId="@Model.Id" class="detail-hero-btn">
+                        <i class="fas fa-calendar-check"></i>
+                        Attendance
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <nav class="detail-tabs">
+            <button class="detail-tab active" onclick="switchTab(event, 'overview')">
+                <i class="fas fa-home"></i>
+                Overview
+            </button>
+            <button class="detail-tab" onclick="switchTab(event, 'personal')">
+                <i class="fas fa-user"></i>
+                Personal Info
+            </button>
+            <button class="detail-tab" onclick="switchTab(event, 'education')">
+                <i class="fas fa-graduation-cap"></i>
+                Education
+            </button>
+            <button class="detail-tab" onclick="switchTab(event, 'employment')">
+                <i class="fas fa-briefcase"></i>
+                Employment
+            </button>
+            <button class="detail-tab" onclick="switchTab(event, 'documents')">
+                <i class="fas fa-file-alt"></i>
+                Documents
+            </button>
+        </nav>
+
+        <!-- Tab Content: Overview -->
+        <div id="overview" class="detail-tab-content active">
+            <!-- Quick Stats -->
+            <div class="detail-stats-grid">
+                <div class="detail-stat-card">
+                    <div class="detail-stat-icon primary">
+                        <i class="fas fa-briefcase"></i>
+                    </div>
+                    <div class="detail-stat-content">
+                        <div class="detail-stat-label">Role</div>
+                        <div class="detail-stat-value">@Model.Role</div>
+                    </div>
+                </div>
+                <div class="detail-stat-card">
+                    <div class="detail-stat-icon success">
+                        <i class="fas fa-calendar"></i>
+                    </div>
+                    <div class="detail-stat-content">
+                        <div class="detail-stat-label">Joining Date</div>
+                        <div class="detail-stat-value">@Model.JoiningDate.ToString("MMM yyyy")</div>
+                    </div>
+                </div>
+                <div class="detail-stat-card">
+                    <div class="detail-stat-icon warning">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="detail-stat-content">
+                        <div class="detail-stat-label">Work Hours</div>
+                        <div class="detail-stat-value">
+                            @if (Model.OnTime.HasValue && Model.OffTime.HasValue)
+                            {
+                                @($"{Model.OnTime?.ToString("hh:mm tt")} - {Model.OffTime?.ToString("hh:mm tt")}")
+                            }
+                            else
+                            {
+                                @("N/A")
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="detail-stat-card">
+                    <div class="detail-stat-icon danger">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                    <div class="detail-stat-content">
+                        <div class="detail-stat-label">Phone</div>
+                        <div class="detail-stat-value">@Model.PhoneNumber</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Information Cards -->
+            <div class="detail-info-grid">
+                <!-- Basic Information -->
+                <div class="detail-info-card">
+                    <div class="detail-info-card-header">
+                        <div class="detail-info-card-icon">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <h3 class="detail-info-card-title">Basic Information</h3>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Full Name</span>
+                        <span class="detail-info-value">@Model.FullName</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">CNIC</span>
+                        <span class="detail-info-value">@Model.CNIC</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Gender</span>
+                        <span class="detail-info-value">@Model.Gender</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Date of Birth</span>
+                        <span class="detail-info-value">@Model.DateOfBirth.ToString("MMMM dd, yyyy")</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Age</span>
+                        <span class="detail-info-value">@((DateTime.Now.Year - Model.DateOfBirth.Year) - (DateTime.Now.DayOfYear < Model.DateOfBirth.DayOfYear ? 1 : 0)) years</span>
+                    </div>
+                </div>
+
+                <!-- Contact Information -->
+                <div class="detail-info-card">
+                    <div class="detail-info-card-header">
+                        <div class="detail-info-card-icon">
+                            <i class="fas fa-address-book"></i>
+                        </div>
+                        <h3 class="detail-info-card-title">Contact Information</h3>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Phone Number</span>
+                        <span class="detail-info-value">@Model.PhoneNumber</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Address</span>
+                        <span class="detail-info-value">@Model.Address</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Campus</span>
+                        <span class="detail-info-value">@Model.Campus?.Name</span>
+                    </div>
+                </div>
+
+                <!-- Employment Status -->
+                <div class="detail-info-card">
+                    <div class="detail-info-card-header">
+                        <div class="detail-info-card-icon">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <h3 class="detail-info-card-title">Employment Status</h3>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Status</span>
+                        <span class="detail-info-value @(Model.IsActive ? "text-green-600" : "text-red-600")">
+                            @(Model.IsActive ? "Active" : "Inactive")
+                        </span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Joining Date</span>
+                        <span class="detail-info-value">@Model.JoiningDate.ToString("MMMM dd, yyyy")</span>
+                    </div>
+                    @if (Model.LeavingDate.HasValue)
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Leaving Date</span>
+                            <span class="detail-info-value">@Model.LeavingDate.Value.ToString("MMMM dd, yyyy")</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.RegisteredBy))
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Registered By</span>
+                            <span class="detail-info-value">@Model.RegisteredBy</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Personal Info -->
+        <div id="personal" class="detail-tab-content">
+            <div class="detail-info-grid">
+                <div class="detail-info-card">
+                    <div class="detail-info-card-header">
+                        <div class="detail-info-card-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h3 class="detail-info-card-title">Personal Details</h3>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Full Name</span>
+                        <span class="detail-info-value">@Model.FullName</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">CNIC</span>
+                        <span class="detail-info-value">@Model.CNIC</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Gender</span>
+                        <span class="detail-info-value">@Model.Gender</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Date of Birth</span>
+                        <span class="detail-info-value">@Model.DateOfBirth.ToString("MMMM dd, yyyy")</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Age</span>
+                        <span class="detail-info-value">@((DateTime.Now.Year - Model.DateOfBirth.Year) - (DateTime.Now.DayOfYear < Model.DateOfBirth.DayOfYear ? 1 : 0)) years</span>
+                    </div>
+                </div>
+
+                <div class="detail-info-card">
+                    <div class="detail-info-card-header">
+                        <div class="detail-info-card-icon">
+                            <i class="fas fa-address-card"></i>
+                        </div>
+                        <h3 class="detail-info-card-title">Contact Details</h3>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Phone Number</span>
+                        <span class="detail-info-value">@Model.PhoneNumber</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Home Address</span>
+                        <span class="detail-info-value">@Model.Address</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Education -->
+        <div id="education" class="detail-tab-content">
+            <div class="detail-info-grid">
+                <div class="detail-info-card">
+                    <div class="detail-info-card-header">
+                        <div class="detail-info-card-icon">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <h3 class="detail-info-card-title">Educational Qualifications</h3>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.EducationLevel))
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Education Level</span>
+                            <span class="detail-info-value highlight">@Model.EducationLevel</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Degree))
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Degree</span>
+                            <span class="detail-info-value">@Model.Degree</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.MajorSubject))
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Major Subject</span>
+                            <span class="detail-info-value">@Model.MajorSubject</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.University))
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">University</span>
+                            <span class="detail-info-value">@Model.University</span>
+                        </div>
+                    }
+                    @if (string.IsNullOrEmpty(Model.EducationLevel) && string.IsNullOrEmpty(Model.Degree))
+                    {
+                        <p class="text-gray-500 text-sm">No educational information available.</p>
+                    }
+                </div>
+
+                <div class="detail-info-card">
+                    <div class="detail-info-card-header">
+                        <div class="detail-info-card-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 class="detail-info-card-title">Academic Performance</h3>
+                    </div>
+                    @if (Model.MatricMarks.HasValue)
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Matric Marks</span>
+                            <span class="detail-info-value">@Model.MatricMarks</span>
+                        </div>
+                    }
+                    @if (Model.InterMarks.HasValue)
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Inter Marks</span>
+                            <span class="detail-info-value">@Model.InterMarks</span>
+                        </div>
+                    }
+                    @if (Model.CGPA.HasValue)
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">CGPA</span>
+                            <span class="detail-info-value highlight">@Model.CGPA.Value.ToString("F2")</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.OtherQualifications))
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Other Qualifications</span>
+                            <span class="detail-info-value">@Model.OtherQualifications</span>
+                        </div>
+                    }
+                    @if (!Model.MatricMarks.HasValue && !Model.InterMarks.HasValue && !Model.CGPA.HasValue)
+                    {
+                        <p class="text-gray-500 text-sm">No academic performance data available.</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Employment -->
+        <div id="employment" class="detail-tab-content">
+            <div class="detail-info-grid">
+                <div class="detail-info-card">
+                    <div class="detail-info-card-header">
+                        <div class="detail-info-card-icon">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+                        <h3 class="detail-info-card-title">Job Information</h3>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Role</span>
+                        <span class="detail-info-value highlight">@Model.Role</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Campus</span>
+                        <span class="detail-info-value">@Model.Campus?.Name</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Status</span>
+                        <span class="detail-info-value">@(Model.IsActive ? "Active" : "Inactive")</span>
+                    </div>
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Joining Date</span>
+                        <span class="detail-info-value">@Model.JoiningDate.ToString("MMMM dd, yyyy")</span>
+                    </div>
+                    @if (Model.LeavingDate.HasValue)
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Leaving Date</span>
+                            <span class="detail-info-value">@Model.LeavingDate.Value.ToString("MMMM dd, yyyy")</span>
+                        </div>
+                    }
+                </div>
+
+                <div class="detail-info-card">
+                    <div class="detail-info-card-header">
+                        <div class="detail-info-card-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <h3 class="detail-info-card-title">Work Schedule</h3>
+                    </div>
+                    @if (Model.OnTime.HasValue)
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Start Time</span>
+                            <span class="detail-info-value">@Model.OnTime.Value.ToString("hh:mm tt")</span>
+                        </div>
+                    }
+                    @if (Model.OffTime.HasValue)
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">End Time</span>
+                            <span class="detail-info-value">@Model.OffTime.Value.ToString("hh:mm tt")</span>
+                        </div>
+                    }
+                    <div class="detail-info-row">
+                        <span class="detail-info-label">Late Flexibility</span>
+                        <span class="detail-info-value">@Model.LateTimeFlexibility minutes</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.RegisteredBy))
+                    {
+                        <div class="detail-info-row">
+                            <span class="detail-info-label">Registered By</span>
+                            <span class="detail-info-value">@Model.RegisteredBy</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Documents -->
+        <div id="documents" class="detail-tab-content">
+            <div class="detail-info-grid">
+                @if (!string.IsNullOrEmpty(Model.ProfilePicture))
+                {
+                    <div class="detail-info-card">
+                        <div class="detail-info-card-header">
+                            <div class="detail-info-card-icon">
+                                <i class="fas fa-image"></i>
+                            </div>
+                            <h3 class="detail-info-card-title">Profile Picture</h3>
+                        </div>
+                        <img src="~/@Model.ProfilePicture" alt="Profile Picture" class="w-full rounded-lg" />
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.CNIC_Front))
+                {
+                    <div class="detail-info-card">
+                        <div class="detail-info-card-header">
+                            <div class="detail-info-card-icon">
+                                <i class="fas fa-id-card"></i>
+                            </div>
+                            <h3 class="detail-info-card-title">CNIC (Front)</h3>
+                        </div>
+                        <img src="~/@Model.CNIC_Front" alt="CNIC Front" class="w-full rounded-lg" />
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.CNIC_Back))
+                {
+                    <div class="detail-info-card">
+                        <div class="detail-info-card-header">
+                            <div class="detail-info-card-icon">
+                                <i class="fas fa-id-card"></i>
+                            </div>
+                            <h3 class="detail-info-card-title">CNIC (Back)</h3>
+                        </div>
+                        <img src="~/@Model.CNIC_Back" alt="CNIC Back" class="w-full rounded-lg" />
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.MatricCertificate))
+                {
+                    <div class="detail-info-card">
+                        <div class="detail-info-card-header">
+                            <div class="detail-info-card-icon">
+                                <i class="fas fa-certificate"></i>
+                            </div>
+                            <h3 class="detail-info-card-title">Matric Certificate</h3>
+                        </div>
+                        <img src="~/@Model.MatricCertificate" alt="Matric Certificate" class="w-full rounded-lg" />
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.InterCertificate))
+                {
+                    <div class="detail-info-card">
+                        <div class="detail-info-card-header">
+                            <div class="detail-info-card-icon">
+                                <i class="fas fa-certificate"></i>
+                            </div>
+                            <h3 class="detail-info-card-title">Inter Certificate</h3>
+                        </div>
+                        <img src="~/@Model.InterCertificate" alt="Inter Certificate" class="w-full rounded-lg" />
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.DegreeCertificate))
+                {
+                    <div class="detail-info-card">
+                        <div class="detail-info-card-header">
+                            <div class="detail-info-card-icon">
+                                <i class="fas fa-certificate"></i>
+                            </div>
+                            <h3 class="detail-info-card-title">Degree Certificate</h3>
+                        </div>
+                        <img src="~/@Model.DegreeCertificate" alt="Degree Certificate" class="w-full rounded-lg" />
+                    </div>
+                }
+
+                @if (string.IsNullOrEmpty(Model.ProfilePicture) && string.IsNullOrEmpty(Model.CNIC_Front) && 
+                     string.IsNullOrEmpty(Model.CNIC_Back) && string.IsNullOrEmpty(Model.MatricCertificate) &&
+                     string.IsNullOrEmpty(Model.InterCertificate) && string.IsNullOrEmpty(Model.DegreeCertificate))
+                {
+                    <div class="col-span-full text-center py-8">
+                        <i class="fas fa-folder-open text-6xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500">No documents uploaded yet.</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Back Button -->
+        <div class="mt-8 flex justify-between items-center">
+            <a asp-action="Index" class="sms-btn sms-btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Back to List
+            </a>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="sms-btn sms-btn-primary">
+                <i class="fas fa-edit"></i>
+                Edit Employee
+            </a>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function switchTab(event, tabId) {
+        // Hide all tab contents
+        const tabContents = document.querySelectorAll('.detail-tab-content');
+        tabContents.forEach(content => {
+            content.classList.remove('active');
+        });
+
+        // Remove active class from all tabs
+        const tabs = document.querySelectorAll('.detail-tab');
+        tabs.forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        // Show selected tab content
+        document.getElementById(tabId).classList.add('active');
+        
+        // Add active class to clicked tab
+        event.currentTarget.classList.add('active');
+    }
+</script>
