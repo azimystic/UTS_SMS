@@ -1,0 +1,156 @@
+﻿@model IEnumerable<ClassSection>
+
+@{
+    ViewData["Title"] = "Class Sections";
+    var groupedSections = ViewBag.GroupedSections as IEnumerable<IGrouping<dynamic, ClassSection>>;
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-primary-800">👥 Class Sections</h1>
+                <p class="text-neutral-600 mt-2">Manage sections within classes (e.g., A, B, C)</p>
+            </div>
+            <a asp-action="Create" class="bg-gradient-primary hover:shadow-sms-lg text-white px-6 py-3 rounded-xl transition-all duration-300 flex items-center mt-4 md:mt-0 shadow-sms-md hover:shadow-sms-lg">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Create New Section
+            </a>
+        </div>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="bg-success-light border-l-4 border-success text-success p-4 mb-6 rounded-xl animate-fade-in">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    @TempData["SuccessMessage"]
+                </div>
+            </div>
+        }
+
+        @if (groupedSections != null && groupedSections.Any())
+        {
+            <!-- Grouped Sections by Class -->
+            @foreach (var classGroup in groupedSections)
+            {
+                <div class="bg-white rounded-2xl shadow-sms-xl overflow-hidden mb-6">
+                    <!-- Class Header -->
+                    <div class="bg-gradient-to-r from-primary-600 to-primary-500 px-6 py-4">
+                        <h2 class="text-xl font-bold text-white flex items-center">
+                            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            </svg>
+                            @classGroup.Key.Name
+                            <span class="ml-3 text-sm font-normal text-primary-100">Grade @classGroup.Key.GradeLevel</span>
+                            <span class="ml-auto bg-white/20 px-3 py-1 rounded-full text-sm">@classGroup.Count() Sections</span>
+                        </h2>
+                    </div>
+
+                    <!-- Sections Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-neutral-50">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Section Name</th>
+                                    <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Capacity</th>
+                                    <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-primary-100">
+                                @foreach (var sectionn in classGroup)
+                                {
+                                    <tr class="transition-all duration-300 hover:bg-primary-50">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="w-10 h-10 bg-gradient-to-r from-pink-400 to-rose-500 rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3">
+                                                    @sectionn.Name
+                                                </div>
+                                                <div>
+                                                    <div class="text-sm font-medium text-primary-800">Section @sectionn.Name</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-success-light text-success">
+                                                @sectionn.Capacity Students
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <div class="flex space-x-2">
+                                                <a asp-action="Edit" asp-route-id="@sectionn.Id"
+                                                   class="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-primary-400 text-white px-3 py-1.5 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-sms-md flex items-center text-sm">
+                                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                    </svg>
+                                                    Edit
+                                                </a>
+                                                <a asp-action="Details" asp-route-id="@sectionn.Id"
+                                                   class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-primary-600 hover:to-blue-700 text-white px-3 py-1.5 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-sms-md flex items-center text-sm">
+                                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                    View
+                                                </a>
+                                                <a asp-action="Delete" asp-route-id="@sectionn.Id"
+                                                   class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-3 py-1.5 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-sms-md flex items-center text-sm">
+                                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                    </svg>
+                                                    Delete
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <!-- No Sections Message -->
+            <div class="bg-white rounded-2xl shadow-sms-xl overflow-hidden">
+                <div class="text-center py-12">
+                    <svg class="w-16 h-16 text-neutral-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    <h3 class="text-lg font-medium text-primary-800 mb-2">No sections yet</h3>
+                    <p class="text-neutral-500 mb-4">Create sections to divide your classes into smaller groups.</p>
+                    <a asp-action="Create" class="bg-gradient-primary hover:shadow-sms-lg text-white px-6 py-2 rounded-lg transition-all duration-300 inline-flex items-center shadow">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Add Section
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+}

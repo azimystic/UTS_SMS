@@ -1,0 +1,237 @@
+﻿@model Diary
+
+@{
+    ViewData["Title"] = "Edit Diary Entry";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="w-full max-w-[1600px] mx-auto px-1 md:px-2">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-primary-800">✏️ Edit Diary Entry</h1>
+            <p class="text-neutral-600 mt-2">Update lesson details for @Model.Date.ToString("MMM dd, yyyy")</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sms-xl p-6">
+            <form asp-action="Edit" method="post" enctype="multipart/form-data" class="space-y-6">
+                @* Keep antiforgery token in the main form for the Edit POST *@
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" name="date" value="@ViewBag.Date" />
+
+                <div asp-validation-summary="ModelOnly" class="bg-error-light border-l-4 border-error text-error p-4 rounded-lg"></div>
+
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">Assignment</label>
+                    <input type="text" class="w-full px-4 py-3 border border-primary-200 rounded-lg bg-neutral-100"
+                           value="@Model.TeacherAssignment.Class.Name - @Model.TeacherAssignment.Section.Name - @Model.TeacherAssignment.Subject.Name"
+                           disabled />
+                </div>
+
+                <div>
+                    <label asp-for="LessonSummary" class="block text-sm font-medium text-neutral-700 mb-2"></label>
+                    <textarea asp-for="LessonSummary" rows="4" class="w-full px-4 py-3 border border-primary-200 rounded-lg"></textarea>
+                    <span asp-validation-for="LessonSummary" class="text-error text-sm"></span>
+                </div>
+
+                <div>
+                    <label asp-for="HomeworkGiven" class="block text-sm font-medium text-neutral-700 mb-2"></label>
+                    <textarea asp-for="HomeworkGiven" rows="3" class="w-full px-4 py-3 border border-primary-200 rounded-lg"></textarea>
+                </div>
+
+                <div>
+                    <label asp-for="Notes" class="block text-sm font-medium text-neutral-700 mb-2"></label>
+                    <textarea asp-for="Notes" rows="2" class="w-full px-4 py-3 border border-primary-200 rounded-lg"></textarea>
+                </div>
+
+                <!-- Chapter Linking (Optional) -->
+                <div class="border-t border-primary-200 pt-6">
+                    <h3 class="text-lg font-semibold text-neutral-800 mb-4">📚 Link to Academic Material (Optional)</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label asp-for="ChapterId" class="block text-sm font-medium text-neutral-700 mb-2">Chapter</label>
+                            <select asp-for="ChapterId" class="w-full px-4 py-3 border border-primary-200 rounded-lg" id="chapterSelect">
+                                <option value="">-- No Chapter --</option>
+                                @foreach (var item in ViewBag.Chapters as SelectList)
+                                {
+                                    <option value="@item.Value" selected="@(item.Selected ? "selected" : null)">@item.Text</option>
+                                }
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label asp-for="ChapterSectionId" class="block text-sm font-medium text-neutral-700 mb-2">Section (Optional)</label>
+                            <select asp-for="ChapterSectionId" class="w-full px-4 py-3 border border-primary-200 rounded-lg" id="sectionSelect">
+                                <option value="">-- No Section --</option>
+                                @if (ViewBag.ChapterSections != null)
+                                {
+                                    foreach (var item in ViewBag.ChapterSections as SelectList)
+                                    {
+                                        <option value="@item.Value" selected="@(item.Selected ? "selected" : null)">@item.Text</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Existing Images Section -->
+                @if (ViewBag.DiaryImages != null && ((List<SMS.Models.DiaryImage>)ViewBag.DiaryImages).Any())
+                {
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">
+                            📷 Existing Images
+                        </label>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            @foreach (var image in (List<SMS.Models.DiaryImage>)ViewBag.DiaryImages)
+                            {
+                                <div class="relative group">
+                                    <img src="/@image.ImagePath" alt="@image.OriginalFileName" class="w-full h-32 object-cover rounded-lg border">
+                                    <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                                        @* Removed nested <form> (nested forms were causing the outer form to submit).
+                                           Instead we render a button that triggers a JS fetch POST to delete the image. *@
+                                        <button type="button"
+                                                class="delete-image-btn bg-error hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium flex items-center transition-all duration-300 transform hover:scale-105"
+                                                data-delete-url="@Url.Action("DeleteImage", "Diary", new { id = image.Id })"
+                                                data-image-id="@image.Id"
+                                                aria-label="Delete image @image.OriginalFileName">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                            Delete
+                                        </button>
+                                    </div>
+                                    <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-2 rounded-b-lg truncate">
+                                        @image.OriginalFileName
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Add New Images Section -->
+                <div>
+                    <label class="block text-sm font-medium text-neutral-700 mb-2">
+                        📷 Add New Images (Optional)
+                    </label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-primary-200 border-dashed rounded-lg hover:border-gray-400 transition-colors">
+                        <div class="space-y-1 text-center">
+                            <svg class="mx-auto h-12 w-12 text-neutral-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <div class="flex text-sm text-neutral-600">
+                                <label for="images" class="relative cursor-pointer bg-white rounded-md font-medium text-info hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                    <span>Upload new images</span>
+                                    <input id="images" name="images" type="file" class="sr-only" multiple accept="image/*">
+                                </label>
+                                <p class="pl-1">or drag and drop</p>
+                            </div>
+                            <p class="text-xs text-neutral-500">PNG, JPG, GIF up to 10MB each</p>
+                        </div>
+                    </div>
+                    <div id="image-preview" class="mt-4 grid grid-cols-2 gap-4" style="display: none;"></div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 pt-6">
+                    <button type="submit" class="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-blue-600 hover:from-primary-600 hover:to-blue-700 text-white font-medium py-3 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Update Diary
+                    </button>
+                    <a asp-action="Index" asp-route-date="@ViewBag.Date" class="w-full sm:w-auto bg-neutral-100 hover:bg-primary-100 text-primary-800 font-medium py-3 px-8 rounded-xl transition-all duration-300 flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@* Render an extra antiforgery token outside the forms for JS to read (safe to have multiple tokens) *@
+<div style="display:none">
+    @Html.AntiForgeryToken()
+</div>
+
+@section Scripts {
+    <script>
+        // Image preview for newly selected images
+        document.getElementById('images').addEventListener('change', function(e) {
+            const files = e.target.files;
+            const preview = document.getElementById('image-preview');
+
+            if (files.length > 0) {
+                preview.style.display = 'grid';
+                preview.innerHTML = '';
+
+                Array.from(files).forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const div = document.createElement('div');
+                            div.className = 'relative';
+                            div.innerHTML = `
+                                <img src="${e.target.result}" class="w-full h-32 object-cover rounded-lg border">
+                                <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-2 rounded-b-lg truncate">
+                                    ${file.name}
+                                </div>
+                            `;
+                            preview.appendChild(div);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            } else {
+                preview.style.display = 'none';
+            }
+        });
+
+        // Delete image handler using fetch to avoid nested forms.
+        // This prevents the nested <form> problem (which caused the outer form to submit)
+        document.addEventListener('click', function (event) {
+            const btn = event.target.closest('.delete-image-btn');
+            if (!btn) return;
+
+            event.preventDefault();
+
+            if (!confirm('Are you sure you want to delete this image?')) return;
+
+            const url = btn.dataset.deleteUrl;
+            if (!url) {
+                alert('Delete URL not found.');
+                return;
+            }
+
+            // Read antiforgery token (there are tokens rendered on the page; pick one)
+            const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+            const token = tokenInput ? tokenInput.value : null;
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': token,
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (response.ok) return response.json().catch(() => ({ success: true }));
+                throw new Error('Network response was not ok');
+            })
+            .then(data => {
+                // If your DeleteImage action returns JSON { success: true } that is best.
+                // If it returns a redirect or plain 200, we still attempt to remove the element.
+                const container = btn.closest('.relative');
+                if (container) container.remove();
+            })
+            .catch(err => {
+                console.error('Failed to delete image:', err);
+                alert('Failed to delete image. Please try again.');
+            });
+        });
+    </script>
+}

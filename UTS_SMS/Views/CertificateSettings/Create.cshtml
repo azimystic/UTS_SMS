@@ -1,0 +1,89 @@
+@model CertificateType
+
+@{
+    ViewData["Title"] = "Create Certificate Type";
+}
+
+<div class="min-h-screen p-4 md:p-6">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-primary-800">Create Certificate Type</h1>
+            <p class="text-neutral-600 mt-2">Add a new certificate type with pricing</p>
+        </div>
+
+        <!-- Form Card -->
+        <div class="bg-white rounded-xl shadow-sms-md p-6">
+            <form asp-action="Create" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-error mb-4"></div>
+                
+                <div class="mb-4">
+                    <label asp-for="CertificateName" class="block text-sm font-medium text-neutral-700 mb-2"></label>
+                    <input asp-for="CertificateName" 
+                           class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+                           placeholder="e.g., Leaving Certificate, Character Certificate" />
+                    <span asp-validation-for="CertificateName" class="text-error text-sm"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="Price" class="block text-sm font-medium text-neutral-700 mb-2"></label>
+                    <input asp-for="Price" type="number" step="0.01" min="0"
+                           class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+                           placeholder="0.00" />
+                    <span asp-validation-for="Price" class="text-error text-sm"></span>
+                </div>
+
+                <div class="mb-6">
+                    <label asp-for="ReportFileName" class="block text-sm font-medium text-neutral-700 mb-2"></label>
+                    <input asp-for="ReportFileName" 
+                           class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+                           placeholder="e.g., LeavingCertificate.docx" />
+                    <span asp-validation-for="ReportFileName" class="text-error text-sm"></span>
+                    <p class="text-xs text-neutral-500 mt-1">
+                        <i class="fas fa-info-circle"></i> Enter the exact filename of the .docx template uploaded to wwwroot/reports folder
+                    </p>
+                </div>
+
+                <!-- Info Box -->
+                <div class="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-blue-800">Template Placeholders</h3>
+                            <div class="mt-2 text-sm text-blue-700">
+                                <p>You can use these placeholders in your .docx template:</p>
+                                <ul class="list-disc list-inside mt-1 space-y-1">
+                                    <li><code>{student_name}</code> - Student's full name</li>
+                                    <li><code>{rollnumber}</code> or <code>{roll_number}</code> - Student's roll number</li>
+                                    <li><code>{cnic}</code> or <code>{student_cnic}</code> - Student's CNIC</li>
+                                    <li><code>{father_name}</code> - Father's name</li>
+                                    <li><code>{father_cnic}</code> - Father's CNIC</li>
+                                    <li><code>{date}</code> - Current date</li>
+                                    <li><code>{issue_date}</code> - Certificate issue date</li>
+                                    <li><code>{certificate_name}</code> - Certificate type name</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="submit" class="bg-gradient-primary hover:shadow-sms-lg text-white px-6 py-2 rounded-lg transition-all duration-300 shadow-sms-md">
+                        <i class="fas fa-save mr-2"></i> Create
+                    </button>
+                    <a asp-action="Index" class="bg-neutral-200 hover:bg-neutral-300 text-neutral-700 px-6 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-times mr-2"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

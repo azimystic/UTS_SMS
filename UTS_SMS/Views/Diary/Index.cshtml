@@ -1,0 +1,234 @@
+@* Views/Diary/Index.cshtml *@
+@model IEnumerable<SMS.Models.Class>
+
+@{
+    ViewData["Title"] = "Diary Entries";
+    var selectedDate = ViewBag.SelectedDate as string;
+    var today = ViewBag.Today as string;
+    var isAdmin = (bool?)ViewBag.IsAdmin ?? false;
+    var isOwner = (bool?)ViewBag.IsOwner ?? false;
+    var isStudent = (bool?)ViewBag.IsStudent ?? false;
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-primary-800">Daily Diary</h1>
+                <p class="text-neutral-600 mt-2">Manage daily lesson entries - Hierarchical View</p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <form method="get" class="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-2">
+                    <input type="date" name="date" id="selectedDate" value="@selectedDate" class="px-4 py-2 border border-primary-200 rounded-lg" max="@today" />
+                    <button type="submit" class="bg-gradient-primary hover:bg-primary-700 text-white px-4 py-2 rounded-lg">Filter</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Success Message -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="bg-success-light border-l-4 border-success text-success p-4 mb-6 rounded-xl">
+                @TempData["SuccessMessage"]
+            </div>
+        }
+
+        <!-- Hierarchical Diary Table -->
+        <div class="bg-white rounded-2xl shadow-sms-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-neutral-50">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase w-16">
+                                <i class="fas fa-chevron-right"></i>
+                            </th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase">Level</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase">Details</th>
+                            <th class="px-6 py-4 text-left text-sm font-medium text-neutral-700 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-primary-100">
+                        @foreach (var cls in Model)
+                        {
+                            <!-- Level 1: Class Row -->
+                            <tr class="hover:bg-primary-50 transition-colors class-row cursor-pointer" data-class-id="@cls.Id">
+                                <td class="px-6 py-4">
+                                    <i class="fas fa-chevron-right expand-icon transition-transform"></i>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                                        <i class="fas fa-school mr-1"></i> Class
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="font-medium text-primary-800 text-lg">@cls.Name</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="text-sm text-neutral-500">Click to expand sections</span>
+                                </td>
+                            </tr>
+                            <!-- Sections will be loaded here via AJAX -->
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script>
+$(document).ready(function() {
+    const selectedDate = $('#selectedDate').val();
+    const isStudent = @(isStudent.ToString().ToLower());
+    
+    // Handle class row click
+    $(document).on('click', '.class-row', function(e) {
+        e.stopPropagation();
+        const $row = $(this);
+        const classId = $row.data('class-id');
+        const $icon = $row.find('.expand-icon');
+        
+        // Check if already expanded
+        if ($icon.hasClass('fa-chevron-down')) {
+            // Collapse: remove all section and subject rows for this class
+            $row.nextUntil('.class-row').remove();
+            $icon.removeClass('fa-chevron-down').addClass('fa-chevron-right');
+        } else {
+            // Expand: load sections
+            $icon.removeClass('fa-chevron-right').addClass('fa-spin fa-spinner');
+            
+            $.get('/Diary/GetSectionsByClass', { classId: classId, date: selectedDate })
+                .done(function(sections) {
+                    $icon.removeClass('fa-spin fa-spinner').addClass('fa-chevron-down');
+                    
+                    if (sections.length === 0) {
+                        const noDataRow = `
+                            <tr class="section-row" data-class-id="${classId}">
+                                <td colspan="4" class="px-6 py-3 bg-neutral-50">
+                                    <div class="text-neutral-500 text-sm italic pl-8">No sections found</div>
+                                </td>
+                            </tr>
+                        `;
+                        $row.after(noDataRow);
+                    } else {
+                        sections.forEach(function(section) {
+                            const sectionRow = `
+                                <tr class="section-row hover:bg-blue-50 transition-colors cursor-pointer" data-class-id="${classId}" data-section-id="${section.id}">
+                                    <td class="px-6 py-3">
+                                        <i class="fas fa-chevron-right expand-icon transition-transform ml-4"></i>
+                                    </td>
+                                    <td class="px-6 py-3">
+                                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                                            <i class="fas fa-users mr-1"></i> Section
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-3">
+                                        <div class="font-medium text-primary-800 pl-4">${section.name}</div>
+                                    </td>
+                                    <td class="px-6 py-3">
+                                        <span class="text-sm text-neutral-500">Click to expand subjects</span>
+                                    </td>
+                                </tr>
+                            `;
+                            $row.after(sectionRow);
+                        });
+                    }
+                })
+                .fail(function() {
+                    $icon.removeClass('fa-spin fa-spinner').addClass('fa-chevron-right');
+                    alert('Failed to load sections');
+                });
+        }
+    });
+    
+    // Handle section row click
+    $(document).on('click', '.section-row', function(e) {
+        e.stopPropagation();
+        const $row = $(this);
+        const classId = $row.data('class-id');
+        const sectionId = $row.data('section-id');
+        const $icon = $row.find('.expand-icon');
+        
+        // Check if already expanded
+        if ($icon.hasClass('fa-chevron-down')) {
+            // Collapse: remove all subject rows for this section
+            $row.nextUntil('.class-row, .section-row').remove();
+            $icon.removeClass('fa-chevron-down').addClass('fa-chevron-right');
+        } else {
+            // Expand: load subjects
+            $icon.removeClass('fa-chevron-right').addClass('fa-spin fa-spinner');
+            
+            $.get('/Diary/GetSubjectsBySection', { classId: classId, sectionId: sectionId, date: selectedDate })
+                .done(function(subjects) {
+                    $icon.removeClass('fa-spin fa-spinner').addClass('fa-chevron-down');
+                    
+                    if (subjects.length === 0) {
+                        const noDataRow = `
+                            <tr class="subject-row" data-section-id="${sectionId}">
+                                <td colspan="4" class="px-6 py-3 bg-neutral-50">
+                                    <div class="text-neutral-500 text-sm italic pl-12">No subjects assigned</div>
+                                </td>
+                            </tr>
+                        `;
+                        $row.after(noDataRow);
+                    } else {
+                        subjects.forEach(function(subject) {
+                            const subjectRow = `
+                                <tr class="subject-row bg-purple-50" data-section-id="${sectionId}" data-subject-id="${subject.subjectId}">
+                                    <td class="px-6 py-3"></td>
+                                    <td class="px-6 py-3">
+                                        <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+                                            <i class="fas fa-book mr-1"></i> Subject
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-3">
+                                        <div class="pl-8">
+                                            <div class="font-medium text-primary-800">${subject.subjectName}</div>
+                                            <div class="text-sm text-neutral-500">Teacher: ${subject.teacherName}</div>
+                                            ${subject.hasDiary ? `
+                                                <div class="mt-2 space-y-1">
+                                                    ${subject.lessonSummary ? `<div class="text-sm text-neutral-700"><strong>Lesson:</strong> ${subject.lessonSummary.substring(0, 100)}${subject.lessonSummary.length > 100 ? '...' : ''}</div>` : ''}
+                                                    ${subject.homework ? `<div class="text-sm text-neutral-700"><strong>Homework:</strong> ${subject.homework.substring(0, 100)}${subject.homework.length > 100 ? '...' : ''}</div>` : ''}
+                                                    ${subject.imageCount > 0 ? `<div class="text-sm text-info"><i class="fas fa-image mr-1"></i> ${subject.imageCount} image(s) attached</div>` : ''}
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-3">
+                                        <div class="flex space-x-2">
+                                            ${subject.hasDiary ? `
+                                                <a href="/Diary/Details/${subject.diaryId}" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center">
+                                                    <i class="fas fa-eye mr-1"></i> View
+                                                </a>
+                                                ${!isStudent ? `
+                                                    <a href="/Diary/Edit/${subject.diaryId}" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm flex items-center">
+                                                        <i class="fas fa-edit mr-1"></i> Edit
+                                                    </a>
+                                                ` : ''}
+                                            ` : `
+                                                ${!isStudent ? `
+                                                    <a href="/Diary/Create?date=${selectedDate}&classId=${classId}&sectionId=${sectionId}&subjectId=${subject.subjectId}" class="bg-primary-500 hover:bg-gradient-primary text-white px-3 py-1.5 rounded-lg text-sm flex items-center">
+                                                        <i class="fas fa-plus mr-1"></i> Add
+                                                    </a>
+                                                ` : '<div class="text-sm text-neutral-500 px-3 py-1.5"><i class="fas fa-info-circle mr-1"></i>No diary entry yet</div>'}
+                                            `}
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                            $row.after(subjectRow);
+                        });
+                    }
+                })
+                .fail(function() {
+                    $icon.removeClass('fa-spin fa-spinner').addClass('fa-chevron-right');
+                    alert('Failed to load subjects');
+                });
+        }
+    });
+});
+</script>
+}

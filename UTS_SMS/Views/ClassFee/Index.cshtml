@@ -1,0 +1,189 @@
+﻿@model IEnumerable<ClassFee>
+
+@{
+    ViewData["Title"] = "Class Fees";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-primary-800">💰 Class Fees</h1>
+                <p class="text-neutral-600 mt-2">Manage tuition and admission fees by class</p>
+            </div>
+            <a asp-action="Create" class="bg-gradient-primary hover:shadow-sms-lg text-white px-6 py-3 rounded-xl transition-all duration-300 flex items-center mt-4 md:mt-0 shadow-sms-md hover:shadow-sms-lg">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Create Fee Structure
+            </a>
+        </div>
+        <form asp-action="Index" method="get" class="bg-white p-4 rounded-2xl shadow-sms-md mb-6 flex flex-col md:flex-row gap-4 items-end">
+            <div class="flex-1">
+                <label for="campusId" class="block text-sm font-medium text-neutral-700 mb-1">Campus</label>
+                <select id="campusId" name="campusId" asp-items="ViewBag.CampusId"
+                        class="w-full rounded-lg border-primary-200 shadow-sm focus:ring-primary-400 focus:border-primary-400">
+                    <option value="">All Campuses</option>
+                </select>
+            </div>
+
+            <div class="flex-1">
+                <label for="classId" class="block text-sm font-medium text-neutral-700 mb-1">Class</label>
+                <select id="classId" name="classId" asp-items="ViewBag.ClassId"
+                        class="w-full rounded-lg border-primary-200 shadow-sm focus:ring-primary-400 focus:border-primary-400">
+                    <option value="">All Classes</option>
+                </select>
+            </div>
+
+            <button type="submit"
+                    class="bg-gradient-primary hover:shadow-sms-lg text-white px-6 py-2 rounded-lg shadow-sms-md hover:shadow-sms-lg transition-all">
+                Filter
+            </button>
+        </form>
+
+        <!-- Success Message -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="bg-success-light border-l-4 border-success text-success p-4 mb-6 rounded-xl animate-fade-in">
+                <div class="flex items-center">
+                    <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    @TempData["SuccessMessage"]
+                </div>
+            </div>
+        }
+
+        <!-- Fees Table -->
+        <div class="bg-white rounded-2xl shadow-sms-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-neutral-50">
+                        <tr>
+                            <th class="px-4 py-4 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">Class</th>
+                            <th class="px-4 py-4 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">Campus</th>
+                            <th class="px-4 py-4 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">Tuition</th>
+                            <th class="px-4 py-4 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">Admission</th>
+                            <th class="px-4 py-4 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">Total</th>
+                            <th class="px-4 py-4 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-primary-100">
+                        @if (Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr class="transition-all duration-300 hover:bg-primary-50">
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-primary-800">@item.Class?.Name</div>
+                                        <div class="text-xs text-neutral-500">Grade @item.Class?.GradeLevel</div>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                                            @item.Class?.Campus?.Name
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-primary-800 text-right">
+                                        @item.TuitionFee.ToString("N0")
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-primary-800 text-right">
+                                        @item.AdmissionFee.ToString("N0")
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-left">
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="text-blue-600 hover:underline">View</a>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-right">
+                                        <span class="font-semibold text-success text-sm">
+                                            @((item.TuitionFee + item.AdmissionFee).ToString("N0"))
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex space-x-1">
+                                            <a asp-action="Edit" asp-route-id="@item.Id"
+                                               class="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-primary-400 text-white p-2 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-sms-md"
+                                               title="Edit">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                            </a>
+                                            <a asp-action="Details" asp-route-id="@item.ClassId"
+                                               class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-primary-600 hover:to-blue-700 text-white p-2 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-sms-md"
+                                               title="View Details">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m-1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                            </a>
+                                            <a asp-action="Delete" asp-route-id="@item.Id"
+                                               class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white p-2 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-sms-md"
+                                               title="Delete">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="7" class="px-6 py-12 text-center">
+                                    <svg class="w-16 h-16 text-neutral-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                    </svg>
+                                    <h3 class="text-lg font-medium text-primary-800 mb-2">No fee structures yet</h3>
+                                    <p class="text-neutral-500 mb-4">Set up fee structures for each class to manage billing.</p>
+                                    <a asp-action="Create" class="bg-gradient-primary hover:shadow-sms-lg text-white px-6 py-2 rounded-lg transition-all duration-300 inline-flex items-center shadow">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                        </svg>
+                                        Add Fee Structure
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Smooth scrolling for overflow */
+        .overflow-x-auto {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Keep table compact and responsive */
+        table {
+            width: 100%;
+        }
+        
+        /* Ensure action buttons stay in a row */
+        td .flex.space-x-1 {
+            display: flex;
+            gap: 0.25rem;
+        }
+    </style>
+}}

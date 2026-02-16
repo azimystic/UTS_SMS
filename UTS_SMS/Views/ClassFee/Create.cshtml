@@ -1,0 +1,545 @@
+﻿@model ClassFee
+
+@{
+    ViewData["Title"] = "Create Class Fee";
+}
+
+<div class="min-h-screen bg-gradient-subtle p-4 md:p-6">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-primary-800">Create Class Fee</h1>
+            <p class="text-neutral-600 mt-2">Set tuition and admission fees for a class</p>
+        </div>
+
+        <!-- Form -->
+        <div class="bg-white rounded-2xl shadow-sms-xl p-6">
+            <form asp-action="Create" class="space-y-6" id="classFeeForm">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="bg-error-light border-l-4 border-error text-error p-4 rounded-lg"></div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Class -->
+                    <div>
+                        <label asp-for="ClassId" class="block text-sm font-medium text-neutral-700 mb-2">Class</label>
+                        <select asp-for="ClassId" id="classSelect" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-400" required>
+                            <option value="">-- Select Class --</option>
+                            @foreach (var cls in ViewBag.Classes as IEnumerable<Class>)
+                            {
+                                <option value="@cls.Id">@cls.Name (Grade @cls.GradeLevel) - @cls.Campus?.Name</option>
+                            }
+                        </select>
+                        <span asp-validation-for="ClassId" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Tuition Fee -->
+                    <div>
+                        <label asp-for="TuitionFee" class="block text-sm font-medium text-neutral-700 mb-2">Tuition Fee</label>
+                        <input asp-for="TuitionFee" type="number" step="0.01" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400" required />
+                        <span asp-validation-for="TuitionFee" class="text-error text-sm"></span>
+                    </div>
+
+                    <!-- Admission Fee -->
+                    <div>
+                        <label asp-for="AdmissionFee" class="block text-sm font-medium text-neutral-700 mb-2">Admission Fee</label>
+                        <input asp-for="AdmissionFee" type="number" step="0.01" class="w-full px-4 py-3 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400" required />
+                        <span asp-validation-for="AdmissionFee" class="text-error text-sm"></span>
+                    </div>
+                </div>
+
+                <!-- Extra Charges Section -->
+                <div class="mt-8 border-t pt-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold text-primary-800">Extra Charges (Optional)</h3>
+                        <button type="button" id="addChargeBtn" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Add Charge
+                        </button>
+                    </div>
+                    
+                    <div id="extraChargesContainer" class="space-y-4">
+                        <!-- Extra charges will be added here dynamically -->
+                    </div>
+                </div>
+
+                <!-- Apply to Other Classes Section -->
+                <div class="mt-6 border-t pt-6 hidden">
+                    <h3 class="text-xl font-semibold text-primary-800 mb-4">🎯 Apply to Other Classes</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-4">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="applyOption" value="none" checked class="form-radio text-primary-600" />
+                                <span class="ml-2">This class only</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="applyOption" value="all" class="form-radio text-primary-600" />
+                                <span class="ml-2">All classes</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="applyOption" value="selected" class="form-radio text-primary-600" />
+                                <span class="ml-2">Selected classes</span>
+                            </label>
+                        </div>
+                        
+                        <div id="classSelectionContainer" class="hidden mt-4 p-4 bg-neutral-50 rounded-lg">
+                            <p class="text-sm text-neutral-600 mb-2">Select classes to apply this fee structure:</p>
+                            <div id="classCheckboxes" class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                <!-- Class checkboxes will be populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex space-x-4 pt-6">
+                    <button type="submit" class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium py-3 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-sms-lg flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Create Fee
+                    </button>
+                    <a asp-action="Index" class="bg-neutral-100 hover:bg-primary-100 text-primary-800 font-medium py-3 px-8 rounded-xl transition-all duration-300 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    
+    <script>
+        let chargeCounter = 0;
+        let classId = null;
+        let sections = [];
+        let students = [];
+        
+        // Global helper functions (must be in global scope for onclick handlers)
+        function updateSelectedCount(chargeId) {
+            const selectedCheckboxes = document.querySelectorAll('#studentTableBody-' + chargeId + ' .student-checkbox:checked');
+            const countElement = document.getElementById('selectedCount-' + chargeId);
+            if (countElement) {
+                countElement.textContent = selectedCheckboxes.length;
+            }
+        }
+        
+        function saveStudentSelection(chargeId, modal) {
+            const selectedCheckboxes = modal.querySelectorAll('.student-checkbox:checked');
+            const selectedIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
+            
+            // Get the charge index from the charge ID
+            const chargeIndex = getChargeIndex(chargeId);
+            
+            // Remove existing hidden inputs for this charge
+            const container = document.getElementById(`selectedStudentsContainer-${chargeId}`);
+            const existingInputs = container.querySelectorAll('input[type="hidden"]');
+            existingInputs.forEach(input => input.remove());
+            
+            // Add new hidden inputs with INDEXED format - one per student ID
+            selectedIds.forEach((studentId, index) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = `ExtraCharges[${chargeIndex}].SelectedStudentIds[${index}]`;
+                input.value = studentId;
+                container.appendChild(input);
+            });
+            
+            // Update display
+            const displayDiv = document.getElementById('selection-' + chargeId);
+            displayDiv.textContent = `${selectedIds.length} student(s) selected`;
+            modal.remove();
+        }
+        
+        // Helper function to extract charge index from charge ID
+        function getChargeIndex(chargeId) {
+            // Extract index from the charge row ID
+            const chargeRow = document.getElementById(chargeId);
+            if (!chargeRow) return 0;
+            
+            const nameInputs = chargeRow.querySelectorAll('input[name*="ChargeName"]');
+            if (nameInputs.length > 0) {
+                const nameAttr = nameInputs[0].name;
+                const match = nameAttr.match(/ExtraCharges\[(\d+)\]/);
+                return match ? parseInt(match[1]) : 0;
+            }
+            return 0;
+        }
+        
+        // Add charge row
+        document.getElementById('addChargeBtn').addEventListener('click', function() {
+            if (!classId) {
+                alert('Please select a class first');
+                return;
+            }
+            addChargeRow(null);
+        });
+        
+        function addChargeRow(charge) {
+            const container = document.getElementById('extraChargesContainer');
+            const chargeRow = document.createElement('div');
+            chargeRow.className = 'border border-primary-200 rounded-lg p-4 bg-neutral-50';
+            chargeRow.id = `charge-${chargeCounter}`;
+            
+            // By default, select all students
+            const allStudentIds = students.map(s => s.id);
+            
+            chargeRow.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <h4 class="font-semibold text-primary-700">Charge ${chargeCounter + 1}</h4>
+                    <button type="button" onclick="removeCharge('charge-${chargeCounter}')" class="text-error hover:text-error-dark">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">Charge Name</label>
+                        <input type="text" name="ExtraCharges[${chargeCounter}].ChargeName" class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400" required />
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">Amount</label>
+                        <input type="number" name="ExtraCharges[${chargeCounter}].Amount" step="0.01" class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400" required />
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-neutral-700 mb-2">Category</label>
+                        <select name="ExtraCharges[${chargeCounter}].Category" class="w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-400" required>
+                            <option value="">-- Select --</option>
+                            <option value="OncePerClass">Once Per Class</option>
+                            <option value="OncePerLifetime">Once Per Lifetime</option>
+                            <option value="MonthlyCharges">Monthly Charges</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mt-4 flex items-center">
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" name="ExtraCharges[${chargeCounter}].IsActive" value="true" checked class="form-checkbox text-primary-600" />
+                        <input type="hidden" name="ExtraCharges[${chargeCounter}].IsActive" value="false" />
+                        <span class="ml-2 text-sm">Active</span>
+                    </label>
+                </div>
+                
+                <div class="mt-4">
+                    <div class="flex gap-2 flex-wrap">
+                        <button type="button" onclick="toggleStudentSelection('charge-${chargeCounter}', 'all')" class="text-primary-600 hover:text-primary-800 text-sm font-medium px-3 py-1 border border-primary-300 rounded">
+                            All Students
+                        </button>
+                        ${sections.map(section => `
+                            <button type="button" 
+                                    onclick="toggleStudentSelection('charge-${chargeCounter}', ${section.id})" 
+                                    ondblclick="unselectSection('charge-${chargeCounter}', ${section.id})"
+                                    class="text-primary-600 hover:text-primary-800 text-sm font-medium px-3 py-1 border border-primary-300 rounded section-btn"
+                                    data-section-id="${section.id}">
+                                Section ${section.name}
+                            </button>
+                        `).join('')}
+                        <button type="button" onclick="showStudentSelectionModal('charge-${chargeCounter}')" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium px-3 py-1 rounded">
+                            Select Students
+                        </button>
+                    </div>
+                    <div id="selection-charge-${chargeCounter}" class="mt-2 text-xs text-neutral-600">
+                        ${students.length > 0 ? `All students selected (${students.length})` : 'No students in this class yet'}
+                    </div>
+                    <div id="selectedStudentsContainer-charge-${chargeCounter}" style="display: none;">
+                        ${allStudentIds.map((studentId, index) => 
+                            `<input type="hidden" name="ExtraCharges[${chargeCounter}].SelectedStudentIds[${index}]" value="${studentId}" />`
+                        ).join('')}
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(chargeRow);
+            chargeCounter++;
+        }
+        
+        // Remove charge
+        function removeCharge(chargeId) {
+            const element = document.getElementById(chargeId);
+            if (element) {
+                element.remove();
+            }
+        }
+        
+        // Toggle student selection
+        function toggleStudentSelection(chargeId, sectionIdOrAll) {
+            const container = document.getElementById(`selectedStudentsContainer-${chargeId}`);
+            const displayDiv = document.getElementById('selection-' + chargeId);
+            
+            // Get current selection from hidden inputs
+            const currentInputs = container.querySelectorAll('input[type="hidden"]');
+            let currentSelection = Array.from(currentInputs).map(input => parseInt(input.value));
+            
+            if (sectionIdOrAll === 'all') {
+                // Select all students
+                const allStudentIds = students.map(s => s.id);
+                
+                // Clear existing inputs
+                currentInputs.forEach(input => input.remove());
+                
+                // Get charge index
+                const chargeIndex = getChargeIndex(chargeId);
+                
+                // Add new inputs with indexed format
+                allStudentIds.forEach((studentId, index) => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = `ExtraCharges[${chargeIndex}].SelectedStudentIds[${index}]`;
+                    input.value = studentId;
+                    container.appendChild(input);
+                });
+                
+                displayDiv.textContent = `All students selected (${students.length})`;
+            } else {
+                // Toggle section students
+                const sectionStudents = students.filter(s => s.sectionId == sectionIdOrAll);
+                const sectionStudentIds = sectionStudents.map(s => s.id);
+                
+                const allSelected = sectionStudentIds.every(id => currentSelection.includes(id));
+                
+                if (allSelected) {
+                    // Unselect section
+                    currentSelection = currentSelection.filter(id => !sectionStudentIds.includes(id));
+                } else {
+                    // Select section
+                    sectionStudentIds.forEach(id => {
+                        if (!currentSelection.includes(id)) {
+                            currentSelection.push(id);
+                        }
+                    });
+                }
+                
+                // Clear existing inputs
+                currentInputs.forEach(input => input.remove());
+                
+                // Get charge index
+                const chargeIndex = getChargeIndex(chargeId);
+                
+                // Add new inputs with indexed format
+                currentSelection.forEach((studentId, index) => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = `ExtraCharges[${chargeIndex}].SelectedStudentIds[${index}]`;
+                    input.value = studentId;
+                    container.appendChild(input);
+                });
+                
+                displayDiv.textContent = `${currentSelection.length} student(s) selected`;
+            }
+        }
+        
+        // Unselect section students (double-click)
+        function unselectSection(chargeId, sectionId) {
+            const container = document.getElementById(`selectedStudentsContainer-${chargeId}`);
+            const displayDiv = document.getElementById('selection-' + chargeId);
+            
+            // Get current selection
+            const currentInputs = container.querySelectorAll('input[type="hidden"]');
+            let currentSelection = Array.from(currentInputs).map(input => parseInt(input.value));
+            
+            const sectionStudents = students.filter(s => s.sectionId == sectionId);
+            const sectionStudentIds = sectionStudents.map(s => s.id);
+            
+            currentSelection = currentSelection.filter(id => !sectionStudentIds.includes(id));
+            
+            // Clear existing inputs
+            currentInputs.forEach(input => input.remove());
+            
+            // Get charge index
+            const chargeIndex = getChargeIndex(chargeId);
+            
+            // Add new inputs with indexed format
+            currentSelection.forEach((studentId, index) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = `ExtraCharges[${chargeIndex}].SelectedStudentIds[${index}]`;
+                input.value = studentId;
+                container.appendChild(input);
+            });
+            
+            displayDiv.textContent = `${currentSelection.length} student(s) selected`;
+        }
+        
+        // Show student selection modal
+        function showStudentSelectionModal(chargeId) {
+            const container = document.getElementById(`selectedStudentsContainer-${chargeId}`);
+            const displayDiv = document.getElementById('selection-' + chargeId);
+            
+            // Get current selection
+            const currentInputs = container.querySelectorAll('input[type="hidden"]');
+            const currentSelection = Array.from(currentInputs).map(input => parseInt(input.value));
+            
+            // Create modal
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg w-full max-w-6xl flex flex-col" style="height: 90vh; max-height: 600px;">
+                    <div class="flex justify-between items-center p-6 border-b flex-shrink-0">
+                        <h3 class="text-lg font-semibold text-primary-800">Select Students</h3>
+                        <button type="button" onclick="this.closest('.fixed').remove()" class="text-neutral-500 hover:text-neutral-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    ${students.length > 0 ? `
+                    <div class="p-6 border-b flex-shrink-0">
+                        <input type="text" id="studentSearch-${chargeId}" placeholder="Search students by name, CNIC..." class="w-full px-4 py-2 border border-primary-200 rounded-lg" />
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-6" style="min-height: 0;">
+                        <table class="w-full">
+                            <thead class="bg-neutral-50 sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-neutral-700 uppercase">
+                                        <input type="checkbox" id="selectAll-${chargeId}" class="form-checkbox text-primary-600" ${currentSelection.length === students.length ? 'checked' : ''} />
+                                        <span class="ml-2">All</span>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-neutral-700 uppercase">Name</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-neutral-700 uppercase">Section</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-neutral-700 uppercase">CNIC</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-neutral-700 uppercase">Phone</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentTableBody-${chargeId}" class="divide-y divide-neutral-200">
+                                ${students.map(student => `
+                                    <tr class="student-row hover:bg-primary-50" data-student-id="${student.id}" data-name="${student.name.toLowerCase()}" data-cnic="${student.cnic || ''}" data-phone="${student.phone || ''}">
+                                        <td class="px-4 py-3">
+                                            <input type="checkbox" class="student-checkbox form-checkbox text-primary-600" value="${student.id}" ${currentSelection.includes(student.id) ? 'checked' : ''} />
+                                        </td>
+                                        <td class="px-4 py-3 text-sm">${student.name}</td>
+                                        <td class="px-4 py-3 text-sm">${student.sectionName}</td>
+                                        <td class="px-4 py-3 text-sm text-neutral-600">${student.cnic || 'N/A'}</td>
+                                        <td class="px-4 py-3 text-sm text-neutral-600">${student.phone || 'N/A'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    ` : '<div class="flex-1 flex items-center justify-center p-8"><p class="text-neutral-600">No students in this class yet. You can still create charges.</p></div>'}
+                    <div class="flex justify-between items-center gap-2 p-6 border-t flex-shrink-0">
+                        <div class="text-sm text-neutral-600">
+                            <span id="selectedCount-${chargeId}">${currentSelection.length}</span> of ${students.length} selected
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="this.closest('.fixed').remove()" class="bg-neutral-100 hover:bg-neutral-200 text-neutral-800 px-4 py-2 rounded-lg">
+                                Cancel
+                            </button>
+                            ${students.length > 0 ? `
+                            <button type="button" onclick="saveStudentSelection('${chargeId}', this.closest('.fixed'))" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 rounded-lg">
+                                Save Selection
+                            </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            if (students.length > 0) {
+                // Search functionality
+                document.getElementById('studentSearch-' + chargeId).addEventListener('input', function(e) {
+                    const searchTerm = e.target.value.toLowerCase();
+                    document.querySelectorAll('#studentTableBody-' + chargeId + ' .student-row').forEach(row => {
+                        const name = row.getAttribute('data-name');
+                        const cnic = row.getAttribute('data-cnic');
+                        const phone = row.getAttribute('data-phone');
+                        const matches = name.includes(searchTerm) || cnic.includes(searchTerm) || phone.includes(searchTerm);
+                        row.style.display = matches ? '' : 'none';
+                    });
+                });
+                
+                // Select all functionality
+                document.getElementById('selectAll-' + chargeId).addEventListener('change', function(e) {
+                    const checkboxes = document.querySelectorAll('#studentTableBody-' + chargeId + ' .student-checkbox');
+                    checkboxes.forEach(cb => {
+                        if (cb.closest('.student-row').style.display !== 'none') {
+                            cb.checked = e.target.checked;
+                        }
+                    });
+                    updateSelectedCount(chargeId);
+                });
+                
+                // Individual checkbox change
+                document.querySelectorAll('#studentTableBody-' + chargeId + ' .student-checkbox').forEach(cb => {
+                    cb.addEventListener('change', function() {
+                        updateSelectedCount(chargeId);
+                        const selectAll = document.getElementById('selectAll-' + chargeId);
+                        const allCheckboxes = document.querySelectorAll('#studentTableBody-' + chargeId + ' .student-checkbox');
+                        const visibleCheckboxes = Array.from(allCheckboxes).filter(cb => cb.closest('.student-row').style.display !== 'none');
+                        const checkedVisible = visibleCheckboxes.filter(cb => cb.checked).length;
+                        selectAll.checked = checkedVisible === visibleCheckboxes.length && visibleCheckboxes.length > 0;
+                    });
+                });
+            }
+        }
+        
+        // Load sections and students when class is selected
+        document.getElementById('classSelect').addEventListener('change', function() {
+            classId = this.value;
+            if (classId) {
+                fetch(`/Students/GetSectionsByClass?classId=${classId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        sections = data;
+                        // Load students for all sections
+                        return fetch(`/ClassFee/GetStudentsByClass?classId=${classId}`);
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        students = data;
+                    })
+                    .catch(error => console.error('Error:', error));
+            } else {
+                sections = [];
+                students = [];
+            }
+        });
+        
+        // Show/hide class selection
+        document.querySelectorAll('input[name="applyOption"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const container = document.getElementById('classSelectionContainer');
+                if (this.value === 'selected') {
+                    container.classList.remove('hidden');
+                    loadClassCheckboxes();
+                } else {
+                    container.classList.add('hidden');
+                }
+            });
+        });
+        
+        // Load class checkboxes
+        function loadClassCheckboxes() {
+            const classId = document.querySelector('[name="ClassId"]').value;
+            const container = document.getElementById('classCheckboxes');
+            
+            if (!classId) {
+                container.innerHTML = '<p class="text-sm text-neutral-600">Please select a class first</p>';
+                return;
+            }
+            
+            container.innerHTML = `
+                @foreach (var cls in ViewBag.Classes as IEnumerable<Class>)
+                {
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" name="SelectedClassIds" value="@cls.Id" class="form-checkbox text-primary-600" />
+                        <span class="ml-2 text-sm">@cls.Name</span>
+                    </label>
+                }
+            `;
+        }
+    </script>
+}
