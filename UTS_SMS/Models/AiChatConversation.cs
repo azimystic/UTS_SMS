@@ -17,7 +17,7 @@ namespace UTS_SMS.Models
         [StringLength(200)]
         public string Title { get; set; } = "New Chat";
 
-        public int CampusId { get; set; }
+        public int? CampusId { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 

@@ -191,6 +191,41 @@ namespace UTS_SMS.Services
             return "Available subjects:\n" + string.Join("\n", subjects.Select(s => $"• {s}"));
         }
 
+        [KernelFunction("GetStudentCount")]
+        [Description("Get the total number of students currently enrolled in the school or campus. Returns total count, breakdown by gender, and grade distribution.")]
+        public async Task<string> GetStudentCount(
+            [Description("Optional: filter by campus ID. Leave empty for all campuses.")] int? campusId = null)
+        {
+            LogToolCall("GetStudentCount", $"Counting students" + (campusId.HasValue ? $" in campus {campusId}" : " across all campuses"));
+
+            var query = _context.Students.Where(s => !s.HasLeft);
+
+            if (campusId.HasValue)
+                query = query.Where(s => s.CampusId == campusId);
+
+            if (CurrentCampusId.HasValue && CurrentRole != "Admin")
+                query = query.Where(s => s.CampusId == CurrentCampusId.Value);
+
+            var students = await query
+                .Include(s => s.ClassObj)
+                .ToListAsync();
+
+            var total = students.Count;
+            var boys = students.Count(s => s.Gender == "Male");
+            var girls = students.Count(s => s.Gender == "Female");
+
+            var gradeDistribution = students
+                .GroupBy(s => s.ClassObj?.Name ?? "Unknown")
+                .OrderBy(g => g.Key)
+                .Select(g => $"  {g.Key}: {g.Count()} students")
+                .ToList();
+
+            return $"Total Students: {total}\n" +
+                   $"Boys: {boys}\n" +
+                   $"Girls: {girls}\n\n" +
+                   $"Grade Distribution:\n{string.Join("\n", gradeDistribution)}";
+        }
+
         [KernelFunction("GetExamsList")]
         [Description("Get a list of exams, optionally filtered by academic year. Returns exam names, categories, and dates.")]
         public async Task<string> GetExamsList(

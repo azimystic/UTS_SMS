@@ -126,7 +126,16 @@ namespace UTS_SMS.Services
                     {
                         conversation = CreateNewConversation(userContext);
                         _context.AiChatConversations.Add(conversation);
-                        await _context.SaveChangesAsync(cancellationToken);
+                        
+                        try
+                        {
+                            await _context.SaveChangesAsync(cancellationToken);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to save new conversation for user {UserId}", userContext.UserId);
+                            throw new InvalidOperationException("Failed to create conversation. Please try again.", ex);
+                        }
                     }
 
                     // ── 3. System prompt (role-specific) ────────────────────────
@@ -135,13 +144,15 @@ namespace UTS_SMS.Services
                     chatHistory.AddUserMessage(userMessage);
 
                     // Save user message
-                    conversation.Messages.Add(new AiChatMessage
+                    var userMsg = new AiChatMessage
                     {
                         ConversationId = conversation.Id,
                         Role = Models.ChatRole.User,
                         Content = userMessage,
                         Timestamp = DateTime.Now
-                    });
+                    };
+                    
+                    conversation.Messages.Add(userMsg);
                     conversation.LastMessageAt = DateTime.Now;
 
                     // Auto-generate title from first message
@@ -152,7 +163,15 @@ namespace UTS_SMS.Services
                             : userMessage;
                     }
 
-                    await _context.SaveChangesAsync(cancellationToken);
+                    try
+                    {
+                        await _context.SaveChangesAsync(cancellationToken);
+                    }
+                    catch (DbUpdateException ex)
+                    {
+                        _logger.LogError(ex, "Database error saving user message for conversation {ConversationId}", conversation.Id);
+                        throw new InvalidOperationException("Failed to save your message. Please try again.", ex);
+                    }
 
                     // Emit conversation ID
                     await writer.WriteAsync(new ChatStreamEvent
@@ -165,7 +184,8 @@ namespace UTS_SMS.Services
                     var executionSettings = new OpenAIPromptExecutionSettings
                     {
                         Temperature = 0.7,
-                        MaxTokens = 2048
+                        MaxTokens = 2048,
+                        ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions
                     };
 
                     var chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
@@ -261,16 +281,33 @@ namespace UTS_SMS.Services
                         }))
                         : null;
 
-                    conversation.Messages.Add(new AiChatMessage
+                    var assistantMsg = new AiChatMessage
                     {
                         ConversationId = conversation.Id,
                         Role = Models.ChatRole.Assistant,
                         Content = fullResponse.ToString(),
                         Sources = sourcesJson,
                         Timestamp = DateTime.Now
-                    });
+                    };
 
-                    await _context.SaveChangesAsync(cancellationToken);
+                    conversation.Messages.Add(assistantMsg);
+                    conversation.LastMessageAt = DateTime.Now;
+
+                    try
+                    {
+                        await _context.SaveChangesAsync(cancellationToken);
+                    }
+                    catch (DbUpdateException ex)
+                    {
+                        _logger.LogError(ex, "Database error saving AI response for conversation {ConversationId}", conversation.Id);
+                        // Don't throw here - the response was already streamed to the user
+                        // Just log the error and continue
+                        await writer.WriteAsync(new ChatStreamEvent
+                        {
+                            Type = ChatEventType.Error,
+                            Data = "Response received but failed to save to history. Your conversation may not be saved."
+                        }, cancellationToken);
+                    }
 
                     await writer.WriteAsync(new ChatStreamEvent
                     {
@@ -281,17 +318,29 @@ namespace UTS_SMS.Services
                     // If we got here, the model worked, so break out of the fallback loop
                     return;
                 }
+                catch (DbUpdateException dbEx)
+                {
+                    // Database-specific error - log and rethrow with user-friendly message
+                    _logger.LogError(dbEx, "Database error in AI chat processing with model {Model}", model);
+                    lastException = new InvalidOperationException("Database error occurred. Please try again.", dbEx);
+                    break; // Don't try other models for database errors
+                }
                 catch (Exception ex)
                 {
+                    _logger.LogError(ex, "Error processing AI chat with model {Model}", model);
                     lastException = ex;
                     // Try next model
                 }
             }
             // If all models fail, emit error
+            var errorMessage = lastException is InvalidOperationException 
+                ? lastException.Message 
+                : $"All Groq models failed. Last error: {lastException?.Message}";
+                
             await writer.WriteAsync(new ChatStreamEvent
             {
                 Type = ChatEventType.Error,
-                Data = $"All Groq models failed. Last error: {lastException?.Message}"
+                Data = errorMessage
             }, cancellationToken);
         }
 
@@ -358,7 +407,7 @@ namespace UTS_SMS.Services
             {
                 UserId = ctx.UserId,
                 Title = "New Chat",
-                CampusId = ctx.CampusId ?? 0,
+                CampusId = ctx.CampusId,
                 CreatedAt = DateTime.Now
             };
         }
