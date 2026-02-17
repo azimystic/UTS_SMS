@@ -52,6 +52,13 @@ namespace UTS_SMS.Services
         {
             try
             {
+                // First try direct pattern matching for common queries (faster than AI)
+                var quickResponse = await TryQuickPatternMatchAsync(message, userContext);
+                if (quickResponse != null)
+                {
+                    return new ChatResponse { Success = true, Message = quickResponse };
+                }
+
                 // Use AI to understand intent and extract parameters
                 var intent = await GetIntentFromAIAsync(message, conversationHistory, userContext);
                 
@@ -76,6 +83,43 @@ namespace UTS_SMS.Services
             }
         }
 
+        private async Task<string?> TryQuickPatternMatchAsync(string message, ChatUserContext ctx)
+        {
+            var lowerMessage = message.ToLower().Trim();
+
+            // Student count patterns
+            if (ContainsAny(lowerMessage, "how many students", "student count", "total students", "number of students"))
+            {
+                return await GetStudentCountAsync(ctx);
+            }
+
+            // Employee count patterns
+            if (ContainsAny(lowerMessage, "how many teachers", "teacher count", "total teachers", "number of teachers",
+                "how many employees", "employee count", "total employees", "staff count"))
+            {
+                return await GetEmployeeCountAsync(ctx);
+            }
+
+            // Class list
+            if (ContainsAny(lowerMessage, "list of classes", "all classes", "show classes", "available classes"))
+            {
+                return await GetClassListAsync(ctx);
+            }
+
+            // Exam list
+            if (ContainsAny(lowerMessage, "list of exams", "all exams", "show exams", "available exams"))
+            {
+                return await GetExamListAsync(ctx);
+            }
+
+            return null; // No quick match found
+        }
+
+        private bool ContainsAny(string text, params string[] keywords)
+        {
+            return keywords.Any(k => text.Contains(k, StringComparison.OrdinalIgnoreCase));
+        }
+
         private async Task<ChatIntent?> GetIntentFromAIAsync(
             string message,
             List<ChatMessage> conversationHistory,
@@ -88,56 +132,48 @@ namespace UTS_SMS.Services
                 var models = _configuration.GetSection("AiChat:GroqModels").Get<string[]>() ?? new[] { "llama-3.1-8b-instant" };
 
                 if (string.IsNullOrEmpty(apiKey))
+                {
+                    _logger.LogWarning("Groq API key not configured, skipping AI intent detection");
                     return null;
+                }
 
                 var client = _httpClientFactory.CreateClient();
+                client.DefaultRequestHeaders.Clear();
                 client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
 
-                // Get available data for context
-                var classes = await _context.Classes.Where(c => c.IsActive).Select(c => c.Name).ToListAsync();
-                var sections = await _context.ClassSections.Where(s => s.IsActive).Select(s => s.Name).Distinct().ToListAsync();
-                var examCategories = await _context.Set<ExamCategory>().Where(e => e.IsActive).Select(e => e.Name).ToListAsync();
-                var exams = await _context.Set<Exam>().Where(e => e.IsActive).Select(e => e.Name).ToListAsync();
+                var systemPrompt = $@"Extract intent from user query and return ONLY valid JSON.
 
-                var systemPrompt = $@"You are an intent parser for a School Management System. Analyze the user message and extract structured intent.
-Today's date is {DateTime.Now:yyyy-MM-dd}. Current user: {userContext.FullName} ({userContext.Role}).
+User: {userContext.FullName} ({userContext.Role})
+Today: {DateTime.Now:yyyy-MM-dd}
 
-Available Classes: {string.Join(", ", classes)}
-Available Sections: {string.Join(", ", sections)}
-Available Exam Categories: {string.Join(", ", examCategories)}
-Available Exams: {string.Join(", ", exams)}
-
-IMPORTANT: Handle class name variations like '9', 'Nine', 'ninth', '9th', 'IX' all mean class 9.
-Handle date variations like 'today', 'yesterday', 'last monday', '15 jan', '2024-01-15', '15/01/2024'.
-
-Return a JSON object with these fields:
+Detect intent and extract parameters. Return JSON only:
 {{
-    ""intent"": ""student_attendance|class_attendance|section_attendance|employee_attendance|student_marks|class_marks|student_count|employee_count|student_info|employee_info|class_list|exam_list|general"",
-    ""studentName"": ""extracted student name or null"",
-    ""employeeName"": ""extracted employee name or null"",
-    ""className"": ""normalized class number like 9, 10 or null"",
-    ""sectionName"": ""section letter like A, B or null"",
-    ""examCategory"": ""exam category name or null"",
-    ""examName"": ""specific exam name or null"",
-    ""subjectName"": ""subject name or null"",
-    ""date"": ""YYYY-MM-DD format or null"",
-    ""dateRange"": ""last_week|last_month|this_month|custom or null"",
-    ""isMyData"": true/false (if user asks about their own data)
+    ""intent"": ""student_attendance|class_attendance|employee_attendance|student_marks|class_marks|student_count|employee_count|student_info|employee_info|class_list|exam_list|general"",
+    ""studentName"": ""name or null"",
+    ""employeeName"": ""name or null"",
+    ""className"": ""9 or null"",
+    ""sectionName"": ""A or null"",
+    ""examCategory"": ""category or null"",
+    ""examName"": ""exam or null"",
+    ""subjectName"": ""subject or null"",
+    ""date"": ""YYYY-MM-DD or null"",
+    ""dateRange"": ""today|yesterday|last_week|last_month|this_month or null"",
+    ""isMyData"": true/false
 }}
 
-Only return the JSON object, no other text. If the query is general conversation or you can't determine intent, set intent to ""general"".";
+Examples:
+- ""class 9 attendance"" ? {{""intent"":""class_attendance"",""className"":""9""}}
+- ""marks of umar in T1"" ? {{""intent"":""student_marks"",""studentName"":""umar"",""examName"":""T1""}}
+- ""today attendance"" ? {{""intent"":""class_attendance"",""dateRange"":""today""}}
+- ""total students"" ? {{""intent"":""student_count""}}
+
+Return ONLY the JSON object.";
 
                 var messages = new List<object>
                 {
-                    new { role = "system", content = systemPrompt }
+                    new { role = "system", content = systemPrompt },
+                    new { role = "user", content = message }
                 };
-
-                // Add recent conversation context
-                foreach (var msg in conversationHistory.TakeLast(4))
-                {
-                    messages.Add(new { role = msg.Role, content = msg.Content });
-                }
-                messages.Add(new { role = "user", content = message });
 
                 foreach (var model in models)
                 {
@@ -147,17 +183,22 @@ Only return the JSON object, no other text. If the query is general conversation
                         {
                             model = model,
                             messages = messages,
-                            max_tokens = 500,
+                            max_tokens = 300,
                             temperature = 0.1
                         };
 
+                        var jsonContent = JsonSerializer.Serialize(requestBody);
+                        _logger.LogInformation("Sending request to Groq with model {Model}", model);
+
                         var response = await client.PostAsync(
                             $"{apiUrl}/chat/completions",
-                            new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json"));
+                            new StringContent(jsonContent, Encoding.UTF8, "application/json"));
+
+                        var responseContent = await response.Content.ReadAsStringAsync();
+                        _logger.LogInformation("Groq API response status: {StatusCode}", response.StatusCode);
 
                         if (response.IsSuccessStatusCode)
                         {
-                            var responseContent = await response.Content.ReadAsStringAsync();
                             var jsonDoc = JsonDocument.Parse(responseContent);
                             var aiResponse = jsonDoc.RootElement
                                 .GetProperty("choices")[0]
@@ -165,34 +206,60 @@ Only return the JSON object, no other text. If the query is general conversation
                                 .GetProperty("content")
                                 .GetString();
 
+                            _logger.LogInformation("AI Response: {Response}", aiResponse);
+
                             if (!string.IsNullOrEmpty(aiResponse))
                             {
-                                // Clean the response - remove markdown code blocks if present
+                                // Clean the response
                                 aiResponse = aiResponse.Trim();
+                                
+                                // Remove markdown code blocks if present
                                 if (aiResponse.StartsWith("```"))
                                 {
                                     var lines = aiResponse.Split('\n');
-                                    aiResponse = string.Join("\n", lines.Skip(1).TakeWhile(l => !l.StartsWith("```")));
+                                    aiResponse = string.Join("\n", lines.Skip(1).TakeWhile(l => !l.StartsWith("```"))).Trim();
                                 }
 
-                                var intent = JsonSerializer.Deserialize<ChatIntent>(aiResponse, new JsonSerializerOptions
+                                // Remove ```json prefix if present
+                                if (aiResponse.StartsWith("```json"))
                                 {
-                                    PropertyNameCaseInsensitive = true
-                                });
-                                return intent;
+                                    aiResponse = aiResponse.Substring(7).Trim();
+                                }
+
+                                try
+                                {
+                                    var intent = JsonSerializer.Deserialize<ChatIntent>(aiResponse, new JsonSerializerOptions
+                                    {
+                                        PropertyNameCaseInsensitive = true
+                                    });
+
+                                    if (intent != null)
+                                    {
+                                        _logger.LogInformation("Successfully parsed intent: {Intent}", intent.Intent);
+                                        return intent;
+                                    }
+                                }
+                                catch (JsonException jex)
+                                {
+                                    _logger.LogWarning(jex, "Failed to parse AI response as JSON: {Response}", aiResponse);
+                                }
                             }
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Groq API error: {StatusCode} - {Content}", response.StatusCode, responseContent);
                         }
 
                         if ((int)response.StatusCode == 429)
                         {
-                            _logger.LogWarning("Rate limit hit for model {Model} in intent detection", model);
-                            await Task.Delay(500);
+                            _logger.LogWarning("Rate limit hit for model {Model}", model);
+                            await Task.Delay(1000);
                             continue;
                         }
                     }
                     catch (JsonException jex)
                     {
-                        _logger.LogWarning(jex, "Failed to parse AI response as JSON");
+                        _logger.LogWarning(jex, "JSON parsing error with model {Model}", model);
                         continue;
                     }
                     catch (Exception ex)
@@ -202,6 +269,7 @@ Only return the JSON object, no other text. If the query is general conversation
                     }
                 }
 
+                _logger.LogWarning("All models failed or returned invalid response");
                 return null;
             }
             catch (Exception ex)
