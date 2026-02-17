@@ -2347,5 +2347,11 @@
     </script>
     
     @await RenderSectionAsync("Scripts", required: false)
+    
+    @* Simple Chat Widget - Available for all logged-in users *@
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        @await Html.PartialAsync("_ChatWidget")
+    }
 </body>
 </html>

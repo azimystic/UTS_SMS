@@ -93,10 +93,12 @@ builder.Services.AddScoped<IPdfService, PdfService>();
 builder.Services.Configure<AiChatOptions>(builder.Configuration.GetSection("AiChat"));
 builder.Services.AddHttpClient("ChromaDB");
 builder.Services.AddHttpClient("GeminiEmbedding");
+builder.Services.AddHttpClient(); // Default HttpClient for SimpleChatService
 builder.Services.AddScoped<VectorStoreService>();
 builder.Services.AddScoped<PdfIngestionService>();
 builder.Services.AddScoped<SmsPlugin>();
 builder.Services.AddScoped<AiChatService>();
+builder.Services.AddScoped<SimpleChatService>(); // New lightweight chat service
 builder.Services.AddSignalR();
 
 // Add background services
