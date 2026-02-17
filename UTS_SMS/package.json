@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "@microsoft/signalr": "^10.0.0",
     "browserslist": "^4.25.3",
     "caniuse-lite": "^1.0.30001737",
     "electron-to-chromium": "^1.5.211",

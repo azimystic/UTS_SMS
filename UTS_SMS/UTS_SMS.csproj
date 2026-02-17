@@ -4,9 +4,11 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>$(NoWarn);SKEXP0070;SKEXP0001;SKEXP0010;SKEXP0050</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ChromaDB.Client" Version="0.9.1" />
     <PackageReference Include="ClosedXML" Version="0.102.3" />
     <PackageReference Include="DocumentFormat.OpenXml" Version="2.20.0" />
     <PackageReference Include="itext7" Version="8.0.5" />
@@ -22,6 +24,9 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.SemanticKernel" Version="1.47.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Google" Version="1.47.0-alpha" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.47.0" />
   </ItemGroup>
 
   <ItemGroup>

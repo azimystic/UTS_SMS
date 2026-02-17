@@ -37,7 +37,6 @@
     <!-- Consolidated Theme CSS - Edit this file to change the entire app theme -->
     <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/SMS.styles.css" asp-append-version="true" />
     <!-- Font Awesome Icons - Offline -->
     <link rel="stylesheet" href="~/lib/fontawesome/css/all.min.css" asp-append-version="true" />
     
@@ -1441,6 +1440,17 @@
                     </li>
                 
 
+
+                  <!-- AI Chat Menu -->
+                @if (User.IsInRole("Admin") || User.IsInRole("Teacher") || User.IsInRole("Student"))
+                {
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="AiChat" asp-action="Index">
+                            <i class="fas fa-robot"></i>
+                            <span class="link-text">Chat with AI</span>
+                        </a>
+                    </li>
+                }
 
                   <!-- Acadmeic Material Menu-->
                 <li class="nav-item has-submenu">

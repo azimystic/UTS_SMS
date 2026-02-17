@@ -99,6 +99,10 @@ namespace UTS_SMS
         // Substitutions
         public DbSet<Substitution> Substitutions { get; set; }
         
+        // AI Chat System
+        public DbSet<AiChatConversation> AiChatConversations { get; set; }
+        public DbSet<AiChatMessage> AiChatMessages { get; set; }
+        
         // Employee Roles and Leaves Management
         public DbSet<EmployeeRole> EmployeeRoles { get; set; }
         public DbSet<EmployeeRoleConfig> EmployeeRoleConfigs { get; set; }

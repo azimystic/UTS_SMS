@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using UTS_SMS;
 using UTS_SMS.Models;
 using UTS_SMS.Services;
+using UTS_SMS.Hubs;
 using UTS_SMS;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -81,6 +82,16 @@ builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<MessageService>();
  builder.Services.AddScoped<ReportService>();
 
+// AI Chat services
+builder.Services.Configure<AiChatOptions>(builder.Configuration.GetSection("AiChat"));
+builder.Services.AddHttpClient("ChromaDB");
+builder.Services.AddHttpClient("GeminiEmbedding");
+builder.Services.AddScoped<VectorStoreService>();
+builder.Services.AddScoped<PdfIngestionService>();
+builder.Services.AddScoped<SmsPlugin>();
+builder.Services.AddScoped<AiChatService>();
+builder.Services.AddSignalR();
+
 // Add background services
 builder.Services.AddHostedService<SalaryDeductionBackgroundService>();
 builder.Services.AddHostedService<NotificationBackgroundService>();
@@ -117,6 +128,9 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Account}/{action=Login}/{id?}");
+
+// AI Chat SignalR Hub
+app.MapHub<AiChatHub>("/aichat-hub");
 
 // Initialize roles and create default admin user
 using (var scope = app.Services.CreateScope())

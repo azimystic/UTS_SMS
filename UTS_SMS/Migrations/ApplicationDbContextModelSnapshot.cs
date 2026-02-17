@@ -596,6 +596,77 @@ namespace UTS_SMS.Migrations
                     b.ToTable("AdmissionInquiries");
                 });
 
+            modelBuilder.Entity("UTS_SMS.Models.AiChatConversation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CampusId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastMessageAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AiChatConversations");
+                });
+
+            modelBuilder.Entity("UTS_SMS.Models.AiChatMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ConversationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Sources")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ToolName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConversationId");
+
+                    b.ToTable("AiChatMessages");
+                });
+
             modelBuilder.Entity("UTS_SMS.Models.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -4712,6 +4783,28 @@ namespace UTS_SMS.Migrations
                     b.Navigation("ClassInterested");
                 });
 
+            modelBuilder.Entity("UTS_SMS.Models.AiChatConversation", b =>
+                {
+                    b.HasOne("UTS_SMS.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("UTS_SMS.Models.AiChatMessage", b =>
+                {
+                    b.HasOne("UTS_SMS.Models.AiChatConversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
+                });
+
             modelBuilder.Entity("UTS_SMS.Models.ApplicationUser", b =>
                 {
                     b.HasOne("UTS_SMS.Models.Campus", "Campus")
@@ -6207,6 +6300,11 @@ namespace UTS_SMS.Migrations
             modelBuilder.Entity("Diary", b =>
                 {
                     b.Navigation("DiaryImages");
+                });
+
+            modelBuilder.Entity("UTS_SMS.Models.AiChatConversation", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("UTS_SMS.Models.AssignedDuty", b =>
