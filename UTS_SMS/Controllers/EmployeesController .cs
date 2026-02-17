@@ -15,12 +15,15 @@ namespace UTS_SMS.Controllers
         private readonly IWebHostEnvironment _env;
         private readonly IUserService _userService;
         private readonly UserManager<ApplicationUser> _userManager;
-        public EmployeesController(ApplicationDbContext context, IWebHostEnvironment env, IUserService userService, UserManager<ApplicationUser> userManager)
+        private readonly IWhatsAppService _whatsAppService;
+
+        public EmployeesController(ApplicationDbContext context, IWebHostEnvironment env, IUserService userService, UserManager<ApplicationUser> userManager, IWhatsAppService whatsAppService)
         {
             _context = context;
             _env = env;
             _userService = userService;
             _userManager = userManager;
+            _whatsAppService = whatsAppService;
         }
 
         // GET: Employees
@@ -273,11 +276,34 @@ namespace UTS_SMS.Controllers
                             _context.Update(employee);
                             await _context.SaveChangesAsync();
 
-                            TempData["Success"] = $"Student and user account created successfully! Check the student details for login credentials.";
+                            // Send WhatsApp with credentials (fire-and-forget)
+                            var username = employee.CNIC.Replace("-", "");
+                            var password = "employee123";
+                            _ = Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    if (!string.IsNullOrWhiteSpace(employee.PhoneNumber))
+                                    {
+                                        var message = $"Welcome {employee.FullName}! Your account is created. Username: {username} Password: {password}.";
+                                        await _whatsAppService.SendMessageAsync(
+                                            employee.FullName,
+                                            employee.PhoneNumber,
+                                            message
+                                        );
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"Error sending WhatsApp: {ex.Message}");
+                                }
+                            });
+
+                            TempData["Success"] = $"Employee and user account created successfully! Username: {username}, Password: {password}";
                         }
                         else
                         {
-                            TempData["Warning"] = "Student created but user account creation failed. Please create manually.";
+                            TempData["Warning"] = "Employee created but user account creation failed. Please create manually.";
                         }
                     }
                     if (employee.Role == "Accountant")
@@ -289,11 +315,34 @@ namespace UTS_SMS.Controllers
                             _context.Update(employee);
                             await _context.SaveChangesAsync();
 
-                            TempData["Success"] = $"Student and user account created successfully! Check the student details for login credentials.";
+                            // Send WhatsApp with credentials (fire-and-forget)
+                            var username = employee.CNIC.Replace("-", "");
+                            var password = "employee123";
+                            _ = Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    if (!string.IsNullOrWhiteSpace(employee.PhoneNumber))
+                                    {
+                                        var message = $"Welcome {employee.FullName}! Your account is created. Username: {username} Password: {password}.";
+                                        await _whatsAppService.SendMessageAsync(
+                                            employee.FullName,
+                                            employee.PhoneNumber,
+                                            message
+                                        );
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"Error sending WhatsApp: {ex.Message}");
+                                }
+                            });
+
+                            TempData["Success"] = $"Employee and user account created successfully! Username: {username}, Password: {password}";
                         }
                         else
                         {
-                            TempData["Warning"] = "Student created but user account creation failed. Please create manually.";
+                            TempData["Warning"] = "Employee created but user account creation failed. Please create manually.";
                         }
                     }
                     

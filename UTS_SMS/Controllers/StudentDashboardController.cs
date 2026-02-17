@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UTS_SMS.Models;
 using UTS_SMS.Services;
+using Stripe.Checkout;
 
 namespace UTS_SMS.Controllers
 {   // Student Dashboard Controller
@@ -13,12 +14,16 @@ namespace UTS_SMS.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IExtraChargeService _extraChargeService;
+        private readonly NotificationService _notificationService;
+        private readonly IConfiguration _configuration;
 
-        public StudentDashboardController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IExtraChargeService extraChargeService)
+        public StudentDashboardController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IExtraChargeService extraChargeService, NotificationService notificationService, IConfiguration configuration)
         {
             _context = context;
             _userManager = userManager;
             _extraChargeService = extraChargeService;
+            _notificationService = notificationService;
+            _configuration = configuration;
         }
 
         public async Task<IActionResult> Dashboard(int? studentId)
@@ -1254,6 +1259,357 @@ namespace UTS_SMS.Controllers
             catch (Exception ex)
             {
                 return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateStripeCheckout(int studentId)
+        {
+            try
+            {
+                var student = await _context.Students
+                    .Include(s => s.ClassObj)
+                    .FirstOrDefaultAsync(s => s.Id == studentId);
+
+                if (student == null)
+                    return Json(new { success = false, message = "Student not found" });
+
+                var currentMonth = DateTime.Now.Month;
+                var currentYear = DateTime.Now.Year;
+
+                // Check if billing already exists for this month
+                var existingBilling = await _context.BillingMaster
+                    .Include(b => b.Transactions)
+                    .FirstOrDefaultAsync(b => b.StudentId == studentId 
+                        && b.ForMonth == currentMonth 
+                        && b.ForYear == currentYear);
+
+                // If billing exists and has been paid, don't allow payment
+                var totalPaid = existingBilling?.Transactions?.Sum(t => t.AmountPaid) ?? 0;
+                if (totalPaid > 0)
+                    return Json(new { success = false, message = "Payment already made for this month" });
+
+                // Calculate total amount
+                decimal totalAmount = 0;
+                
+                if (existingBilling != null)
+                {
+                    var fineCharges = await _context.StudentFineCharges
+                        .Where(sfc => sfc.StudentId == studentId && !sfc.IsPaid && sfc.IsActive)
+                        .SumAsync(sfc => (decimal?)sfc.Amount) ?? 0;
+                    
+                    totalAmount = existingBilling.TuitionFee + 
+                                  existingBilling.AdmissionFee + 
+                                  existingBilling.MiscallaneousCharges + 
+                                  existingBilling.Fine + 
+                                  existingBilling.PreviousDues +
+                                  fineCharges;
+                }
+                else
+                {
+                    // Calculate from ClassFee
+                    var classFee = await _context.ClassFees
+                        .FirstOrDefaultAsync(cf => cf.ClassId == student.ClassObj.Id);
+
+                    if (classFee == null)
+                        return Json(new { success = false, message = "Class fee structure not found" });
+
+                    var tuitionFee = classFee.TuitionFee * (1 - ((student.TuitionFeeDiscountPercent ?? 0) / 100m));
+                    var admissionFee = student.AdmissionFeePaid ? 0 :
+                        Math.Max(0, classFee.AdmissionFee - (classFee.AdmissionFee * ((student.AdmissionFeeDiscountAmount ?? 0) / 100m)));
+                    var fineCharges = await _context.StudentFineCharges
+                        .Where(sfc => sfc.StudentId == studentId && !sfc.IsPaid && sfc.IsActive)
+                        .SumAsync(sfc => (decimal?)sfc.Amount) ?? 0;
+                    var extraChargesAmount = await _extraChargeService.CalculateExtraCharges(student.Class, student.Id, student.CampusId);
+
+                    // Calculate previous dues
+                    var lastRecord = await _context.BillingMaster
+                        .Include(b => b.Transactions)
+                        .Where(b => b.StudentId == student.Id &&
+                                   (b.ForYear < currentYear || (b.ForYear == currentYear && b.ForMonth < currentMonth)))
+                        .OrderByDescending(b => b.ForYear)
+                        .ThenByDescending(b => b.ForMonth)
+                        .FirstOrDefaultAsync();
+                    
+                    decimal calculatedPreviousDues = 0;
+                    if (lastRecord != null)
+                    {
+                        var lastBillTotalPayable = lastRecord.TuitionFee + lastRecord.AdmissionFee +
+                                                   lastRecord.MiscallaneousCharges + lastRecord.PreviousDues + lastRecord.Fine;
+                        var lastBillTotalPaid = lastRecord.Transactions?.Sum(t => t.AmountPaid) ?? 0;
+                        calculatedPreviousDues = lastBillTotalPayable - lastBillTotalPaid;
+
+                        var lastRecordDate = new DateTime(lastRecord.ForYear, lastRecord.ForMonth, 1);
+                        var selectedDate = new DateTime(currentYear, currentMonth, 1);
+                        var monthsGap = ((selectedDate.Year - lastRecordDate.Year) * 12) + selectedDate.Month - lastRecordDate.Month - 1;
+
+                        if (monthsGap > 0)
+                        {
+                            var missingMonthsAmount = monthsGap * (tuitionFee + extraChargesAmount);
+                            calculatedPreviousDues += missingMonthsAmount;
+                        }
+                    }
+
+                    totalAmount = tuitionFee + admissionFee + extraChargesAmount + fineCharges + calculatedPreviousDues;
+                }
+
+                if (totalAmount <= 0)
+                    return Json(new { success = false, message = "No outstanding payment required" });
+
+                // Set Stripe API key
+                Stripe.StripeConfiguration.ApiKey = _configuration["Stripe:SecretKey"];
+
+                // Create Stripe checkout session
+                var domain = $"{Request.Scheme}://{Request.Host}";
+                var options = new SessionCreateOptions
+                {
+                    PaymentMethodTypes = new List<string> { "card" },
+                    LineItems = new List<SessionLineItemOptions>
+                    {
+                        new SessionLineItemOptions
+                        {
+                            PriceData = new SessionLineItemPriceDataOptions
+                            {
+                                Currency = "pkr",
+                                ProductData = new SessionLineItemPriceDataProductDataOptions
+                                {
+                                    Name = $"School Fee - {student.StudentName}",
+                                    Description = $"Fee for {DateTime.Now:MMMM yyyy} - {student.ClassObj?.Name}"
+                                },
+                                UnitAmount = (long)(totalAmount * 100) // Stripe uses smallest currency unit
+                            },
+                            Quantity = 1
+                        }
+                    },
+                    Mode = "payment",
+                    SuccessUrl = $"{domain}/StudentDashboard/StripePaymentSuccess?session_id={{CHECKOUT_SESSION_ID}}&studentId={studentId}",
+                    CancelUrl = $"{domain}/StudentDashboard/Dashboard?studentId={studentId}",
+                    Metadata = new Dictionary<string, string>
+                    {
+                        { "StudentId", studentId.ToString() },
+                        { "ForMonth", currentMonth.ToString() },
+                        { "ForYear", currentYear.ToString() },
+                        { "Amount", totalAmount.ToString("F2") }
+                    }
+                };
+
+                var service = new SessionService();
+                var session = await service.CreateAsync(options);
+
+                return Json(new { success = true, checkoutUrl = session.Url });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Error: " + ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> StripePaymentSuccess(string session_id, int studentId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(session_id))
+                {
+                    TempData["ErrorMessage"] = "Invalid payment session";
+                    return RedirectToAction("Dashboard", new { studentId });
+                }
+
+                // Set Stripe API key
+                Stripe.StripeConfiguration.ApiKey = _configuration["Stripe:SecretKey"];
+
+                // Retrieve the session to verify payment
+                var service = new SessionService();
+                var session = await service.GetAsync(session_id);
+
+                if (session.PaymentStatus != "paid")
+                {
+                    TempData["ErrorMessage"] = "Payment was not completed";
+                    return RedirectToAction("Dashboard", new { studentId });
+                }
+
+                var student = await _context.Students
+                    .Include(s => s.ClassObj)
+                    .FirstOrDefaultAsync(s => s.Id == studentId);
+
+                if (student == null)
+                {
+                    TempData["ErrorMessage"] = "Student not found";
+                    return RedirectToAction("Dashboard", new { studentId });
+                }
+
+                var currentUser = await _userManager.GetUserAsync(User);
+                var currentMonth = DateTime.Now.Month;
+                var currentYear = DateTime.Now.Year;
+                var campusId = student.CampusId;
+                var amountPaid = session.AmountTotal.HasValue ? (decimal)session.AmountTotal.Value / 100 : 0;
+
+                // Check if billing record already exists
+                var existingMaster = await _context.BillingMaster
+                    .Include(b => b.Transactions)
+                    .FirstOrDefaultAsync(b => b.StudentId == studentId &&
+                                    b.ForMonth == currentMonth &&
+                                    b.ForYear == currentYear);
+
+                BillingMaster billingMaster;
+
+                if (existingMaster != null)
+                {
+                    // Update existing billing
+                    var totalAlreadyPaid = existingMaster.Transactions?.Sum(t => t.AmountPaid) ?? 0;
+                    var originalTotal = existingMaster.TuitionFee + existingMaster.AdmissionFee + 
+                               existingMaster.MiscallaneousCharges + existingMaster.Fine + existingMaster.PreviousDues;
+                    
+                    // Calculate new dues: Original Total - (Already Paid + Current Payment)
+                    existingMaster.Dues = originalTotal - totalAlreadyPaid - amountPaid;
+                    existingMaster.ModifiedDate = DateTime.Now;
+                    existingMaster.ModifiedBy = currentUser?.UserName ?? "Stripe-Payment";
+
+                    _context.Update(existingMaster);
+                    billingMaster = existingMaster;
+                }
+                else
+                {
+                    // Create new billing record
+                    var classFee = await _context.ClassFees
+                        .FirstOrDefaultAsync(cf => cf.ClassId == student.ClassObj.Id);
+
+                    if (classFee == null)
+                    {
+                        TempData["ErrorMessage"] = "Class fee structure not found";
+                        return RedirectToAction("Dashboard", new { studentId });
+                    }
+
+                    var tuitionFee = classFee.TuitionFee * (1 - ((student.TuitionFeeDiscountPercent ?? 0) / 100m));
+                    var admissionFee = student.AdmissionFeePaid ? 0 :
+                        Math.Max(0, classFee.AdmissionFee - (classFee.AdmissionFee * ((student.AdmissionFeeDiscountAmount ?? 0) / 100m)));
+                    var fineCharges = await _context.StudentFineCharges
+                        .Where(sfc => sfc.StudentId == studentId && !sfc.IsPaid && sfc.IsActive)
+                        .SumAsync(sfc => (decimal?)sfc.Amount) ?? 0;
+                    var extraChargesAmount = await _extraChargeService.CalculateExtraCharges(student.Class, student.Id, student.CampusId);
+
+                    // Calculate previous dues
+                    var lastRecord = await _context.BillingMaster
+                        .Include(b => b.Transactions)
+                        .Where(b => b.StudentId == student.Id &&
+                                   (b.ForYear < currentYear || (b.ForYear == currentYear && b.ForMonth < currentMonth)))
+                        .OrderByDescending(b => b.ForYear)
+                        .ThenByDescending(b => b.ForMonth)
+                        .FirstOrDefaultAsync();
+                    
+                    decimal calculatedPreviousDues = 0;
+                    string duesRemarks = "No previous dues record found";
+                    
+                    if (lastRecord != null)
+                    {
+                        var lastBillTotalPayable = lastRecord.TuitionFee + lastRecord.AdmissionFee +
+                                                   lastRecord.MiscallaneousCharges + lastRecord.PreviousDues + lastRecord.Fine;
+                        var lastBillTotalPaid = lastRecord.Transactions?.Sum(t => t.AmountPaid) ?? 0;
+                        calculatedPreviousDues = lastBillTotalPayable - lastBillTotalPaid;
+
+                        var lastRecordDate = new DateTime(lastRecord.ForYear, lastRecord.ForMonth, 1);
+                        var selectedDate = new DateTime(currentYear, currentMonth, 1);
+                        var monthsGap = ((selectedDate.Year - lastRecordDate.Year) * 12) + selectedDate.Month - lastRecordDate.Month - 1;
+                        var lastMonthName = System.Globalization.DateTimeFormatInfo.CurrentInfo.GetMonthName(lastRecord.ForMonth);
+
+                        if (monthsGap > 0)
+                        {
+                            var missingMonthsAmount = monthsGap * (tuitionFee + extraChargesAmount);
+                            calculatedPreviousDues += missingMonthsAmount;
+                            duesRemarks = $"Previous dues from {lastMonthName} {lastRecord.ForYear}: ₨{(lastBillTotalPayable - lastBillTotalPaid):N0}. " +
+                                          $"Plus {monthsGap} month(s) missing fees: ₨{missingMonthsAmount:N0}.";
+                        }
+                        else
+                        {
+                            duesRemarks = $"Previous dues from {lastMonthName} {lastRecord.ForYear}: ₨{calculatedPreviousDues:N0}";
+                        }
+                    }
+
+                    var totalAmount = tuitionFee + admissionFee + extraChargesAmount + fineCharges + calculatedPreviousDues;
+                    var dues = totalAmount - amountPaid;
+
+                    billingMaster = new BillingMaster
+                    {
+                        StudentId = studentId,
+                        ClassId = student.Class,
+                        ForMonth = currentMonth,
+                        ForYear = currentYear,
+                        TuitionFee = tuitionFee,
+                        AdmissionFee = admissionFee,
+                        MiscallaneousCharges = extraChargesAmount + fineCharges,
+                        PreviousDues = calculatedPreviousDues,
+                        Fine = 0,
+                        Dues = dues,
+                        CreatedDate = DateTime.Now,
+                        CreatedBy = currentUser?.UserName ?? "Stripe-Payment",
+                        CampusId = (int)campusId,
+                        RemarksPreviousDues = duesRemarks
+                    };
+
+                    _context.Add(billingMaster);
+                }
+
+                // Mark admission fee as paid if applicable
+                if (!student.AdmissionFeePaid && billingMaster.AdmissionFee > 0)
+                {
+                    student.AdmissionFeePaid = true;
+                    _context.Students.Update(student);
+                }
+
+                await _context.SaveChangesAsync();
+
+                // Create billing transaction
+                var billingTransaction = new BillingTransaction
+                {
+                    BillingMasterId = billingMaster.Id,
+                    AmountPaid = amountPaid,
+                    CashPaid = 0,
+                    OnlinePaid = amountPaid,
+                    OnlineAccount = null,
+                    TransactionReference = session.PaymentIntentId ?? session_id,
+                    PaymentDate = DateTime.Now,
+                    ReceivedBy = "Stripe-Online-Payment",
+                    CampusId = (int)campusId
+                };
+                
+                _context.Add(billingTransaction);
+                await _context.SaveChangesAsync();
+
+                // Mark unpaid student fines/charges as paid
+                var unpaidFines = await _context.StudentFineCharges
+                    .Where(sfc => sfc.StudentId == studentId && !sfc.IsPaid && sfc.IsActive)
+                    .ToListAsync();
+
+                foreach (var fine in unpaidFines)
+                {
+                    fine.IsPaid = true;
+                    fine.PaidDate = DateTime.Now;
+                    fine.BillingMasterId = billingMaster.Id;
+                    fine.ModifiedBy = "Stripe-Payment";
+                    fine.ModifiedDate = DateTime.Now;
+                }
+
+                await _context.SaveChangesAsync();
+
+                // Create notification for fee received
+                await _notificationService.CreateFeeReceivedNotification(
+                    studentId,
+                    amountPaid,
+                    (int)campusId,
+                    "Stripe-Payment"
+                );
+
+                TempData["SuccessMessage"] = $"Payment of {amountPaid:C} received successfully via Stripe!";
+                
+                // Open receipt in new tab
+                var receiptUrl = Url.Action("TransactionReceipt", "BillingReports", new { id = billingTransaction.Id });
+                var script = $"<script>window.open('{receiptUrl}', '_blank'); window.location='{Url.Action("Dashboard", "StudentDashboard", new { studentId })}';</script>";
+                return Content(script, "text/html");
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Error processing payment: " + ex.Message;
+                return RedirectToAction("Dashboard", new { studentId });
             }
         }
     }

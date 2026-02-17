@@ -6,6 +6,8 @@ using UTS_SMS.Models;
 using UTS_SMS.Services;
 using UTS_SMS.Hubs;
 using UTS_SMS;
+using DinkToPdf;
+using DinkToPdf.Contracts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -78,9 +80,14 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IExtraChargeService, ExtraChargeService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ISalaryDeductionService, SalaryDeductionService>();
+builder.Services.AddScoped<IWhatsAppService, WhatsAppService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<MessageService>();
- builder.Services.AddScoped<ReportService>();
+builder.Services.AddScoped<ReportService>();
+
+// Add DinkToPdf for PDF generation
+builder.Services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+builder.Services.AddScoped<IPdfService, PdfService>();
 
 // AI Chat services
 builder.Services.Configure<AiChatOptions>(builder.Configuration.GetSection("AiChat"));

@@ -499,6 +499,16 @@
                                 @calc.RemainingDues.ToString("C")
                             </span>
                         </div>
+                        @if (calc.TotalPaid == 0 && calc.TotalPayable > 0)
+                        {
+                            <div class="mt-3">
+                                <button onclick="payByStripe()" 
+                                        class="w-full bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white font-bold py-2 px-4 rounded-lg hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2">
+                                    <i class="fas fa-credit-card"></i>
+                                    <span>Pay by Stripe</span>
+                                </button>
+                            </div>
+                        }
                     </div>
                     @if (calc.Transactions.Any())
                     {
@@ -851,6 +861,40 @@
 
         function printReceipt(transactionId) {
             window.open('/BillingReports/TransactionReceipt/' + transactionId, '_blank');
+        }
+
+        function payByStripe() {
+            // Show loading state
+            const btn = event.target.closest('button');
+            const originalContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Processing...</span>';
+            
+            // Call API to create Stripe checkout session
+            fetch('/StudentDashboard/CreateStripeCheckout?studentId=' + studentId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.checkoutUrl) {
+                    // Redirect to Stripe checkout
+                    window.location.href = data.checkoutUrl;
+                } else {
+                    alert('Error creating payment session: ' + (data.message || 'Unknown error'));
+                    btn.disabled = false;
+                    btn.innerHTML = originalContent;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to create payment session. Please try again.');
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            });
         }
 
         function updateMonthYearDisplay() {
@@ -1348,6 +1392,8 @@
         function showAwardDetails(award, examName, examCategory, position, percentage, academicYear) {
             alert(`ðŸ† Achievement Details\n\nAward: ${award}\nPosition: #${position}\nPercentage: ${percentage}%\nExam: ${examName}\nCategory: ${examCategory}\nAcademic Year: ${academicYear}`);
         }
+
+        
     </script>
 </body>
 </html>

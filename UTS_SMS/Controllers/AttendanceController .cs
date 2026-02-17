@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UTS_SMS.Models;
 using UTS_SMS.ViewModels;
+using UTS_SMS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,11 +17,13 @@ namespace UTS_SMS.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IWhatsAppService _whatsAppService;
 
-        public AttendanceController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public AttendanceController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IWhatsAppService whatsAppService)
         {
             _context = context;
             _userManager = userManager;
+            _whatsAppService = whatsAppService;
 
         }
         [HttpGet]
@@ -207,7 +210,7 @@ namespace UTS_SMS.Controllers
                     .Where(a => a.Date == date && a.ClassId == classId && a.SectionId == sectionId && a.CampusId == usercampusId)
                     .ToListAsync();
 
-                // Get all students to retrieve their academic years
+                // Get all students to retrieve their academic years and phone numbers
                 var studentIds = model.Select(m => m.StudentId).ToList();
                 var students = await _context.Students
                     .Where(s => studentIds.Contains(s.Id))
@@ -241,6 +244,38 @@ namespace UTS_SMS.Controllers
                             CampusId = (int)usercampusId,
                         };
                         _context.Attendance.Add(attendance);
+                    }
+
+                    // Send WhatsApp notification if not Present
+                    if (item.Status != "P" && students.TryGetValue(item.StudentId, out var student))
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                var statusText = item.Status switch
+                                {
+                                    "A" => "Absent",
+                                    "L" => "On Leave",
+                                    "T" => "Late",
+                                    _ => "Not Present"
+                                };
+
+                                var message = $"Assalam-o-Alaikum,\n\nYour child {student.StudentName} was marked {statusText} on {date:dd MMM yyyy}.\n\nRegards,\nUTS SMS";
+
+                                await _whatsAppService.SendMessageAsync(
+                                    student.FatherName ?? "Parent",
+                                    student.FatherPhone,
+                                    message
+                                );
+                            }
+                            catch (Exception ex)
+                            {
+                                // Log error but don't fail the attendance save
+                                Console.WriteLine($"Error sending WhatsApp: {ex.Message}")
+;
+                            }
+                        });
                     }
                 }
 

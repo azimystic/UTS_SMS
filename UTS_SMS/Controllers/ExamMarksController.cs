@@ -12,12 +12,14 @@ namespace UTS_SMS.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly NotificationService _notificationService;
+        private readonly IWhatsAppService _whatsAppService;
 
-        public ExamMarksController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, NotificationService notificationService)
+        public ExamMarksController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, NotificationService notificationService, IWhatsAppService whatsAppService)
         {
             _context = context;
             _userManager = userManager;
             _notificationService = notificationService;
+            _whatsAppService = whatsAppService;
         }
 
         // Helper method to parse academic year from string (e.g., "2025-2026" -> 2025)
@@ -405,7 +407,7 @@ namespace UTS_SMS.Controllers
 
                 await _context.SaveChangesAsync();
 
-                // Create notifications for students when marks are entered
+                // Create notifications and send WhatsApp messages for students when marks are entered
                 foreach (var examMark in examMarksToSave.Concat(examMarksToUpdate))
                 {
                     await _notificationService.CreateMarksEntryNotification(
@@ -417,6 +419,32 @@ namespace UTS_SMS.Controllers
                         examMark.CampusId,
                         User.Identity?.Name ?? "System"
                     );
+
+                    // Send WhatsApp notification to student's father (fire-and-forget)
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            var student = await _context.Students.FindAsync(examMark.StudentId);
+                            var subject = await _context.Subjects.FindAsync(examMark.SubjectId);
+                            
+                            if (student != null && subject != null && !string.IsNullOrWhiteSpace(student.FatherPhone))
+                            {
+                                var message = $"Dear Parent, Result Alert: {student.StudentName} has obtained {examMark.ObtainedMarks}/{examMark.TotalMarks} marks in {subject.Name}.";
+                                
+                                await _whatsAppService.SendMessageAsync(
+                                    student.FatherName ?? "Parent",
+                                    student.FatherPhone,
+                                    message
+                                );
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log error but don't fail the marks save
+                            Console.WriteLine($"Error sending WhatsApp: {ex.Message}");
+                        }
+                    });
                 }
 
                 return Json(new { success = true, message = "Exam marks saved successfully!" });

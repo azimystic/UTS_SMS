@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using UTS_SMS.Models;
+using UTS_SMS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,13 +19,15 @@ namespace UTS_SMS.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IMemoryCache _cache;
+        private readonly IWhatsAppService _whatsAppService;
         private const double ALLOWED_DISTANCE_METERS = 100;
 
-        public EmployeeAttendanceController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IMemoryCache cache)
+        public EmployeeAttendanceController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IMemoryCache cache, IWhatsAppService whatsAppService)
         {
             _context = context;
             _userManager = userManager;
             _cache = cache;
+            _whatsAppService = whatsAppService;
         }
 
         [Authorize(Roles = "Admin,Accountant")]
@@ -184,6 +187,11 @@ namespace UTS_SMS.Controllers
                     })
                     .ToDictionaryAsync(e => e.Id);
 
+                // Get employee details for WhatsApp notifications
+                var employees = await _context.Employees
+                    .Where(e => employeeIds.Contains(e.Id))
+                    .ToDictionaryAsync(e => e.Id);
+
                 foreach (var item in model)
                 {
                     var times = employeeTimes.GetValueOrDefault(item.EmployeeId);
@@ -202,6 +210,38 @@ namespace UTS_SMS.Controllers
                     {
                         var attendance = CreateAttendance(item, date, times, User.Identity.Name);
                         _context.EmployeeAttendance.Add(attendance);
+                    }
+
+                    // Send WhatsApp notification if not Present
+                    if (item.Status != "P" && employees.TryGetValue(item.EmployeeId, out var employee))
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                var statusText = item.Status switch
+                                {
+                                    "A" => "Absent",
+                                    "L" => "On Leave",
+                                    "T" => "Late",
+                                    "S" => "Short Leave",
+                                    _ => "Not Present"
+                                };
+
+                                var message = $"Assalam-o-Alaikum {employee.FullName},\n\nYour attendance was marked {statusText} on {date:dd MMM yyyy}.\n\nRegards,\nUTS SMS";
+
+                                await _whatsAppService.SendMessageAsync(
+                                    employee.FullName,
+                                    employee.PhoneNumber,
+                                    message
+                                );
+                            }
+                            catch (Exception ex)
+                            {
+                                // Log error but don't fail the attendance save
+                                Console.WriteLine($"Error sending WhatsApp: {ex.Message}");
+                            }
+                        });
                     }
                 }
 
